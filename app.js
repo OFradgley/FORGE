@@ -4,7 +4,7 @@
 // -----------------------------------------------------------------------
 import React, { useState } from "https://esm.sh/react@18.2.0?bundle";
 import { createRoot }       from "https://esm.sh/react-dom@18.2.0/client?bundle";
-import { motion }           from "https://esm.sh/framer-motion@11.0.4?bundle";
+import { motion }           from "https://cdn.skypack.dev/framer-motion@10.18.1";
 
 import {
   names,
