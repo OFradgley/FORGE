@@ -2,9 +2,9 @@
 // Requires: index.html with <script type="module" src="app.js"> and
 // tables.js exporting *all* data including attributeOrder & OCC_ATTR_MAP.
 // -----------------------------------------------------------------------
-import React, { useState } from "https://esm.sh/react@18?bundle";
-import { createRoot }       from "https://esm.sh/react-dom@18/client?bundle";
-import { motion }           from "https://esm.sh/framer-motion@10?bundle";
+import React, { useState } from "https://esm.sh/react@18.2.0?bundle";
+import { createRoot }       from "https://esm.sh/react-dom@18.2.0/client?bundle";
+import { motion }           from "https://esm.sh/framer-motion@10.18.1?bundle";
 
 import {
   names,
