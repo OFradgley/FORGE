@@ -25,7 +25,8 @@ import {
 } from "./tables.js";
 
 /* -------------------------- Minimal UI Primitives ------------------------- */
-const Button = ({ children, ...props }) => (<button className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" {...props}>{children}</button>
+const Button = ({ children, ...props }) => (
+  <button className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" {...props}>{children}</button>
 );
 
 const Card         = ({ children }) => <div className="bg-white rounded-xl shadow-md p-4 w-full">{children}</div>;
