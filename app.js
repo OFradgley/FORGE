@@ -19,8 +19,8 @@ import {
   helmetItem,
   shieldItem,
   rationItem,
-  attributeOrderList as attributeOrder,
-  OCC_ATTR as OCC_ATTR_MAP
+  attributeOrder,
+  OCC_ATTR_MAP
 } from "./tables.js";
 
 /* -------------------------- Minimal UI Primitives ------------------------- */
