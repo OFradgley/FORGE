@@ -7,6 +7,19 @@
  *        from the rule‑book.  Nothing is trimmed.
  * ----------------------------------------------------------------*/
 
+export const attributeOrder = [
+  "Strength","Dexterity","Constitution","Intelligence","Wisdom","Charisma"
+];
+
+export const OCC_ATTR_MAP = [
+  { attr:"Strength",    keys:["barbarian","knight","warrior","mercenary","bodyguard","hunter","woodsman","pit","thug","soldier","bandit","outlaw"]},
+  { attr:"Dexterity",   keys:["thief","pickpocket","spy","ranger","acrobat","burglar","assassin","sailor","navigator","courier","smuggler"]},
+  { attr:"Constitution",keys:["miner","farmer","butcher","blacksmith","builder","labourer","villager"]},
+  { attr:"Intelligence",keys:["wizard","mage","scientist","engineer","scribe","alchemist","inventor","magister","scholar","cartographer"]},
+  { attr:"Wisdom",      keys:["cleric","druid","monk","priest","hermit","witch","missionary","reverend"]},
+  { attr:"Charisma",    keys:["aristocrat","noble","bard","musician","actor","courtier","merchant","politician","statesman"]}
+];
+
 export const names = [
   "Adalyn","Aeddon","Alaric","Alenya","Alethia","Alistair","Alondo","Althea","Althus","Amara","Arasen","Aric","Asher","Astrid","Aveline","Barin","Bas","Bataar","Bellara","Bevan","Brom","Brynn","Caera","Caius","Caldas","Cedric","Celene","Chandra","Cortina","Corwin","Dariel","Davin","Dax","Delos","Dorian","Draven","Driana","Edda","Elara","Eldrin","Elira","Elowen","Elstan","Elyndor","Emrik","Eos","Esra","Evangeline","Evelith","Fanir","Farina","Fendrel","Fenris","Fenwick","Feryn","Flint","Freya","Galen","Garran","Garrick","Ghadon","Gideon","Giselle","Glynn","Gwenna","Hadrik","Haf","Halen","Halric","Helira","Hirsham","Idris","Ilora","Ilyana","Isarn","Ishana","Isolde","Jareth","Jasper","Jebran","Jihan","Jiselle","Jorena","Jorn","Jorven","Jorvik","Kaelith","Kaivan","Kalidas","Karyna","Katana","Kato","Katrin","Keelan","Kelric","Kenrick","Korgan","Kormak","Kunor","Kyler","Kynan","Leela","Lenara","Liorin","Loona","Lorien","Lucan","Lucius","Lyra","Maelis","Mathis","Mattick","Maya","Merrik","Milla","Mirael","Mireth","Morell","Morgana","Mortimer","Myrtle","Nakura","Nanda","Nazmi","Neera","Nekun","Nisus","Nolan","Noric","Norina","Nymeria","Nyssara","Nyx","Olyssa","Ophelin","Oren","Owyn","Padma","Pearce","Pendry","Perella","Perrin","Phyra","Qamar","Quentin","Quinn","Radric","Raelith","Renn","Reva","Roderick","Ronin","Roslyn","Rowan","Sabine","Sadia","Saren","Sariel","Saskia","Segura","Selene","Selira","Seraphina","Shekhar","Silas","Siorra","Solana","Soren","Tahir","Talon","Talyra","Tamara","Tamsin","Tarvin","Temir","Tessa","Thalindra","Tharic","Themon","Theryn","Thorne","Tia","Torgan","Torin","Tristan","Ulfar","Ulissa","Ulric","Ulvanna","Valeri","Varek","Varyn","Vaylen","Venara","Vera","Vesna","Vespera","Veyla","Wrenric","Wylisse","Wynne","Xanath","Xandor","Xyra","Yorath","Yorick","Yselda","Yuda","Zakar","Zane","Zanita","Zayra","Zeke","Zelena","Zephyr","Zorin"
 ];
@@ -39,5 +52,3 @@ export const helmetItem = { name:"Helmet", slots:1 };
 export const shieldItem = { name:"Shield", slots:1 };
 export const rationItem  = { name:"Ration", slots:1 };
 
-export const attributeOrderList = attributeOrder;  // re‑export for convenience
-export const OCC_ATTR = OCC_ATTR_MAP; // idem
