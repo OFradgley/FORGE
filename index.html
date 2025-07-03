@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FORGE Character Generator</title>
+  
   <!-- Tailwind via CDN (lightweight) -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -20,14 +21,8 @@
 <!-- Babel compiler -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- Compile app.js (now JSX but no import statements) -->
-<script type="text/babel" src="app.js"></script>
-
-  <!-- ① Load Babel stand-alone once -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<!-- ② Tell the browser to compile app.js on the fly -->
-<script type="text/babel" data-type="module" src="app.js"></script>
+<!-- LOAD app.js as a real ES-module -->
+<script type="module" src="app.js"></script>
 
 </body>
 </html>
