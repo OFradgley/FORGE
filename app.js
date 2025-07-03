@@ -1,9 +1,9 @@
 // app.js – main React module (ES‑modules, CDN imports)
 // Host these three files (index.html, tables.js, app.js) on GitHub Pages.
 
-import React, { useState } from "https://esm.sh/react@18";
-import { createRoot }         from "https://esm.sh/react-dom@18/client";
-import { motion }             from "https://esm.sh/framer-motion@10";
+import React, { useState } from "https://esm.sh/react@18?bundle";
+import { createRoot }       from "https://esm.sh/react-dom@18/client?bundle";
+import { motion }           from "https://esm.sh/framer-motion@10?bundle";
 
 import {
   names,
