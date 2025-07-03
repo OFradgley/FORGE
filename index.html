@@ -20,7 +20,7 @@
   <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div id="root" class="w-full max-w-4xl"></div>
 
-    <!-- ④ Compile app.js (now JSX that uses global React) -->
-    <script type="text/babel" src="app.js"></script>
+    <!-- Compile app.js *and* keep it a module -->
+    <script type="text/babel" data-type="module" src="app.js"></script>
   </body>
 </html>
