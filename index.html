@@ -11,6 +11,11 @@
   <div id="root" class="w-full max-w-4xl"></div>
 
   <!-- Main ES‑module (pulls React/React‑DOM via esm.sh) -->
-  <script type="module" src="app.js"></script>
+  <!-- ① Load Babel stand-alone once -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- ② Tell the browser to compile app.js on the fly -->
+<script type="text/babel" data-type="module" src="app.js"></script>
+
 </body>
 </html>
