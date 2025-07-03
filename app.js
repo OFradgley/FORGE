@@ -4,7 +4,6 @@
 // -----------------------------------------------------------------------
 import React, { useState } from "https://esm.sh/react@18.2.0?bundle";
 import { createRoot }       from "https://esm.sh/react-dom@18.2.0/client?bundle";
-import { motion } from "https://cdn.jsdelivr.net/npm/framer-motion@11.0.4/dist/framer-motion.es.js";
 
 import {
   names,
@@ -115,7 +114,7 @@ function CharacterGenerator() {
 
   return (
     <div className="flex flex-col items-center gap-6 p-4">
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3 }} className="w-full max-w-3xl">
+      <div className="w-full max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle>FORGE Character Generator</CardTitle>
@@ -125,7 +124,7 @@ function CharacterGenerator() {
             {pc ? <CharacterSheet pc={pc} /> : <p className="text-center italic text-gray-600">Click “Roll New Character” to begin.</p>}
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }
