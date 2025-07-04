@@ -38,7 +38,16 @@ const pick    = arr => arr[Math.floor(Math.random() * arr.length)];
 const d6      = () => Math.floor(Math.random() * 6) + 1;
 const roll2d6 = () => d6() + d6();
 const roll3d6 = () => d6() + d6() + d6();
-const mod     = v => Math.floor((v - 10) / 2);
+const mod = v => {
+  if (v === 1) return -4;
+  if (v <= 3)  return -3;
+  if (v <= 5)  return -2;
+  if (v <= 8)  return -1;
+  if (v <= 12) return 0;
+  if (v <= 15) return 1;
+  if (v <= 17) return 2;
+  return 3;
+};
 const fmt     = n => (n >= 0 ? `+${n}` : `${n}`);
 
 const choosePrimaries = (o1, o2) => {
@@ -78,7 +87,16 @@ function CharacterGenerator() {
     const hs         = roll2d6();
     const hasHelmet  = (hs >= 6 && hs <= 7) || hs >= 11;
     const hasShield  = (hs >= 8 && hs <= 10) || hs >= 11;
-    const ac         = armour.ac + (hasShield ? 1 : 0) + mod(scores.Dexterity);
+    const dexMod = mod(scores.Dexterity);
+    let dexBonus;
+    if (armour.name === "Chain Armour (AC14)") {
+      dexBonus = Math.min(dexMod, 2);
+    } else if (armour.name === "Plate Armour (AC16)") {
+      dexBonus = Math.min(dexMod, 1);
+    } else {
+      dexBonus = dexMod;
+    }
+    const ac = armour.ac + (hasShield ? 1 : 0) + dexBonus;
 
     const inventory = [
       { name: `${weapon.name} (${weapon.dmg})`, slots: weapon.slots },
@@ -94,6 +112,10 @@ function CharacterGenerator() {
       rationItem, { ...rationItem }
     ].flat().filter(Boolean);
 
+    // Calculate max slots
+    const strengthAttr = attrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check;
+
     setPc({
       name: pick(names),
       level: 1,
@@ -105,6 +127,7 @@ function CharacterGenerator() {
       gold: (d6() + d6()) * 30,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
+      maxSlots, 
       appearance: pick(appearances),
       detail:     pick(details),
       clothing:   pick(clothes),
@@ -147,6 +170,7 @@ const AttributeBlock = ({ attr, score, mod, primary, check }) => (
 );
 
 function CharacterSheet({ pc }) {
+  const overLimit = pc.totalSlots > pc.maxSlots;
   return (
     <div className="space-y-6">
       <Grid cols={2}>
@@ -170,10 +194,24 @@ function CharacterSheet({ pc }) {
       </Grid>
 
       <section>
-        <h3 className="text-xl font-semibold mb-2">Inventory <span className="text-sm text-gray-500">(Total slots: {pc.totalSlots})</span></h3>
+        <h3 className="text-xl font-semibold mb-2">
+          Inventory{" "}
+          <span className="text-sm text-gray-500">
+            (Slots used:{" "}
+            <span style={overLimit ? { color: "red", fontWeight: "bold" } : {}}>
+              {pc.totalSlots}
+            </span>
+            /{pc.maxSlots})
+          </span>
+        </h3>
         <ul className="list-disc list-inside">
           {pc.inventory.map((it, i) => (
-            <li key={i}>{it.name} — <span className="italic text-gray-400">{it.slots} slot{it.slots !== 1 ? "s" : ""}</span></li>
+            <li key={i}>
+              {it.name} —{" "}
+              <span className="italic text-gray-400">
+                {it.slots} slot{it.slots !== 1 ? "s" : ""}
+              </span>
+            </li>
           ))}
         </ul>
       </section>

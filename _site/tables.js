@@ -1,6 +1,6 @@
 // tables.js – FORGE Anniversary Edition full lookup tables (v1.1.2)
 // Exported constants for names, occupations, weapons, armours, gear, etc.
-// Import these into the React generator component to keep that file lean.
+// to keep the app.js file lean.
 
 /* ------------------------------------------------------------------
  * NOTE:  The arrays are intentionally long and taken verbatim
@@ -41,9 +41,9 @@ export const armours = [
 const dungeonGearRaw = [
   "Antidote","Bear trap","Pulleys","Candles x5","Chain (Close)","Chalk x10",
   "Chisel","Crowbar","Drill","Empty sack","Grappling hook","Grease","Hammer",
-  "Heal potion","Spikes x5","Lantern","Lantern oil","Lens","Ladder",          // ← added
+  "Heal potion","Spikes x5","Lantern","Lantern oil","Lens","Ladder",          
   "Manacles","Metal file","Mining pick","Mirror","Nails x10","Net","Poison",
-  "10ft pole","Rope (Far)","Runestone","Sacred writ","Shovel","Spiked boots",
+  "10ft pole","Rope (Far)","Runestone (1st)","Sacred writ (1st)","Shovel","Spiked boots",
   "Thieves’ tools","Tinderbox","Torch","Twine (Distant)","Stakes x5"
 ];
 
@@ -53,7 +53,7 @@ const generalGearRaw = [
   "Fishing rod","Garlic","Glue","Grease","Horn","Hourglass","Incense",
   "Instrument","Loaded dice","Marbles","Padlock","Perfume","Quill and Ink",
   "Saw","Small bell","Soap","Sponge","Spyglass","Tar",
-  "Tent (3 Man)","Tent (Personal)",                                             // ← clarified tents
+  "Tent (3 Man)","Tent (Personal)",                                             
   "Tongs","Whistle","Wolfsbane"
 ];
 
@@ -64,7 +64,7 @@ function slotsFor(item) {
   if (/^10ft pole$/i.test(item))                return 2;  // long & awkward
   if (/^Ladder$/i.test(item))                   return 3;  // extra-bulky
   if (/^Tent \(3 Man\)$/i.test(item))           return 2;  // heavier tent
-  return 1;                                                  // everything else
+  return 1;                                                // everything else
 }
 
 /* -------------------------- EXPORTED TABLES --------------------------- */
