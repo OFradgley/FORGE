@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-jekyll serve --livereload
+jekyll serve --livereload --incremental
 pause
