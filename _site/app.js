@@ -67,6 +67,7 @@ function CharacterGenerator() {
   const [pc, setPc] = useState(null);
   const [primaries, setPrimaries] = useState(new Set());
   const [hpOverride, setHpOverride] = useState(null); // Move hpOverride here
+  const [selectedWeapon, setSelectedWeapon] = useState(null);
 
   function rollCharacter() {
     setHpOverride(null); // <-- Reset HP override on new character roll
@@ -96,6 +97,7 @@ function CharacterGenerator() {
 
     // ---- Gear rolls ----
     const weapon  = pick(weapons);
+    setSelectedWeapon(weapon.name); // Set initial weapon
     const aRoll   = roll2d6();
     const armour  = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
 
@@ -222,6 +224,8 @@ function CharacterGenerator() {
                 primaries={primaries}
                 hpOverride={hpOverride}
                 setHpOverride={setHpOverride}
+                selectedWeapon={selectedWeapon}
+                setSelectedWeapon={setSelectedWeapon}
               />
             ) : (
               <p className="text-center italic text-gray-600">
@@ -266,7 +270,11 @@ const Field = ({ label, value }) => (
   </div>
 );
 
-function CharacterSheet({ pc, togglePrimary, primaries, hpOverride, setHpOverride }) {
+function CharacterSheet({
+  pc, togglePrimary, primaries, hpOverride, setHpOverride,
+  selectedWeapon, setSelectedWeapon
+}) {
+  const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
@@ -296,6 +304,60 @@ function CharacterSheet({ pc, togglePrimary, primaries, hpOverride, setHpOverrid
     const newHp = 4 + conMod;
     setHpOverride(Math.max(1, newHp));
   }
+
+  // Helper to get ammo for a weapon
+  function getAmmoForWeapon(weaponName) {
+    if (weaponName === "Sling") return "Pouch of Bullets x20";
+    if (weaponName === "Hand Crossbow" || weaponName === "Crossbow") return "Case of Bolts x20";
+    if (
+      weaponName === "Shortbow" ||
+      weaponName === "Longbow" ||
+      weaponName === "Warbow"
+    ) return "Quiver of Arrows x20";
+    return null;
+  }
+
+  // Find the weapon object
+  const weaponObj = weapons.find(w => w.name === selectedWeapon) || pc.inventory.find(i => weapons.some(w => w.name === i.name));
+  const ammoName = getAmmoForWeapon(selectedWeapon);
+
+  // Handler for changing weapon
+  function handleWeaponChange(e) {
+    setSelectedWeapon(e.target.value);
+    setShowWeaponDropdown(false);
+  }
+
+  // Build inventory for display
+  const displayInventory = [
+    {
+      name: (
+        <span>
+          {selectedWeapon}
+          {weaponObj && (
+            <>
+              {" "}
+              <span>({weaponObj.dmg})</span>
+            </>
+          )}
+        </span>
+      ),
+      slots: weaponObj ? weaponObj.slots : 1
+    },
+    ...(ammoName ? [{
+      name: ammoName,
+      slots: 1
+    }] : []),
+    ...pc.inventory.filter(
+      i =>
+        !weapons.some(w => w.name === i.name) &&
+        i.name !== "Pouch of Bullets x20" &&
+        i.name !== "Case of Bolts x20" &&
+        i.name !== "Quiver of Arrows x20"
+    )
+  ];
+
+  // --- RECALCULATE total slots based on current weapon/ammo selection ---
+  const currentSlotsUsed = displayInventory.reduce((sum, item) => sum + (item.slots || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -357,20 +419,43 @@ function CharacterSheet({ pc, togglePrimary, primaries, hpOverride, setHpOverrid
       </Grid>
 
       <section>
-        <h3 className="text-xl font-semibold mb-2">
-          Inventory{" "}
-          <span className="text-sm text-gray-500">
-            (Slots used:{" "}
-            <span style={overLimit ? { color: "red", fontWeight: "bold" } : {}}>
-              {pc.totalSlots}
+        <div className="flex items-center flex-wrap gap-2 mb-2">
+          <h3 className="text-xl font-semibold mb-0">
+            Inventory{" "}
+            <span className="text-sm text-gray-500">
+              (Slots used:{" "}
+              <span style={currentSlotsUsed > pc.maxSlots ? { color: "red", fontWeight: "bold" } : {}}>
+                {currentSlotsUsed}
+              </span>
+              /{pc.maxSlots})
             </span>
-            /{pc.maxSlots})
-          </span>
-        </h3>
+          </h3>
+          <button
+            className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+            onClick={() => setShowWeaponDropdown(v => !v)}
+            style={{ fontSize: "0.75rem" }}
+          >
+            Change weapon
+          </button>
+        </div>
+        {showWeaponDropdown && (
+          <select
+            value={selectedWeapon}
+            onChange={handleWeaponChange}
+            className="border rounded px-1 py-0.5 text-sm mb-2"
+            style={{ minWidth: 120 }}
+            autoFocus
+            onBlur={() => setShowWeaponDropdown(false)}
+          >
+            {[...weapons].sort((a, b) => a.name.localeCompare(b.name)).map(w => (
+              <option key={w.name} value={w.name}>{w.name}</option>
+            ))}
+          </select>
+        )}
         <ul className="list-disc list-inside">
-          {pc.inventory.map((it, i) => (
+          {displayInventory.map((it, i) => (
             <li key={i}>
-              {(it.name === "Shield" ? "Shield (AC+1)" : it.name)} —{" "}
+              {it.name} —{" "}
               <span className="italic text-gray-400">
                 {it.slots} slot{it.slots !== 1 ? "s" : ""}
               </span>
