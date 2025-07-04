@@ -1,6 +1,6 @@
 // tables.js – FORGE Anniversary Edition full lookup tables (v1.1.2)
 // Exported constants for names, occupations, weapons, armours, gear, etc.
-// Import these into the React generator component to keep that file lean.
+// to keep the app.js file lean.
 
 /* ------------------------------------------------------------------
  * NOTE:  The arrays are intentionally long and taken verbatim
@@ -29,18 +29,55 @@ export const occupations = [
 ];
 
 export const weapons = [
-  {name:"Quarterstaff",dmg:"1d8",slots:2},{name:"Rapier",dmg:"1d6",slots:1},{name:"Dagger",dmg:"1d6",slots:1},{name:"Shortsword",dmg:"1d6",slots:1},{name:"Cudgel",dmg:"1d6",slots:1},{name:"Sickle",dmg:"1d6",slots:1},{name:"Spear",dmg:"1d8",slots:2},{name:"Longsword",dmg:"1d8",slots:2},{name:"Mace",dmg:"1d8",slots:2},{name:"Axe",dmg:"1d8",slots:2},{name:"Flail",dmg:"1d8",slots:2},{name:"Halberd",dmg:"1d10",slots:3},{name:"Maul",dmg:"1d10",slots:3},{name:"Greataxe",dmg:"1d10",slots:3},{name:"Greatsword",dmg:"1d10",slots:3},{name:"Sling",dmg:"1d4",slots:1},{name:"Hand Crossbow",dmg:"1d4",slots:1},{name:"Shortbow",dmg:"1d4",slots:2},{name:"Longbow",dmg:"1d6",slots:2},{name:"Crossbow",dmg:"1d6",slots:2},{name:"Warbow",dmg:"1d6",slots:3}
+  {name:"Quarterstaff",dmg:"1d8",slots:2},{name:"Rapier",dmg:"1d6",slots:1},{name:"Dagger",dmg:"1d6",slots:1},{name:"Shortsword",dmg:"1d6",slots:1},{name:"Cudgel",dmg:"1d6",slots:1},{name:"Sickle",dmg:"1d6",slots:1},{name:"Spear",dmg:"1d8",slots:2},{name:"Longsword",dmg:"1d8",slots:2},{name:"Mace",dmg:"1d8",slots:2},{name:"Axe",dmg:"1d8",slots:2},{name:"Flail",dmg:"1d8",slots:2},{name:"Halberd",dmg:"1d10[↑]",slots:3},{name:"Maul",dmg:"1d10[↑]",slots:3},{name:"Greataxe",dmg:"1d10[↑]",slots:3},{name:"Greatsword",dmg:"1d10[↑]",slots:3},{name:"Sling",dmg:"1d4",slots:1},{name:"Hand Crossbow",dmg:"1d4",slots:1},{name:"Shortbow",dmg:"1d4",slots:1},{name:"Longbow",dmg:"1d6",slots:2},{name:"Crossbow",dmg:"1d6",slots:2},{name:"Warbow",dmg:"1d6",slots:2}
 ];
 
 export const armours = [
-  {name:"No Armour",ac:10,slots:0},{name:"Leather Armour",ac:12,slots:2},{name:"Chain Armour",ac:14,slots:3},{name:"Plate Armour",ac:16,slots:4}
+  {name:"No Armour",ac:10,slots:0},{name:"Leather Armour (AC12)",ac:12,slots:1},{name:"Chain Armour (AC14)",ac:14,slots:2},{name:"Plate Armour (AC16)",ac:16,slots:3}
 ];
 
-const dungeonGearRaw = ["Antidote","Bear trap","Pulleys","Candles x5","Chain (Close)","Chalk x10","Chisel","Crowbar","Drill","Empty sack","Grappling hook","Grease","Hammer","Heal potion","Spikes x5","Lantern","Lantern oil","Lens","Manacles","Metal file","Mining pick","Mirror","Nails x10","Net","Poison","10ft pole","Rope (Far)","Runestone","Sacred writ","Shovel","Spiked boots","Thieves’ tools","Tinderbox","Torch","Twine (Distant)","Stakes x5"];
-export const dungeonGear = dungeonGearRaw.map(n=>({name:n,slots:/10ft pole|Chain \(Close\)|Lantern|Bear trap|Shovel|Spiked boots/.test(n)?2:1}));
+/* ------------------------------ RAW LISTS ------------------------------ */
 
-const generalGearRaw = ["Air bladder","Bedroll","Bellows","Blank book","Bottle","Bucket","Caltrops","Card deck","Cooking pot","Craft tools","Dice set","Face paint","Fake gems","Fishing rod","Garlic","Glue","Grease","Horn","Hourglass","Incense","Instrument","Loaded dice","Marbles","Padlock","Perfume","Quill and Ink","Saw","Small bell","Soap","Sponge","Spyglass","Tar","Tent","Tongs","Whistle","Wolfsbane"];
-export const generalGear = generalGearRaw.map(n=>({name:n,slots:/Bedroll|Cooking pot|Tent/.test(n)?2:1}));
+const dungeonGearRaw = [
+  "Antidote","Bear trap","Pulleys","Candles x5","Chain (Close)","Chalk x10",
+  "Chisel","Crowbar","Drill","Empty sack","Grappling hook","Grease","Hammer",
+  "Heal potion","Spikes x5","Lantern","Lantern oil","Lens","Ladder",          
+  "Manacles","Metal file","Mining pick","Mirror","Nails x10","Net","Poison",
+  "10ft pole","Rope (Far)","Runestone (1st)","Sacred writ (1st)","Shovel","Spiked boots",
+  "Thieves’ tools","Tinderbox","Torch","Twine (Distant)","Stakes x5"
+];
+
+const generalGearRaw = [
+  "Air bladder","Bedroll","Bellows","Blank book","Bottle","Bucket","Caltrops",
+  "Card deck","Cooking pot","Craft tools","Dice set","Face paint","Fake gems",
+  "Fishing rod","Garlic","Glue","Grease","Horn","Hourglass","Incense",
+  "Instrument","Loaded dice","Marbles","Padlock","Perfume","Quill and Ink",
+  "Saw","Small bell","Soap","Sponge","Spyglass","Tar",
+  "Tent (3 Man)","Tent (Personal)",                                             
+  "Tongs","Whistle","Wolfsbane"
+];
+
+/* --------------------------- SLOT CALCULATOR --------------------------- */
+
+function slotsFor(item) {
+  if (/^Whistle$/i.test(item))                  return 0;  // weightless
+  if (/^10ft pole$/i.test(item))                return 2;  // long & awkward
+  if (/^Ladder$/i.test(item))                   return 3;  // extra-bulky
+  if (/^Tent \(3 Man\)$/i.test(item))           return 2;  // heavier tent
+  return 1;                                                // everything else
+}
+
+/* -------------------------- EXPORTED TABLES --------------------------- */
+
+export const dungeonGear = dungeonGearRaw.map(name => ({
+  name,
+  slots: slotsFor(name)
+}));
+
+export const generalGear = generalGearRaw.map(name => ({
+  name,
+  slots: slotsFor(name)
+}));
 
 export const appearances = ["Angular","Athletic","Bony","Brawny","Broad","Burly","Chubby","Compact","Corpulent","Delicate","Flabby","Gaunt","Handsome","Hideous","Hulking","Lanky","Nimble","Petite","Pudgy","Ripped","Rotund","Rugged","Scrawny","Short","Sinewy","Skeletal","Slender","Statuesque","Stocky","Stout","Taut","Towering","Trim","Weathered","Willowy","Wiry"];
 export const details = ["Bald","Battle scar","Big nose","Birthmark","Braided hair","Bristly chin","Broken nose","Burn scar","Curly hair","Dark skin","Dishevelled","Dreadlocks","Full beard","Long beard","Long hair","Lost finger","Makeup","Milky eye","Mohawk","Mustache","Narrow eyes","Oily skin","Pale skin","Pierced ear","Pierced nose","Pockmarked","Rosy cheeks","Short hair","Smells","Sunburned","Tanned","Tattooed","Topknot","Whip scar","Wispy hair","Missing tooth"];
