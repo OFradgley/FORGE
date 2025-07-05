@@ -318,6 +318,8 @@ function CharacterSheet({
   const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
+  const [showNameInput, setShowNameInput] = React.useState(false);
+  const [nameInputValue, setNameInputValue] = React.useState(pc.name);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
@@ -434,10 +436,56 @@ function CharacterSheet({
   // --- RECALCULATE total slots based on current weapon/ammo selection ---
   const currentSlotsUsed = displayInventory.reduce((sum, item) => sum + (item.slots || 0), 0);
 
+  // Save name on blur or Enter
+  React.useEffect(() => { setNameInputValue(pc.name); }, [pc.name]);
+  function handleNameInputSave() {
+    setPc({ ...pc, name: nameInputValue.trim() || pc.name });
+    setShowNameInput(false);
+  }
+
   return (
     <div className="space-y-6">
       <Grid cols={2}>
-        <Field label="Name" value={pc.name} />
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs text-gray-500">Name</span>
+            <button
+              className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+              style={{ fontSize: "0.75rem" }}
+              onClick={() => setShowNameInput(true)}
+            >
+              Change
+            </button>
+          </div>
+          {showNameInput ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="border rounded px-1 py-0.5 text-sm"
+                value={nameInputValue}
+                autoFocus
+                onChange={e => setNameInputValue(e.target.value)}
+                onBlur={handleNameInputSave}
+                onKeyDown={e => {
+                  if (e.key === "Enter") handleNameInputSave();
+                }}
+                style={{ minWidth: 100 }}
+              />
+              <button
+                className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                style={{ fontSize: "0.75rem" }}
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => setNameInputValue(pick(names))}
+                tabIndex={-1}
+              >
+                Reroll
+              </button>
+            </div>
+          ) : (
+            <div className="font-semibold">{pc.name}</div>
+          )}
+        </div>
         <div>
           <div className="flex flex-col items-start gap-1 mb-1">
             <div className="flex items-center gap-2">
@@ -458,34 +506,66 @@ function CharacterSheet({
               </button>
             </div>
             {showOccDropdown1 && (
-              <select
-                value={pc.occupations[0]}
-                onChange={handleOcc1Change}
-                className="border rounded px-1 py-0.5 text-sm mt-1"
-                autoFocus
-                onBlur={() => setShowOccDropdown1(false)}
-              >
-                {occupations
-                  .filter(o => o !== pc.occupations[1])
-                  .map(o => (
-                    <option key={o} value={o}>{o}</option>
-                  ))}
-              </select>
+              <div className="flex items-center gap-2 mt-1">
+                <select
+                  value={pc.occupations[0]}
+                  onChange={handleOcc1Change}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowOccDropdown1(false)}
+                >
+                  {occupations
+                    .filter(o => o !== pc.occupations[1])
+                    .map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                </select>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  style={{ fontSize: "0.75rem" }}
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => {
+                    let options = occupations.filter(o => o !== pc.occupations[1]);
+                    let newVal = pick(options);
+                    setPc({ ...pc, occupations: [newVal, pc.occupations[1]] });
+                  }}
+                  tabIndex={-1}
+                >
+                  Reroll
+                </button>
+              </div>
             )}
             {showOccDropdown2 && (
-              <select
-                value={pc.occupations[1]}
-                onChange={handleOcc2Change}
-                className="border rounded px-1 py-0.5 text-sm mt-1"
-                autoFocus
-                onBlur={() => setShowOccDropdown2(false)}
-              >
-                {occupations
-                  .filter(o => o !== pc.occupations[0])
-                  .map(o => (
-                    <option key={o} value={o}>{o}</option>
-                  ))}
-              </select>
+              <div className="flex items-center gap-2 mt-1">
+                <select
+                  value={pc.occupations[1]}
+                  onChange={handleOcc2Change}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowOccDropdown2(false)}
+                >
+                  {occupations
+                    .filter(o => o !== pc.occupations[0])
+                    .map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                </select>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  style={{ fontSize: "0.75rem" }}
+                  type="button"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => {
+                    let options = occupations.filter(o => o !== pc.occupations[0]);
+                    let newVal = pick(options);
+                    setPc({ ...pc, occupations: [pc.occupations[0], newVal] });
+                  }}
+                  tabIndex={-1}
+                >
+                  Reroll
+                </button>
+              </div>
             )}
           </div>
           <div className="font-semibold">{pc.occupations.join(" / ")}</div>
@@ -642,26 +722,36 @@ function CharacterSheet({
           </button>
         </div>
         {showWeaponDropdown && (
-          <select
-            value={selectedWeapon}
-            onChange={handleWeaponChange}
-            className="border rounded px-1 py-0.5 text-sm mb-2"
-            style={{ minWidth: 120 }}
-            autoFocus
-            onBlur={() => setShowWeaponDropdown(false)}
-          >
-            {[...weapons].sort((a, b) => a.name.localeCompare(b.name)).map(w => (
-              <option key={w.name} value={w.name}>{w.name}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 mb-2">
+            <select
+              value={selectedWeapon}
+              onChange={handleWeaponChange}
+              className="border rounded px-1 py-0.5 text-sm"
+              style={{ minWidth: 120 }}
+              autoFocus
+              onBlur={() => setShowWeaponDropdown(false)}
+            >
+              {[...weapons].sort((a, b) => a.name.localeCompare(b.name)).map(w => (
+                <option key={w.name} value={w.name}>{w.name}</option>
+              ))}
+            </select>
+            <button
+              className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+              style={{ fontSize: "0.75rem" }}
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => setSelectedWeapon(pick(weapons).name)}
+              tabIndex={-1}
+            >
+              Reroll
+            </button>
+          </div>
         )}
         <ul className="list-disc list-inside">
           {displayInventory.map((it, i) => (
             <li key={i}>
-              {it.name} —{" "}
-              <span className="italic text-gray-400">
-                {it.slots} slot{it.slots !== 1 ? "s" : ""}
-              </span>
+              {it.name}
+              <span className="text-xs text-gray-500 italic"> — {it.slots} slot{it.slots !== 1 ? "s" : ""}</span>
             </li>
           ))}
         </ul>
@@ -683,17 +773,33 @@ function CharacterSheet({
                 </button>
               </div>
               {showAppearanceDropdown && (
-                <select
-                  value={pc.appearance}
-                  onChange={handleAppearanceChange}
-                  className="border rounded px-1 py-0.5 text-sm"
-                  autoFocus
-                  onBlur={() => setShowAppearanceDropdown(false)}
-                >
-                  {appearances.map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={pc.appearance}
+                    onChange={handleAppearanceChange}
+                    className="border rounded px-1 py-0.5 text-sm"
+                    autoFocus
+                    onBlur={() => setShowAppearanceDropdown(false)}
+                  >
+                    {appearances.map(a => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                    style={{ fontSize: "0.75rem" }}
+                    type="button"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                      let newVal = pick(appearances);
+                      pc.appearance = newVal;
+                      setPc({ ...pc, appearance: newVal });
+                    }}
+                    tabIndex={-1}
+                  >
+                    Reroll
+                  </button>
+                </div>
               )}
             </div>
             <div className="font-semibold">{pc.appearance}</div>
@@ -711,17 +817,33 @@ function CharacterSheet({
                 </button>
               </div>
               {showDetailDropdown && (
-                <select
-                  value={pc.detail}
-                  onChange={handleDetailChange}
-                  className="border rounded px-1 py-0.5 text-sm"
-                  autoFocus
-                  onBlur={() => setShowDetailDropdown(false)}
-                >
-                  {details.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={pc.detail}
+                    onChange={handleDetailChange}
+                    className="border rounded px-1 py-0.5 text-sm"
+                    autoFocus
+                    onBlur={() => setShowDetailDropdown(false)}
+                  >
+                    {details.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                    style={{ fontSize: "0.75rem" }}
+                    type="button"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                      let newVal = pick(details);
+                      pc.detail = newVal;
+                      setPc({ ...pc, detail: newVal });
+                    }}
+                    tabIndex={-1}
+                  >
+                    Reroll
+                  </button>
+                </div>
               )}
             </div>
             <div className="font-semibold">{pc.detail}</div>
@@ -739,17 +861,33 @@ function CharacterSheet({
                 </button>
               </div>
               {showClothingDropdown && (
-                <select
-                  value={pc.clothing}
-                  onChange={handleClothingChange}
-                  className="border rounded px-1 py-0.5 text-sm"
-                  autoFocus
-                  onBlur={() => setShowClothingDropdown(false)}
-                >
-                  {clothes.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={pc.clothing}
+                    onChange={handleClothingChange}
+                    className="border rounded px-1 py-0.5 text-sm"
+                    autoFocus
+                    onBlur={() => setShowClothingDropdown(false)}
+                  >
+                    {clothes.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                    style={{ fontSize: "0.75rem" }}
+                    type="button"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                      let newVal = pick(clothes);
+                      pc.clothing = newVal;
+                      setPc({ ...pc, clothing: newVal });
+                    }}
+                    tabIndex={-1}
+                  >
+                    Reroll
+                  </button>
+                </div>
               )}
             </div>
             <div className="font-semibold">{pc.clothing}</div>
@@ -767,17 +905,33 @@ function CharacterSheet({
                 </button>
               </div>
               {showQuirkDropdown && (
-                <select
-                  value={pc.quirk}
-                  onChange={handleQuirkChange}
-                  className="border rounded px-1 py-0.5 text-sm"
-                  autoFocus
-                  onBlur={() => setShowQuirkDropdown(false)}
-                >
-                  {quirks.map(q => (
-                    <option key={q} value={q}>{q}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={pc.quirk}
+                    onChange={handleQuirkChange}
+                    className="border rounded px-1 py-0.5 text-sm"
+                    autoFocus
+                    onBlur={() => setShowQuirkDropdown(false)}
+                  >
+                    {quirks.map(q => (
+                      <option key={q} value={q}>{q}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                    style={{ fontSize: "0.75rem" }}
+                    type="button"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => {
+                      let newVal = pick(quirks);
+                      pc.quirk = newVal;
+                      setPc({ ...pc, quirk: newVal });
+                    }}
+                    tabIndex={-1}
+                  >
+                    Reroll
+                  </button>
+                </div>
               )}
             </div>
             <div className="font-semibold">{pc.quirk}</div>
