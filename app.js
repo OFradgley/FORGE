@@ -70,6 +70,10 @@ function CharacterGenerator() {
   const [selectedWeapon, setSelectedWeapon] = useState(null);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Try to persist dark mode in localStorage
+    return localStorage.getItem("darkMode") === "true";
+  });
 
   function rollCharacter() {
     setHpOverride(null); // <-- Reset HP override on new character roll
@@ -201,8 +205,19 @@ function CharacterGenerator() {
     });
   }
 
+  // Dark mode effect
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark");
+      localStorage.setItem("darkMode", "true");
+    } else {
+      document.body.classList.remove("dark");
+      localStorage.setItem("darkMode", "false");
+    }
+  }, [darkMode]);
+
   return (
-    <div className="flex flex-col items-center gap-6 p-4">
+    <div className={`flex flex-col items-center gap-6 p-4${darkMode ? " dark" : ""}`}>
       <div className="w-full max-w-3xl">
         <Card>
           <CardHeader>
@@ -215,6 +230,22 @@ function CharacterGenerator() {
               <CardTitle>FORGE Character Generator</CardTitle>
             </div>
             <div className="flex flex-col items-center">
+              <button
+                className="mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs"
+                onClick={() => setDarkMode(dm => !dm)}
+                style={{
+                  minWidth: 60,
+                  color: "#d1d5db", // Tailwind's text-gray-300
+                  height: "1.5rem",
+                  lineHeight: "1rem",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  border: "none"
+                }}
+                title="Toggle dark mode"
+              >
+                {darkMode ? "Light Mode" : "Dark Mode"}
+              </button>
               <Button onClick={rollCharacter}>Roll New Character</Button>
             </div>
           </CardHeader>
