@@ -256,6 +256,7 @@ function CharacterGenerator() {
                 selectedWeapon={selectedWeapon}
                 setSelectedWeapon={setSelectedWeapon}
                 setPc={setPc} // Pass setPc to CharacterSheet
+                darkMode={darkMode} // Pass darkMode as a prop
               />
             ) : (
               <p className="text-center italic text-gray-600">
@@ -303,7 +304,8 @@ const Field = ({ label, value }) => (
 function CharacterSheet({
   pc, togglePrimary, primaries, hpOverride, setHpOverride,
   selectedWeapon, setSelectedWeapon,
-  setPc
+  setPc,
+  darkMode // Accept darkMode as a prop
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
   const [showAppearanceDropdown, setShowAppearanceDropdown] = React.useState(false);
@@ -509,7 +511,7 @@ function CharacterSheet({
                 style={{ fontSize: "0.75rem" }}
                 type="button"
                 onMouseDown={e => e.preventDefault()}
-                onClick={() => setSelectedWeapon(pick(weapons).name)}
+                onClick={() => setNameInputValue(pick(names))}
                 tabIndex={-1}
               >
                 Reroll
@@ -521,7 +523,18 @@ function CharacterSheet({
           <div className="flex items-center gap-2 mt-2">
             <div>
               <div className="text-xs text-gray-500">Level</div>
-              <div className="font-semibold text-base text-black dark:text-white text-center">{pc.level}</div>
+              <div
+                className="font-semibold text-base text-center"
+                style={{
+                  color: darkMode ? '#fff' : '#222',
+                  borderRadius: '0.375rem',
+                  padding: '0.25rem 0.75rem',
+                  minWidth: 32,
+                  display: 'inline-block',
+                }}
+              >
+                {pc.level}
+              </div>
             </div>
             <button
               className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
