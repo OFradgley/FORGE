@@ -68,6 +68,8 @@ function CharacterGenerator() {
   const [primaries, setPrimaries] = useState(new Set());
   const [hpOverride, setHpOverride] = useState(null); // Move hpOverride here
   const [selectedWeapon, setSelectedWeapon] = useState(null);
+  const [swapMode, setSwapMode] = React.useState(false);
+  const [swapSelection, setSwapSelection] = React.useState([]);
 
   function rollCharacter() {
     setHpOverride(null); // <-- Reset HP override on new character roll
@@ -226,6 +228,7 @@ function CharacterGenerator() {
                 setHpOverride={setHpOverride}
                 selectedWeapon={selectedWeapon}
                 setSelectedWeapon={setSelectedWeapon}
+                setPc={setPc} // Pass setPc to CharacterSheet
               />
             ) : (
               <p className="text-center italic text-gray-600">
@@ -272,9 +275,18 @@ const Field = ({ label, value }) => (
 
 function CharacterSheet({
   pc, togglePrimary, primaries, hpOverride, setHpOverride,
-  selectedWeapon, setSelectedWeapon
+  selectedWeapon, setSelectedWeapon,
+  setPc
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
+  const [showAppearanceDropdown, setShowAppearanceDropdown] = React.useState(false);
+  const [showDetailDropdown, setShowDetailDropdown] = React.useState(false);
+  const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
+  const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
+  const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
+  const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
+  const [swapMode, setSwapMode] = React.useState(false);
+  const [swapSelection, setSwapSelection] = React.useState([]);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
@@ -327,6 +339,38 @@ function CharacterSheet({
     setShowWeaponDropdown(false);
   }
 
+  // --- APPEARANCE, DETAIL, CLOTHING, QUIRK HANDLERS ---
+  function handleAppearanceChange(e) {
+    pc.appearance = e.target.value;
+    setShowAppearanceDropdown(false);
+    // If you want to persist, call setPc({...pc, appearance: e.target.value});
+  }
+  function handleDetailChange(e) {
+    pc.detail = e.target.value;
+    setShowDetailDropdown(false);
+  }
+  function handleClothingChange(e) {
+    pc.clothing = e.target.value;
+    setShowClothingDropdown(false);
+  }
+  function handleQuirkChange(e) {
+    pc.quirk = e.target.value;
+    setShowQuirkDropdown(false);
+  }
+
+  // Handler for occupation changes
+  function handleOcc1Change(e) {
+    // Prevent duplicate occupations
+    if (e.target.value === pc.occupations[1]) return;
+    setPc({ ...pc, occupations: [e.target.value, pc.occupations[1]] });
+    setShowOccDropdown1(false);
+  }
+  function handleOcc2Change(e) {
+    if (e.target.value === pc.occupations[0]) return;
+    setPc({ ...pc, occupations: [pc.occupations[0], e.target.value] });
+    setShowOccDropdown2(false);
+  }
+
   // Build inventory for display
   const displayInventory = [
     {
@@ -363,20 +407,148 @@ function CharacterSheet({
     <div className="space-y-6">
       <Grid cols={2}>
         <Field label="Name" value={pc.name} />
-        <Field label="Level" value={pc.level} />
-        <Field label="Alignment" value={pc.alignment} />
-        <Field label="Occupations" value={pc.occupations.join(" / ")} />
+        <div>
+          <div className="flex flex-col items-start gap-1 mb-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Occupations</span>
+              <button
+                className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                onClick={() => setShowOccDropdown1(v => !v)}
+                style={{ fontSize: "0.75rem" }}
+              >
+                1
+              </button>
+              <button
+                className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                onClick={() => setShowOccDropdown2(v => !v)}
+                style={{ fontSize: "0.75rem" }}
+              >
+                2
+              </button>
+            </div>
+            {showOccDropdown1 && (
+              <select
+                value={pc.occupations[0]}
+                onChange={handleOcc1Change}
+                className="border rounded px-1 py-0.5 text-sm mt-1"
+                autoFocus
+                onBlur={() => setShowOccDropdown1(false)}
+              >
+                {occupations
+                  .filter(o => o !== pc.occupations[1])
+                  .map(o => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+              </select>
+            )}
+            {showOccDropdown2 && (
+              <select
+                value={pc.occupations[1]}
+                onChange={handleOcc2Change}
+                className="border rounded px-1 py-0.5 text-sm mt-1"
+                autoFocus
+                onBlur={() => setShowOccDropdown2(false)}
+              >
+                {occupations
+                  .filter(o => o !== pc.occupations[0])
+                  .map(o => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+              </select>
+            )}
+          </div>
+          <div className="font-semibold">{pc.occupations.join(" / ")}</div>
+        </div>
       </Grid>
 
       <section>
-        <h3 className="text-xl font-semibold mb-2">Attributes</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-xl font-semibold mb-0">Attributes</h3>
+          <button
+            className={`px-2 py-1 rounded text-xs ${swapMode ? "bg-yellow-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+            onClick={() => {
+              setSwapMode(v => !v);
+              setSwapSelection([]);
+            }}
+            style={{ fontSize: "0.75rem" }}
+          >
+            Swap
+          </button>
+          {swapMode && (
+            <span className="text-xs text-gray-500">
+              {swapSelection.length === 0
+                ? "Select first attribute"
+                : "Select second attribute"}
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {pc.attrs.map(a => (
-            <AttributeBlock
+          {pc.attrs.map((a, idx) => (
+            <div
               key={a.attr}
-              {...a}
-              onTogglePrimary={togglePrimary}
-            />
+              className={
+                swapMode
+                  ? `cursor-pointer border-2 ${swapSelection.includes(idx) ? "border-yellow-500" : "border-transparent"} rounded-lg`
+                  : ""
+              }
+              onClick={() => {
+                if (!swapMode) return;
+                if (swapSelection.includes(idx)) return;
+                if (swapSelection.length < 2) {
+                  setSwapSelection(sel => [...sel, idx]);
+                }
+                if (swapSelection.length === 1 && swapSelection[0] !== idx) {
+                  // Perform swap
+                  const i = swapSelection[0];
+                  const j = idx;
+                  const newAttrs = [...pc.attrs];
+                  // Swap score and mod, recalc check
+                  const temp = { ...newAttrs[i] };
+                  newAttrs[i] = { ...newAttrs[j], attr: newAttrs[i].attr };
+                  newAttrs[j] = { ...temp, attr: newAttrs[j].attr };
+                  // Recalculate check for both
+                  [i, j].forEach(k => {
+                    newAttrs[k].mod = mod(newAttrs[k].score);
+                    newAttrs[k].check = newAttrs[k].mod + (newAttrs[k].primary ? 1 : 0);
+                  });
+                  // Update PC and recalc maxSlots, AC, HP, etc.
+                  const strengthAttr = newAttrs.find(a => a.attr === "Strength");
+                  const maxSlots = 10 + strengthAttr.check;
+                  // Recalculate AC
+                  const dexAttr = newAttrs.find(a => a.attr === "Dexterity");
+                  let dexBonus;
+                  if (pc.acBreakdown.base === 14) {
+                    dexBonus = Math.min(dexAttr.mod, 2);
+                  } else if (pc.acBreakdown.base === 16) {
+                    dexBonus = Math.min(dexAttr.mod, 1);
+                  } else {
+                    dexBonus = dexAttr.mod;
+                  }
+                  const ac = pc.acBreakdown.base + pc.acBreakdown.shield + dexBonus;
+                  // Recalculate HP
+                  const conAttr = newAttrs.find(a => a.attr === "Constitution");
+                  const conMod = conAttr.mod;
+                  const hpPrimary = Math.max(1, pc.rawHpPrimary + conMod);
+                  const hpSecondary = Math.max(1, pc.rawHpSecondary + conMod);
+                  setPc({
+                    ...pc,
+                    attrs: newAttrs,
+                    maxSlots,
+                    ac,
+                    acBreakdown: { ...pc.acBreakdown, dex: dexBonus },
+                    hpPrimary,
+                    hpSecondary,
+                  });
+                  setSwapMode(false);
+                  setSwapSelection([]);
+                }
+              }}
+            >
+              <AttributeBlock
+                {...a}
+                onTogglePrimary={togglePrimary}
+              />
+            </div>
           ))}
         </div>
       </section>
@@ -467,10 +639,118 @@ function CharacterSheet({
       <section>
         <h3 className="text-xl font-semibold mb-2">Character Details</h3>
         <Grid cols={2}>
-          <Field label="Physical Appearance" value={pc.appearance} />
-          <Field label="Notable Detail" value={pc.detail} />
-          <Field label="Clothing" value={pc.clothing} />
-          <Field label="Quirk" value={pc.quirk} />
+          <div>
+            <div className="flex flex-col items-start gap-1 mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Appearance</span>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  onClick={() => setShowAppearanceDropdown(v => !v)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  Change
+                </button>
+              </div>
+              {showAppearanceDropdown && (
+                <select
+                  value={pc.appearance}
+                  onChange={handleAppearanceChange}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowAppearanceDropdown(false)}
+                >
+                  {appearances.map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="font-semibold">{pc.appearance}</div>
+          </div>
+          <div>
+            <div className="flex flex-col items-start gap-1 mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Detail</span>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  onClick={() => setShowDetailDropdown(v => !v)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  Change
+                </button>
+              </div>
+              {showDetailDropdown && (
+                <select
+                  value={pc.detail}
+                  onChange={handleDetailChange}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowDetailDropdown(false)}
+                >
+                  {details.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="font-semibold">{pc.detail}</div>
+          </div>
+          <div>
+            <div className="flex flex-col items-start gap-1 mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Clothing</span>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  onClick={() => setShowClothingDropdown(v => !v)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  Change
+                </button>
+              </div>
+              {showClothingDropdown && (
+                <select
+                  value={pc.clothing}
+                  onChange={handleClothingChange}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowClothingDropdown(false)}
+                >
+                  {clothes.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="font-semibold">{pc.clothing}</div>
+          </div>
+          <div>
+            <div className="flex flex-col items-start gap-1 mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Quirk</span>
+                <button
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  onClick={() => setShowQuirkDropdown(v => !v)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  Change
+                </button>
+              </div>
+              {showQuirkDropdown && (
+                <select
+                  value={pc.quirk}
+                  onChange={handleQuirkChange}
+                  className="border rounded px-1 py-0.5 text-sm"
+                  autoFocus
+                  onBlur={() => setShowQuirkDropdown(false)}
+                >
+                  {quirks.map(q => (
+                    <option key={q} value={q}>{q}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="font-semibold">{pc.quirk}</div>
+          </div>
         </Grid>
       </section>
     </div>
