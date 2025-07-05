@@ -94,13 +94,10 @@ function CharacterGenerator() {
       return { attr: a, score: s, mod: m, primary: primariesInit.has(a), check: m + (primariesInit.has(a) ? 1 : 0) };
     });
 
-    // Pre-roll HP for both cases
-    const rawHpPrimary = d8();
-    const rawHpSecondary = d6();
+    // Pre-roll HP for both cases (10 rolls each)
+    const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
+    const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
     const conMod = mod(scores.Constitution);
-    const hpPrimary = Math.max(1, rawHpPrimary + conMod);
-    const hpSecondary = Math.max(1, rawHpSecondary + conMod);
-
     // ---- Gear rolls ----
     const weapon  = pick(weapons);
     setSelectedWeapon(weapon.name); // Set initial weapon
@@ -166,10 +163,8 @@ function CharacterGenerator() {
       occupations: [occ1, occ2],
       attrs,
       maxSlots,
-      hpPrimary,
-      hpSecondary,
-      rawHpPrimary,
-      rawHpSecondary,
+      rawHpPrimary: rawHpPrimaryArr, // Array of 10 d8 rolls
+      rawHpSecondary: rawHpSecondaryArr, // Array of 10 d6 rolls
       // hp will be selected in CharacterSheet based on Constitution primary
       ac,
       acBreakdown: { base: acBase, shield: acShield, dex: acDex },
@@ -186,10 +181,11 @@ function CharacterGenerator() {
   // Update attrs and dependent values when primaries change
   useEffect(() => {
     if (!pc) return;
+    // Use correct check bonus formula: primary = mod + level, secondary = mod + Math.floor(level/2)
     const newAttrs = pc.attrs.map(a => ({
       ...a,
       primary: primaries.has(a.attr),
-      check: a.mod + (primaries.has(a.attr) ? 1 : 0)
+      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2))
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
@@ -320,6 +316,7 @@ function CharacterSheet({
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [showNameInput, setShowNameInput] = React.useState(false);
   const [nameInputValue, setNameInputValue] = React.useState(pc.name);
+  const [levelDropdown, setLevelDropdown] = React.useState(false);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
@@ -330,24 +327,41 @@ function CharacterSheet({
   const rawHpSecondary = pc.rawHpSecondary;
   const conMod = pc.attrs.find(a => a.attr === "Constitution")?.mod || 0;
 
-  // Calculate HP to display
-  let hp = conPrimary
-    ? Math.max(baseHpPrimary, baseHpSecondary)
-    : baseHpSecondary;
-
-  // If override is set, use it
+  // Calculate HP to display (using pre-rolled arrays)
+  const minConMod = Math.max(conMod, -3);
+  const level = pc.level;
+  const isConPrimary = primaries.has("Constitution");
+  // For each level, HP = die + minConMod, min 1 per level
+  function calcHp(arr) {
+    let total = 0;
+    for (let i = 0; i < level; i++) {
+      const hp = Math.max(1, arr[i] + minConMod);
+      total += hp;
+    }
+    return total;
+  }
+  const hpPrimary = calcHp(pc.rawHpPrimary);
+  const hpSecondary = calcHp(pc.rawHpSecondary);
+  let hp = isConPrimary ? Math.max(hpPrimary, hpSecondary) : hpSecondary;
   if (hpOverride !== null) {
     hp = hpOverride;
   }
-
-  // Show "Take 4" if the RAW die roll is 1 or 2 (before mod)
+  // Show "Take 4" if the RAW die roll is 1 or 2 (before mod) for level 1
   const showTake4 =
-    ((conPrimary ? rawHpPrimary : rawHpSecondary) <= 2) &&
-    (hpOverride === null);
-
+    ((isConPrimary ? pc.rawHpPrimary[0] : pc.rawHpSecondary[0]) <= 2) &&
+    (hpOverride === null) && level === 1;
   function handleTake4() {
-    const newHp = 4 + conMod;
-    setHpOverride(Math.max(1, newHp));
+    // Overwrite the first roll in the relevant array with 4
+    if (isConPrimary) {
+      const newRaw = [...pc.rawHpPrimary];
+      newRaw[0] = 4;
+      setPc({ ...pc, rawHpPrimary: newRaw });
+    } else {
+      const newRaw = [...pc.rawHpSecondary];
+      newRaw[0] = 4;
+      setPc({ ...pc, rawHpSecondary: newRaw });
+    }
+    setHpOverride(null); // Remove any manual override
   }
 
   // Helper to get ammo for a weapon
@@ -443,6 +457,25 @@ function CharacterSheet({
     setShowNameInput(false);
   }
 
+  // Add this function inside CharacterSheet:
+  function handleLevelChange(newLevel) {
+    // Recalculate attribute checks: primary = mod + level, secondary = mod + Math.floor(level/2)
+    const newAttrs = pc.attrs.map(a => ({
+      ...a,
+      check: a.mod + (a.primary ? newLevel : Math.floor(newLevel / 2))
+    }));
+    const strengthAttr = newAttrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check;
+    setPc({
+      ...pc,
+      level: newLevel,
+      attrs: newAttrs,
+      maxSlots,
+      // HP is now always calculated from pre-rolled arrays
+    });
+    setLevelDropdown(false);
+  }
+
   return (
     <div className="space-y-6">
       <Grid cols={2}>
@@ -476,7 +509,7 @@ function CharacterSheet({
                 style={{ fontSize: "0.75rem" }}
                 type="button"
                 onMouseDown={e => e.preventDefault()}
-                onClick={() => setNameInputValue(pick(names))}
+                onClick={() => setSelectedWeapon(pick(weapons).name)}
                 tabIndex={-1}
               >
                 Reroll
@@ -485,6 +518,32 @@ function CharacterSheet({
           ) : (
             <div className="font-semibold">{pc.name}</div>
           )}
+          <div className="flex items-center gap-2 mt-2">
+            <div>
+              <div className="text-xs text-gray-500">Level</div>
+              <div className="font-semibold text-base text-black dark:text-white text-center">{pc.level}</div>
+            </div>
+            <button
+              className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+              style={{ fontSize: "0.75rem" }}
+              onClick={() => setLevelDropdown(v => !v)}
+            >
+              Change
+            </button>
+            {levelDropdown && (
+              <select
+                value={pc.level}
+                onChange={e => handleLevelChange(Number(e.target.value))}
+                className="border rounded px-1 py-0.5 text-sm ml-2"
+                autoFocus
+                onBlur={() => setLevelDropdown(false)}
+              >
+                {[...Array(10)].map((_, i) => (
+                  <option key={i+1} value={i+1}>{i+1}</option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
         <div>
           <div className="flex flex-col items-start gap-1 mb-1">
