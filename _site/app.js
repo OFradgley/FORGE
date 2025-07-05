@@ -489,7 +489,7 @@ function CharacterSheet({
               style={{ fontSize: "0.75rem" }}
               onClick={() => setShowNameInput(true)}
             >
-              Change
+              ...
             </button>
           </div>
           {showNameInput ? (
@@ -511,7 +511,11 @@ function CharacterSheet({
                 style={{ fontSize: "0.75rem" }}
                 type="button"
                 onMouseDown={e => e.preventDefault()}
-                onClick={() => setNameInputValue(pick(names))}
+                onClick={() => {
+                  const newName = pick(names);
+                  setPc({ ...pc, name: newName });
+                  setNameInputValue(newName);
+                }}
                 tabIndex={-1}
               >
                 Reroll
@@ -524,13 +528,12 @@ function CharacterSheet({
             <div>
               <div className="text-xs text-gray-500">Level</div>
               <div
-                className="font-semibold text-base text-center"
+                className="font-semibold text-base text-left"
                 style={{
                   color: darkMode ? '#fff' : '#222',
                   borderRadius: '0.375rem',
-                  padding: '0.25rem 0.75rem',
-                  minWidth: 32,
-                  display: 'inline-block',
+                  // Remove padding and minWidth for left alignment
+                  display: 'block',
                 }}
               >
                 {pc.level}
@@ -541,7 +544,7 @@ function CharacterSheet({
               style={{ fontSize: "0.75rem" }}
               onClick={() => setLevelDropdown(v => !v)}
             >
-              Change
+              ...
             </button>
             {levelDropdown && (
               <select
@@ -740,8 +743,11 @@ function CharacterSheet({
         <Field
           label="Hit Points"
           value={
-            <span>
-              {hp}
+            <>
+              <span>{hp}</span>
+              <span className="text-xs text-gray-500 italic" style={{ marginLeft: 4 }}>
+                (HD = {isConPrimary ? 'd8' : 'd6'})
+              </span>
               {showTake4 && (
                 <button
                   className="ml-2 px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
@@ -751,7 +757,7 @@ function CharacterSheet({
                   take 4
                 </button>
               )}
-            </span>
+            </>
           }
         />
         <Field
@@ -841,7 +847,7 @@ function CharacterSheet({
                   onClick={() => setShowAppearanceDropdown(v => !v)}
                   style={{ fontSize: "0.75rem" }}
                 >
-                  Change
+                  ...
                 </button>
               </div>
               {showAppearanceDropdown && (
@@ -885,7 +891,7 @@ function CharacterSheet({
                   onClick={() => setShowDetailDropdown(v => !v)}
                   style={{ fontSize: "0.75rem" }}
                 >
-                  Change
+                  ...
                 </button>
               </div>
               {showDetailDropdown && (
@@ -929,7 +935,7 @@ function CharacterSheet({
                   onClick={() => setShowClothingDropdown(v => !v)}
                   style={{ fontSize: "0.75rem" }}
                 >
-                  Change
+                  ...
                 </button>
               </div>
               {showClothingDropdown && (
@@ -973,7 +979,7 @@ function CharacterSheet({
                   onClick={() => setShowQuirkDropdown(v => !v)}
                   style={{ fontSize: "0.75rem" }}
                 >
-                  Change
+                  ...
                 </button>
               </div>
               {showQuirkDropdown && (
