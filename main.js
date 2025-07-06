@@ -55,6 +55,15 @@ modules.forEach(({ label, file }, i) => {
 loadModule(modules[0].file);
 
 async function loadModule(path) {
-  const { default: mount } = await import(path);
-  mount(root);
+  try {
+    const mod = await import(path);
+    console.log("Imported module for", path, ":", mod, "mount:", mod.mount);
+    if (typeof mod.mount !== "function") {
+      throw new Error(`Module at ${path} does not export a 'mount' function.`);
+    }
+    mod.mount(root);
+  } catch (e) {
+    console.error("Failed to load module:", path, e);
+    root.innerHTML = `<div style=\"color:red\">Failed to load module: ${path}<br>${e.message}</div>`;
+  }
 }

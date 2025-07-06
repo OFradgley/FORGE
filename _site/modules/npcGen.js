@@ -1,8 +1,40 @@
 // modules/npcGen.js
-// Temporary: duplicate of charGen.js for NPC generator placeholder
-import charGen from "./charGen.compiled.js";
-export default charGen;
+import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.js";
+import {
+  names, occupations, weapons, armours, dungeonGear, generalGear,
+  appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem,
+  attributeOrder, OCC_ATTR_MAP
+} from "../tables.js";
 
+// Helper Utilities
+const pick    = arr => arr[Math.floor(Math.random() * arr.length)];
+const d6      = () => Math.floor(Math.random() * 6) + 1;
+const d8      = () => Math.floor(Math.random() * 8) + 1;
+const roll2d6 = () => d6() + d6();
+const roll3d6 = () => d6() + d6() + d6();
+const mod = v => {
+  if (v === 1) return -4;
+  if (v <= 3)  return -3;
+  if (v <= 5)  return -2;
+  if (v <= 8)  return -1;
+  if (v <= 12) return 0;
+  if (v <= 15) return 1;
+  if (v <= 17) return 2;
+  return 3;
+};
+const fmt     = n => (n >= 0 ? `+${n}` : `${n}`);
+const choosePrimaries = (o1, o2) => {
+  const set   = new Set();
+  const lower = [o1.toLowerCase(), o2.toLowerCase()];
+  for (const { attr, keys } of OCC_ATTR_MAP) {
+    if (lower.some(o => keys.some(k => o.includes(k)))) set.add(attr);
+    if (set.size === 2) break;
+  }
+  while (set.size < 2) set.add(pick(attributeOrder));
+  return set;
+};
+
+// ------------------------------ Main Component ------------------------------
 function NPCGenerator() {
   // ...existing code...
   return (
@@ -62,3 +94,5 @@ function NPCGenerator() {
     </div>
   );
 }
+
+export default NPCGenerator;

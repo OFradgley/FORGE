@@ -212,7 +212,7 @@ function CharacterGenerator() {
       width: 32,
       height: 32
     }
-  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE Character Generator")), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-center"
   }, /*#__PURE__*/React.createElement("button", {
     className: "mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs",
@@ -939,16 +939,18 @@ function CharacterSheet({
   }, pc.quirk)))));
 }
 
-// Export a mountCharGen(root) function for main.js
-export function mountCharGen(root) {
-  const {
-    createRoot
-  } = ReactDOM;
-  createRoot(root).render(/*#__PURE__*/React.createElement(CharacterGenerator, null));
+// Remove any internal call to mount or mountCharGen. Only export the mount function.
+function mount(root) {
+  if (root._reactRoot) {
+    root._reactRoot.unmount();
+    root._reactRoot = null;
+  }
+  // Forcibly clear React 18's internal root container if present
+  if (root._reactRootContainer) {
+    root._reactRootContainer = null;
+  }
+  root.innerHTML = "";
+  root._reactRoot = window.ReactDOM.createRoot(root);
+  root._reactRoot.render(window.React.createElement(CharacterGenerator));
 }
-
-// Optionally export CharacterGenerator for testing or advanced use
-export { CharacterGenerator };
-
-// Default export for dynamic import in main.js
-export default mountCharGen;
+export default mount;

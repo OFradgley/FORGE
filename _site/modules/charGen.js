@@ -1,5 +1,5 @@
 // modules/charGen.js
-import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.js";
+import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
 import {
   names, occupations, weapons, armours, dungeonGear, generalGear,
   appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem,
@@ -186,7 +186,7 @@ function CharacterGenerator() {
                 alt="Forge Favicon"
                 style={{ width: 32, height: 32 }}
               />
-              <CardTitle>FORGE Character Generator</CardTitle>
+              <CardTitle>FORGE PC Generator</CardTitle>
             </div>
             <div className="flex flex-col items-center">
               <button
