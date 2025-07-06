@@ -168,12 +168,10 @@ function NPCGenerator() {
   }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE NPC Generator")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-center"
   }, /*#__PURE__*/React.createElement("button", {
-    className: "mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs",
+    className: `mb-2 px-2 py-0.5 rounded text-xs ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-300 text-black'}`,
     onClick: () => setDarkMode(dm => !dm),
     style: {
       minWidth: 60,
-      color: "#d1d5db",
-      // Tailwind's text-gray-300
       height: "1.5rem",
       lineHeight: "1rem",
       fontSize: "0.8rem",
@@ -873,12 +871,13 @@ function CharacterSheet({
 }
 
 // Only one export for mount is needed. Remove duplicate export.
-function mount(root) {
+export function mount(root) {
+  if (!root) return;
+  // Use window.ReactDOM for compatibility with browser global ReactDOM
   if (root._reactRoot) {
     root._reactRoot.unmount();
     root._reactRoot = null;
   }
-  // Forcibly clear React 18's internal root container if present
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
@@ -886,4 +885,3 @@ function mount(root) {
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(NPCGenerator));
 }
-export { mount };

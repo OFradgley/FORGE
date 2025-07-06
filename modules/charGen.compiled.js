@@ -215,12 +215,10 @@ function CharacterGenerator() {
   }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-center"
   }, /*#__PURE__*/React.createElement("button", {
-    className: "mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs",
+    className: `mb-2 px-2 py-0.5 rounded text-xs ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-300 text-black'}`,
     onClick: () => setDarkMode(dm => !dm),
     style: {
       minWidth: 60,
-      color: "#d1d5db",
-      // Tailwind's text-gray-300
       height: "1.5rem",
       lineHeight: "1rem",
       fontSize: "0.8rem",
