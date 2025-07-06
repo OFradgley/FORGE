@@ -1,3 +1,7 @@
+// app.js (archived on 2025-07-06)
+// This file has been archived after modularization. See modules/charGen.js for main logic.
+// Original content below:
+
 // app.js — ES‑module, browser‑native JSX (imports bundled React, etc.)
 // Requires: index.html with <script type="module" src="app.js"> and
 // tables.js exporting *all* data including attributeOrder & OCC_ATTR_MAP.
@@ -22,16 +26,6 @@ import {
   attributeOrder,
   OCC_ATTR_MAP
 } from "./tables.js";
-
-/* -------------------------- Minimal UI Primitives ------------------------- */
-const Button = ({ children, ...props }) => (
-  <button className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700" {...props}>{children}</button>
-);
-
-const Card         = ({ children }) => <div className="bg-white rounded-xl shadow-md p-4 w-full">{children}</div>;
-const CardHeader   = ({ children }) => <div className="flex justify-between items-center mb-4">{children}</div>;
-const CardTitle    = ({ children }) => <h2 className="text-2xl font-bold">{children}</h2>;
-const CardContent  = ({ children }) => <div>{children}</div>;
 
 /* --------------------------- Helper Utilities --------------------------- */
 const pick    = arr => arr[Math.floor(Math.random() * arr.length)];
