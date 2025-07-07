@@ -41,25 +41,51 @@ function NPCGenerator() {
   const [selectedWeapon, setSelectedWeapon] = React.useState(null);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
-  const [darkMode, setDarkMode] = React.useState(() => {
-    return localStorage.getItem("darkMode") === "true";
-  });
-  function rollCharacter() {
+  const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollDropdown, setShowRollDropdown] = React.useState(false);
+  const dropdownRef = React.useRef();
+
+  React.useEffect(() => {
+    // Listen for changes to dark mode (in case nav toggles it)
+    const observer = new MutationObserver(() => {
+      setDarkMode(document.body.classList.contains("dark"));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    // Also check on mount
+    setDarkMode(document.body.classList.contains("dark"));
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-roll character on component mount
+  React.useEffect(() => {
+    rollCharacter();
+  }, []);
+
+  // Handle click outside dropdown
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowRollDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  function rollCharacter(npcType = null) {
     setHpOverride(null);
-    let occ1 = pick(occupations), occ2 = pick(occupations);
-    while (occ2 === occ1) occ2 = pick(occupations);
+    let occ1 = pick(occupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    const primariesInit = choosePrimaries(occ1, occ2);
+    const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
     setPrimaries(new Set(primariesInit));
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
-      const m = mod(s);
+      const m = 0; // NPCs always have +0 modifier
       return {
         attr: a,
         score: s,
         mod: m,
         primary: primariesInit.has(a),
-        check: m + (primariesInit.has(a) ? 1 : 0)
+        check: m + (primariesInit.has(a) ? 1 : Math.floor(1 / 2)) // level 1: primary = +1, secondary = +0
       };
     });
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
@@ -109,7 +135,7 @@ function NPCGenerator() {
       name: pick(names),
       level: 1,
       alignment: pick(["Lawful", "Neutral", "Chaotic"]),
-      occupations: [occ1, occ2],
+      occupations: [occ1],
       attrs,
       maxSlots,
       rawHpPrimary: rawHpPrimaryArr,
@@ -130,7 +156,7 @@ function NPCGenerator() {
     const newAttrs = pc.attrs.map(a => ({
       ...a,
       primary: primaries.has(a.attr),
-      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2))
+      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2)) // Same formula as PC but mod is always 0
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
@@ -143,15 +169,6 @@ function NPCGenerator() {
       return next;
     });
   }
-  React.useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
-    } else {
-      document.body.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
-    }
-  }, [darkMode]);
   return /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center gap-6 p-4${darkMode ? " dark" : ""}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -166,24 +183,40 @@ function NPCGenerator() {
       height: 32
     }
   }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE NPC Generator")), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col items-center"
+    className: "relative",
+    ref: dropdownRef
   }, /*#__PURE__*/React.createElement("button", {
-    className: "mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs",
-    onClick: () => setDarkMode(dm => !dm),
-    style: {
-      minWidth: 60,
-      color: "#d1d5db",
-      // Tailwind's text-gray-300
-      height: "1.5rem",
-      lineHeight: "1rem",
-      fontSize: "0.8rem",
-      fontWeight: 500,
-      border: "none"
-    },
-    title: "Toggle dark mode"
-  }, darkMode ? "Light Mode" : "Dark Mode"), /*#__PURE__*/React.createElement(Button, {
-    onClick: rollCharacter
-  }, "Roll New NPC"))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+    className: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2",
+    onClick: () => setShowRollDropdown(!showRollDropdown)
+  }, "New NPC", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs"
+  }, "▼")), showRollDropdown && /*#__PURE__*/React.createElement("div", {
+    className: "absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[140px]"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Random");
+      setShowRollDropdown(false);
+    }
+  }, "Random"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Unskilled");
+      setShowRollDropdown(false);
+    }
+  }, "Unskilled"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Skilled");
+      setShowRollDropdown(false);
+    }
+  }, "Skilled"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Mercenary");
+      setShowRollDropdown(false);
+    }
+  }, "Mercenary")))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
@@ -196,7 +229,7 @@ function NPCGenerator() {
     darkMode: darkMode // Pass darkMode as a prop
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CRoll New NPC\u201D to begin.")))));
+  }, "Click \u201CNew NPC\u201D to begin.")))));
 }
 
 const AttributeBlock = ({
@@ -223,12 +256,8 @@ const AttributeBlock = ({
 }, primary && /*#__PURE__*/React.createElement("span", {
   className: "text-white font-bold"
 }, "P"))), /*#__PURE__*/React.createElement("div", {
-  className: "text-lg font-bold"
-}, score), /*#__PURE__*/React.createElement("div", {
-  className: "text-sm"
-}, "Mod ", fmt(mod)), /*#__PURE__*/React.createElement("div", {
   className: "text-xs text-gray-500"
-}, "Check ", fmt(check)));
+}, "Check ", check >= 0 ? `+${check}` : `${check}`));
 const Grid = ({
   cols = 2,
   children
@@ -260,7 +289,6 @@ function CharacterSheet({
   const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
-  const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [showNameInput, setShowNameInput] = React.useState(false);
@@ -355,20 +383,11 @@ function CharacterSheet({
 
   // Handler for occupation changes
   function handleOcc1Change(e) {
-    if (e.target.value === pc.occupations[1]) return;
     setPc({
       ...pc,
-      occupations: [e.target.value, pc.occupations[1]]
+      occupations: [e.target.value]
     });
     setShowOccDropdown1(false);
-  }
-  function handleOcc2Change(e) {
-    if (e.target.value === pc.occupations[0]) return;
-    setPc({
-      ...pc,
-      occupations: [pc.occupations[0], e.target.value]
-    });
-    setShowOccDropdown2(false);
   }
 
   // Build inventory for display
@@ -489,19 +508,13 @@ function CharacterSheet({
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Occupations"), /*#__PURE__*/React.createElement("button", {
+  }, "Occupation"), /*#__PURE__*/React.createElement("button", {
     className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     onClick: () => setShowOccDropdown1(v => !v),
     style: {
       fontSize: "0.75rem"
     }
-  }, "1"), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    onClick: () => setShowOccDropdown2(v => !v),
-    style: {
-      fontSize: "0.75rem"
-    }
-  }, "2")), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-1"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.occupations[0],
@@ -509,7 +522,7 @@ function CharacterSheet({
     className: "border rounded px-1 py-0.5 text-sm",
     autoFocus: true,
     onBlur: () => setShowOccDropdown1(false)
-  }, occupations.filter(o => o !== pc.occupations[1]).map(o => /*#__PURE__*/React.createElement("option", {
+  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
     key: o,
     value: o
   }, o))), /*#__PURE__*/React.createElement("button", {
@@ -520,44 +533,16 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      let options = occupations.filter(o => o !== pc.occupations[1]);
-      let newVal = pick(options);
+      let newVal = pick(occupations);
       setPc({
         ...pc,
-        occupations: [newVal, pc.occupations[1]]
-      });
-    },
-    tabIndex: -1
-  }, "Reroll")), showOccDropdown2 && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mt-1"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.occupations[1],
-    onChange: handleOcc2Change,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowOccDropdown2(false)
-  }, occupations.filter(o => o !== pc.occupations[0]).map(o => /*#__PURE__*/React.createElement("option", {
-    key: o,
-    value: o
-  }, o))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    style: {
-      fontSize: "0.75rem"
-    },
-    type: "button",
-    onMouseDown: e => e.preventDefault(),
-    onClick: () => {
-      let options = occupations.filter(o => o !== pc.occupations[0]);
-      let newVal = pick(options);
-      setPc({
-        ...pc,
-        occupations: [pc.occupations[0], newVal]
+        occupations: [newVal]
       });
     },
     tabIndex: -1
   }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.occupations.join(" / ")))),
+  }, pc.occupations[0]))),
   /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -592,8 +577,8 @@ function CharacterSheet({
         newAttrs[i] = { ...newAttrs[j], attr: newAttrs[i].attr };
         newAttrs[j] = { ...temp, attr: newAttrs[j].attr };
         [i, j].forEach(k => {
-          newAttrs[k].mod = mod(newAttrs[k].score);
-          newAttrs[k].check = newAttrs[k].mod + (newAttrs[k].primary ? 1 : 0);
+          newAttrs[k].mod = 0; // NPCs always have +0 modifier
+          newAttrs[k].check = newAttrs[k].mod + (newAttrs[k].primary ? pc.level : Math.floor(pc.level / 2)); // Same formula as PC
         });
         const strengthAttr = newAttrs.find(a => a.attr === "Strength");
         const maxSlots = 10 + strengthAttr.check;
@@ -872,13 +857,18 @@ function CharacterSheet({
   }, pc.quirk))))))));
 }
 
+// Only one export for mount is needed. Remove duplicate export.
 export function mount(root) {
   if (!root) return;
-  if (root._reactRootContainer) {
-    root._reactRootContainer.unmount();
+  // Use window.ReactDOM for compatibility with browser global ReactDOM
+  if (root._reactRoot) {
+    root._reactRoot.unmount();
+    root._reactRoot = null;
   }
-  root._reactRootContainer = React.createRoot(root);
-  root._reactRootContainer.render(React.createElement(NPCGenerator));
+  if (root._reactRootContainer) {
+    root._reactRootContainer = null;
+  }
+  root.innerHTML = "";
+  root._reactRoot = window.ReactDOM.createRoot(root);
+  root._reactRoot.render(window.React.createElement(NPCGenerator));
 }
-
-export { mount };

@@ -42,6 +42,8 @@ function NPCGenerator() {
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollDropdown, setShowRollDropdown] = React.useState(false);
+  const dropdownRef = React.useRef();
 
   React.useEffect(() => {
     // Listen for changes to dark mode (in case nav toggles it)
@@ -58,7 +60,18 @@ function NPCGenerator() {
   React.useEffect(() => {
     rollCharacter();
   }, []);
-  function rollCharacter() {
+
+  // Handle click outside dropdown
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowRollDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  function rollCharacter(npcType = null) {
     setHpOverride(null);
     let occ1 = pick(occupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
@@ -169,9 +182,41 @@ function NPCGenerator() {
       width: 32,
       height: 32
     }
-  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE NPC Generator")), /*#__PURE__*/React.createElement(Button, {
-    onClick: rollCharacter
-  }, "Roll New NPC")), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE NPC Generator")), /*#__PURE__*/React.createElement("div", {
+    className: "relative",
+    ref: dropdownRef
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2",
+    onClick: () => setShowRollDropdown(!showRollDropdown)
+  }, "New NPC", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs"
+  }, "▼")), showRollDropdown && /*#__PURE__*/React.createElement("div", {
+    className: "absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[140px]"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Random");
+      setShowRollDropdown(false);
+    }
+  }, "Random"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Unskilled");
+      setShowRollDropdown(false);
+    }
+  }, "Unskilled"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Skilled");
+      setShowRollDropdown(false);
+    }
+  }, "Skilled"), /*#__PURE__*/React.createElement("button", {
+    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
+    onClick: () => {
+      rollCharacter("Mercenary");
+      setShowRollDropdown(false);
+    }
+  }, "Mercenary")))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
@@ -184,7 +229,7 @@ function NPCGenerator() {
     darkMode: darkMode // Pass darkMode as a prop
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CRoll New NPC\u201D to begin.")))));
+  }, "Click \u201CNew NPC\u201D to begin.")))));
 }
 
 const AttributeBlock = ({

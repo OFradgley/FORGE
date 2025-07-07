@@ -217,7 +217,7 @@ function CharacterGenerator() {
     }
   }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement(Button, {
     onClick: rollCharacter
-  }, "Roll New Character")), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+  }, "New Character")), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
@@ -230,7 +230,7 @@ function CharacterGenerator() {
     darkMode: darkMode // Pass darkMode as a prop
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CRoll New Character\u201D to begin.")))));
+  }, "Click \u201CNew Character\u201D to begin.")))));
 }
 
 // Replace CharacterSheet with the original, pixel-perfect version from app.js

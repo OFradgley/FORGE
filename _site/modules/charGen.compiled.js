@@ -42,10 +42,23 @@ function CharacterGenerator() {
   const [selectedWeapon, setSelectedWeapon] = React.useState(null);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
-  const [darkMode, setDarkMode] = React.useState(() => {
-    // Try to persist dark mode in localStorage
-    return localStorage.getItem("darkMode") === "true";
-  });
+  const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+
+  React.useEffect(() => {
+    // Listen for changes to dark mode (in case nav toggles it)
+    const observer = new MutationObserver(() => {
+      setDarkMode(document.body.classList.contains("dark"));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    // Also check on mount
+    setDarkMode(document.body.classList.contains("dark"));
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-roll character on component mount
+  React.useEffect(() => {
+    rollCharacter();
+  }, []);
   function rollCharacter() {
     setHpOverride(null); // <-- Reset HP override on new character roll
     // ---- Occupations (distinct) ----
@@ -189,16 +202,6 @@ function CharacterGenerator() {
     });
   }
 
-  // Dark mode effect
-  React.useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
-    } else {
-      document.body.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
-    }
-  }, [darkMode]);
   return /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center gap-6 p-4${darkMode ? " dark" : ""}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -212,25 +215,9 @@ function CharacterGenerator() {
       width: 32,
       height: 32
     }
-  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col items-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "mb-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs",
-    onClick: () => setDarkMode(dm => !dm),
-    style: {
-      minWidth: 60,
-      color: "#d1d5db",
-      // Tailwind's text-gray-300
-      height: "1.5rem",
-      lineHeight: "1rem",
-      fontSize: "0.8rem",
-      fontWeight: 500,
-      border: "none"
-    },
-    title: "Toggle dark mode"
-  }, darkMode ? "Light Mode" : "Dark Mode"), /*#__PURE__*/React.createElement(Button, {
+  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement(Button, {
     onClick: rollCharacter
-  }, "Roll New Character"))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+  }, "New Character")), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
@@ -243,7 +230,7 @@ function CharacterGenerator() {
     darkMode: darkMode // Pass darkMode as a prop
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CRoll New Character\u201D to begin.")))));
+  }, "Click \u201CNew Character\u201D to begin.")))));
 }
 
 // Replace CharacterSheet with the original, pixel-perfect version from app.js
@@ -953,4 +940,4 @@ function mount(root) {
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(CharacterGenerator));
 }
-export default mount;
+export { mount };
