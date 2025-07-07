@@ -183,32 +183,37 @@ function NPCGenerator() {
   }, "New NPC", /*#__PURE__*/React.createElement("span", {
     className: "text-xs"
   }, "▼")), showRollDropdown && /*#__PURE__*/React.createElement("div", {
-    className: "absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 min-w-[140px]"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
-    onClick: () => {
-      rollCharacter("Random");
-      setShowRollDropdown(false);
-    }
-  }, "Random"), /*#__PURE__*/React.createElement("button", {
-    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
-    onClick: () => {
-      rollCharacter("Unskilled");
-      setShowRollDropdown(false);
-    }
-  }, "Unskilled"), /*#__PURE__*/React.createElement("button", {
-    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
-    onClick: () => {
-      rollCharacter("Skilled");
-      setShowRollDropdown(false);
-    }
-  }, "Skilled"), /*#__PURE__*/React.createElement("button", {
-    className: "w-full px-4 py-2 text-left hover:bg-gray-100 text-black",
-    onClick: () => {
-      rollCharacter("Mercenary");
-      setShowRollDropdown(false);
-    }
-  }, "Mercenary")))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+    className: `absolute top-full left-0 mt-1 border rounded shadow-lg z-10 min-w-[140px] ${darkMode ? 'bg-gray-800' : 'bg-white'}`
+  },
+    /*#__PURE__*/React.createElement("button", {
+      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
+      onClick: () => {
+        rollCharacter("Random");
+        setShowRollDropdown(false);
+      }
+    }, "Random"),
+    /*#__PURE__*/React.createElement("button", {
+      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
+      onClick: () => {
+        rollCharacter("Unskilled");
+        setShowRollDropdown(false);
+      }
+    }, "Unskilled"),
+    /*#__PURE__*/React.createElement("button", {
+      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
+      onClick: () => {
+        rollCharacter("Skilled");
+        setShowRollDropdown(false);
+      }
+    }, "Skilled"),
+    /*#__PURE__*/React.createElement("button", {
+      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
+      onClick: () => {
+        rollCharacter("Mercenary");
+        setShowRollDropdown(false);
+      }
+    }, "Mercenary")
+  ))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
@@ -840,7 +845,7 @@ function CharacterSheet({
   }, "Reroll")),
   /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.quirk))))))));
+  }, pc.quirk))))))))
 }
 
 // Only one export for mount is needed. Remove duplicate export.

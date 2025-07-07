@@ -715,7 +715,7 @@ function CharacterSheet({
     className: "text-xl font-semibold mb-0"
   }, "Inventory", " ", /*#__PURE__*/React.createElement("span", {
     className: "text-sm text-gray-500"
-  }, "(Slots used:", " ", /*#__PURE__*/React.createElement("span", {
+  }, "(Slots:", " ", /*#__PURE__*/React.createElement("span", {
     style: currentSlotsUsed > pc.maxSlots ? {
       color: "red",
       fontWeight: "bold"
