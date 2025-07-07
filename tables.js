@@ -29,7 +29,7 @@ export const occupations = [
 ];
 
 export const weapons = [
-  {name:"Quarterstaff",dmg:"1d8",slots:2},{name:"Rapier",dmg:"1d6",slots:1},{name:"Dagger",dmg:"1d6",slots:1},{name:"Shortsword",dmg:"1d6",slots:1},{name:"Cudgel",dmg:"1d6",slots:1},{name:"Sickle",dmg:"1d6",slots:1},{name:"Spear",dmg:"1d8",slots:2},{name:"Longsword",dmg:"1d8",slots:2},{name:"Mace",dmg:"1d8",slots:2},{name:"Axe",dmg:"1d8",slots:2},{name:"Flail",dmg:"1d8",slots:2},{name:"Halberd",dmg:"1d10[↑]",slots:3},{name:"Maul",dmg:"1d10[↑]",slots:3},{name:"Greataxe",dmg:"1d10[↑]",slots:3},{name:"Greatsword",dmg:"1d10[↑]",slots:3},{name:"Sling",dmg:"1d4",slots:1},{name:"Hand Crossbow",dmg:"1d4",slots:1},{name:"Shortbow",dmg:"1d4",slots:1},{name:"Longbow",dmg:"1d6",slots:2},{name:"Crossbow",dmg:"1d6",slots:2},{name:"Warbow",dmg:"1d6",slots:2}
+  {name:"Quarterstaff",dmg:"1d8",slots:2},{name:"Rapier",dmg:"1d6",slots:1},{name:"Dagger",dmg:"1d6",slots:1},{name:"Shortsword",dmg:"1d6",slots:1},{name:"Cudgel",dmg:"1d6",slots:1},{name:"Sickle",dmg:"1d6",slots:1},{name:"Spear",dmg:"1d8",slots:2},{name:"Longsword",dmg:"1d8",slots:2},{name:"Mace",dmg:"1d8",slots:2},{name:"Axe",dmg:"1d8",slots:2},{name:"Flail",dmg:"1d8",slots:2},{name:"Warhammer",dmg:"1d8",slots:2},{name:"Halberd",dmg:"1d10[↑]",slots:3},{name:"Maul",dmg:"1d10[↑]",slots:3},{name:"Greataxe",dmg:"1d10[↑]",slots:3},{name:"Greatsword",dmg:"1d10[↑]",slots:3},{name:"Sling",dmg:"1d4",slots:1},{name:"Hand Crossbow",dmg:"1d4",slots:1},{name:"Shortbow",dmg:"1d4",slots:1},{name:"Longbow",dmg:"1d6",slots:2},{name:"Crossbow",dmg:"1d6",slots:2},{name:"Warbow",dmg:"1d6",slots:2}
 ];
 
 export const armours = [
