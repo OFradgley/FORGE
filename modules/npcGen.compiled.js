@@ -126,6 +126,19 @@ function NPCGenerator() {
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
     const morale = roll2d6(); // Random value between 2 and 12
+    const equipmentRoll = roll2d6();
+    let equipment;
+    if (equipmentRoll <= 3) {
+      equipment = "No equipment of their own";
+    } else if (equipmentRoll <= 6) {
+      equipment = "Equipped for basic travel";
+    } else if (equipmentRoll <= 9) {
+      equipment = "Equipped for basic combat";
+    } else if (equipmentRoll <= 11) {
+      equipment = "Equipped for travel & combat";
+    } else {
+      equipment = "Best equipment money can buy";
+    }
     setPc({
       name: pick(names),
       level: 1,
@@ -143,7 +156,8 @@ function NPCGenerator() {
       detail: pick(details),
       clothing: pick(clothes),
       quirk: pick(quirks),
-      morale
+      morale,
+      equipment
     });
   }
   React.useEffect(() => {
@@ -732,6 +746,9 @@ function CharacterSheet({
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Morale",
     value: pc.morale
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Equipment",
+    value: pc.equipment
   })), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
