@@ -143,8 +143,8 @@ function NPCGenerator() {
     const competenceRoll = roll2d6();
     let competence, level, morale;
     if (competenceRoll <= 3) {
-      competence = "A liability (L1, ML5)";
-      level = 1;
+      competence = "A liability (L0, ML5)";
+      level = 0;
       morale = 5;
     } else if (competenceRoll <= 6) {
       competence = "Average (L1, ML6)";
