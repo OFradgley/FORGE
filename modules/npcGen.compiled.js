@@ -164,6 +164,17 @@ function NPCGenerator() {
       morale = 9;
     }
     
+    // Roll for Alignment (d6)
+    const alignmentRoll = d6();
+    let alignment;
+    if (alignmentRoll <= 2) {
+      alignment = "Lawful";
+    } else if (alignmentRoll <= 5) {
+      alignment = "Neutral";
+    } else {
+      alignment = "Chaotic";
+    }
+    
     // If level is 0, set all attributes as secondary
     let finalPrimaries = primariesInit;
     if (level === 0) {
@@ -184,7 +195,7 @@ function NPCGenerator() {
     setPc({
       name: pick(names),
       level: level,
-      alignment: pick(["Lawful", "Neutral", "Chaotic"]),
+      alignment: alignment,
       occupations: [occ1],
       attrs: finalAttrs,
       maxSlots: finalMaxSlots,
@@ -455,6 +466,7 @@ function CharacterSheet({
   const [showNameInput, setShowNameInput] = React.useState(false);
   const [nameInputValue, setNameInputValue] = React.useState(pc.name);
   const [levelDropdown, setLevelDropdown] = React.useState(false);
+  const [showAlignmentDropdown, setShowAlignmentDropdown] = React.useState(false);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
@@ -554,6 +566,15 @@ function CharacterSheet({
       occupations: [e.target.value]
     });
     setShowOccDropdown1(false);
+  }
+
+  // Handler for alignment changes
+  function handleAlignmentChange(e) {
+    setPc({
+      ...pc,
+      alignment: e.target.value
+    });
+    setShowAlignmentDropdown(false);
   }
 
   // Build inventory for display
@@ -656,33 +677,7 @@ function CharacterSheet({
     tabIndex: -1
   }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.name), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mt-2"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-gray-500"
-  }, "Level"), /*#__PURE__*/React.createElement("div", {
-    className: "font-semibold text-base text-left",
-    style: {
-      color: darkMode ? '#fff' : '#222',
-      borderRadius: '0.375rem',
-      display: 'block'
-    }
-  }, pc.level)), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    style: {
-      fontSize: "0.75rem"
-    },
-    onClick: () => setLevelDropdown(v => !v)
-  }, "..."), levelDropdown && /*#__PURE__*/React.createElement("select", {
-    value: pc.level,
-    onChange: e => handleLevelChange(Number(e.target.value)),
-    className: "border rounded px-1 py-0.5 text-sm ml-2",
-    autoFocus: true,
-    onBlur: () => setLevelDropdown(false)
-  }, [...Array(11)].map((_, i) => /*#__PURE__*/React.createElement("option", {
-    key: i,
-    value: i
-  }, i))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.name)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -722,7 +717,84 @@ function CharacterSheet({
     tabIndex: -1
   }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.occupations[0]))),
+  }, pc.occupations[0])), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Level"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    onClick: () => setLevelDropdown(v => !v)
+  }, "...")), levelDropdown && /*#__PURE__*/React.createElement("select", {
+    value: pc.level,
+    onChange: e => handleLevelChange(Number(e.target.value)),
+    className: "border rounded px-1 py-0.5 text-sm ml-2",
+    autoFocus: true,
+    onBlur: () => setLevelDropdown(false)
+  }, [...Array(11)].map((_, i) => /*#__PURE__*/React.createElement("option", {
+    key: i,
+    value: i
+  }, i))), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold text-base text-left",
+    style: {
+      color: darkMode ? '#fff' : '#222',
+      borderRadius: '0.375rem',
+      display: 'block'
+    }
+  }, pc.level)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Alignment"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    onClick: () => setShowAlignmentDropdown(v => !v)
+  }, "...")), showAlignmentDropdown ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.alignment,
+    onChange: handleAlignmentChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowAlignmentDropdown(false)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "Lawful"
+  }, "Lawful"), /*#__PURE__*/React.createElement("option", {
+    value: "Neutral"
+  }, "Neutral"), /*#__PURE__*/React.createElement("option", {
+    value: "Chaotic"
+  }, "Chaotic")), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      const alignmentRoll = d6();
+      let newAlignment;
+      if (alignmentRoll <= 2) {
+        newAlignment = "Lawful";
+      } else if (alignmentRoll <= 5) {
+        newAlignment = "Neutral";
+      } else {
+        newAlignment = "Chaotic";
+      }
+      setPc({ ...pc, alignment: newAlignment });
+    },
+    tabIndex: -1
+  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold text-base text-left",
+    style: {
+      color: darkMode ? '#fff' : '#222',
+      borderRadius: '0.375rem',
+      display: 'block'
+    }
+  }, pc.alignment))),
   /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -794,7 +866,7 @@ function CharacterSheet({
     }
   }, /*#__PURE__*/React.createElement(AttributeBlock, Object.assign({}, a, {
     onTogglePrimary: togglePrimary
-  }))))),  /*#__PURE__*/React.createElement(Grid, {
+  })))))),  /*#__PURE__*/React.createElement(Grid, {
     cols: 2
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Hit Points",
@@ -1031,7 +1103,7 @@ function CharacterSheet({
   }, "Reroll")),
   /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.quirk))))))))
+  }, pc.quirk)))))));
 }
 
 // Only one export for mount is needed. Remove duplicate export.
