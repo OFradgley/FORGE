@@ -1,32 +1,32 @@
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // modules/charGen.js
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
-import {
-  names, occupations, weapons, armours, dungeonGear, generalGear,
-  appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem,
-  attributeOrder, OCC_ATTR_MAP
-} from "../tables.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
-const pick    = arr => arr[Math.floor(Math.random() * arr.length)];
-const d6      = () => Math.floor(Math.random() * 6) + 1;
-const d8      = () => Math.floor(Math.random() * 8) + 1;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const d6 = () => Math.floor(Math.random() * 6) + 1;
+const d8 = () => Math.floor(Math.random() * 8) + 1;
 const roll2d6 = () => d6() + d6();
 const roll3d6 = () => d6() + d6() + d6();
 const mod = v => {
   if (v === 1) return -4;
-  if (v <= 3)  return -3;
-  if (v <= 5)  return -2;
-  if (v <= 8)  return -1;
+  if (v <= 3) return -3;
+  if (v <= 5) return -2;
+  if (v <= 8) return -1;
   if (v <= 12) return 0;
   if (v <= 15) return 1;
   if (v <= 17) return 2;
   return 3;
 };
-const fmt     = n => (n >= 0 ? `+${n}` : `${n}`);
+const fmt = n => n >= 0 ? `+${n}` : `${n}`;
 const choosePrimaries = (o1, o2) => {
-  const set   = new Set();
+  const set = new Set();
   const lower = [o1.toLowerCase(), o2.toLowerCase()];
-  for (const { attr, keys } of OCC_ATTR_MAP) {
+  for (const {
+    attr,
+    keys
+  } of OCC_ATTR_MAP) {
     if (lower.some(o => keys.some(k => o.includes(k)))) set.add(attr);
     if (set.size === 2) break;
   }
@@ -985,14 +985,18 @@ function CharacterSheet({
   );
 }
 
-// Export a mountCharGen(root) function for main.js
-export function mountCharGen(root) {
-  const { createRoot } = ReactDOM;
-  createRoot(root).render(<CharacterGenerator />);
+// Remove any internal call to mount or mountCharGen. Only export the mount function.
+function mount(root) {
+  if (root._reactRoot) {
+    root._reactRoot.unmount();
+    root._reactRoot = null;
+  }
+  // Forcibly clear React 18's internal root container if present
+  if (root._reactRootContainer) {
+    root._reactRootContainer = null;
+  }
+  root.innerHTML = "";
+  root._reactRoot = window.ReactDOM.createRoot(root);
+  root._reactRoot.render(window.React.createElement(CharacterGenerator));
 }
-
-// Optionally export CharacterGenerator for testing or advanced use
-export { CharacterGenerator };
-
-// Default export for dynamic import in main.js
-export default mountCharGen;
+export { mount };
