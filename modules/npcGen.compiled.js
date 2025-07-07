@@ -60,10 +60,9 @@ function NPCGenerator() {
   }, []);
   function rollCharacter() {
     setHpOverride(null);
-    let occ1 = pick(occupations), occ2 = pick(occupations);
-    while (occ2 === occ1) occ2 = pick(occupations);
+    let occ1 = pick(occupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    const primariesInit = choosePrimaries(occ1, occ2);
+    const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
     setPrimaries(new Set(primariesInit));
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
@@ -123,7 +122,7 @@ function NPCGenerator() {
       name: pick(names),
       level: 1,
       alignment: pick(["Lawful", "Neutral", "Chaotic"]),
-      occupations: [occ1, occ2],
+      occupations: [occ1],
       attrs,
       maxSlots,
       rawHpPrimary: rawHpPrimaryArr,
@@ -245,7 +244,6 @@ function CharacterSheet({
   const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
-  const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [showNameInput, setShowNameInput] = React.useState(false);
@@ -340,20 +338,11 @@ function CharacterSheet({
 
   // Handler for occupation changes
   function handleOcc1Change(e) {
-    if (e.target.value === pc.occupations[1]) return;
     setPc({
       ...pc,
-      occupations: [e.target.value, pc.occupations[1]]
+      occupations: [e.target.value]
     });
     setShowOccDropdown1(false);
-  }
-  function handleOcc2Change(e) {
-    if (e.target.value === pc.occupations[0]) return;
-    setPc({
-      ...pc,
-      occupations: [pc.occupations[0], e.target.value]
-    });
-    setShowOccDropdown2(false);
   }
 
   // Build inventory for display
@@ -474,19 +463,13 @@ function CharacterSheet({
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Occupations"), /*#__PURE__*/React.createElement("button", {
+  }, "Occupation"), /*#__PURE__*/React.createElement("button", {
     className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     onClick: () => setShowOccDropdown1(v => !v),
     style: {
       fontSize: "0.75rem"
     }
-  }, "1"), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    onClick: () => setShowOccDropdown2(v => !v),
-    style: {
-      fontSize: "0.75rem"
-    }
-  }, "2")), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-1"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.occupations[0],
@@ -494,7 +477,7 @@ function CharacterSheet({
     className: "border rounded px-1 py-0.5 text-sm",
     autoFocus: true,
     onBlur: () => setShowOccDropdown1(false)
-  }, occupations.filter(o => o !== pc.occupations[1]).map(o => /*#__PURE__*/React.createElement("option", {
+  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
     key: o,
     value: o
   }, o))), /*#__PURE__*/React.createElement("button", {
@@ -505,44 +488,16 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      let options = occupations.filter(o => o !== pc.occupations[1]);
-      let newVal = pick(options);
+      let newVal = pick(occupations);
       setPc({
         ...pc,
-        occupations: [newVal, pc.occupations[1]]
-      });
-    },
-    tabIndex: -1
-  }, "Reroll")), showOccDropdown2 && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mt-1"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.occupations[1],
-    onChange: handleOcc2Change,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowOccDropdown2(false)
-  }, occupations.filter(o => o !== pc.occupations[0]).map(o => /*#__PURE__*/React.createElement("option", {
-    key: o,
-    value: o
-  }, o))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    style: {
-      fontSize: "0.75rem"
-    },
-    type: "button",
-    onMouseDown: e => e.preventDefault(),
-    onClick: () => {
-      let options = occupations.filter(o => o !== pc.occupations[0]);
-      let newVal = pick(options);
-      setPc({
-        ...pc,
-        occupations: [pc.occupations[0], newVal]
+        occupations: [newVal]
       });
     },
     tabIndex: -1
   }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.occupations.join(" / ")))),
+  }, pc.occupations[0]))),
   /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
