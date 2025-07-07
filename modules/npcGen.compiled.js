@@ -53,6 +53,7 @@ function NPCGenerator() {
     observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
     // Also check on mount
     setDarkMode(document.body.classList.contains("dark"));
+    // No need for injected CSS - using inline styles instead
     return () => observer.disconnect();
   }, []);
 
@@ -182,38 +183,126 @@ function NPCGenerator() {
     onClick: () => setShowRollDropdown(!showRollDropdown)
   }, "New NPC", /*#__PURE__*/React.createElement("span", {
     className: "text-xs"
-  }, "▼")), showRollDropdown && /*#__PURE__*/React.createElement("div", {
-    className: `absolute top-full left-0 mt-1 border rounded shadow-lg z-10 min-w-[140px] ${darkMode ? 'bg-gray-800' : 'bg-white'}`
-  },
-    /*#__PURE__*/React.createElement("button", {
-      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
-      onClick: () => {
-        rollCharacter("Random");
-        setShowRollDropdown(false);
-      }
-    }, "Random"),
-    /*#__PURE__*/React.createElement("button", {
-      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
-      onClick: () => {
-        rollCharacter("Unskilled");
-        setShowRollDropdown(false);
-      }
-    }, "Unskilled"),
-    /*#__PURE__*/React.createElement("button", {
-      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
-      onClick: () => {
-        rollCharacter("Skilled");
-        setShowRollDropdown(false);
-      }
-    }, "Skilled"),
-    /*#__PURE__*/React.createElement("button", {
-      className: `w-full px-4 py-2 text-left hover:bg-gray-100 ${darkMode ? 'text-white' : 'text-black'}`,
-      onClick: () => {
-        rollCharacter("Mercenary");
-        setShowRollDropdown(false);
-      }
-    }, "Mercenary")
-  ))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
+  }, "▼")),    showRollDropdown && /*#__PURE__*/React.createElement("div", {
+      className: `absolute top-full left-0 mt-1 border rounded shadow-lg z-10 min-w-[140px] ${darkMode ? 'bg-gray-800' : 'bg-white'}`
+    },
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
+          rollCharacter("Random");
+          setShowRollDropdown(false);
+        }
+      }, "Random"),
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
+          rollCharacter("Unskilled");
+          setShowRollDropdown(false);
+        }
+      }, "Unskilled"),
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
+          rollCharacter("Skilled");
+          setShowRollDropdown(false);
+        }
+      }, "Skilled"),
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
+          rollCharacter("Mercenary");
+          setShowRollDropdown(false);
+        }
+      }, "Mercenary")
+    ))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
     primaries: primaries,
