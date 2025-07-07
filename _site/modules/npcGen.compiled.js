@@ -90,7 +90,7 @@ function NPCGenerator() {
     });
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
     const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
-    const conMod = mod(scores.Constitution);
+    const conMod = 0; // NPCs always have +0 modifier
     const weapon = pick(weapons);
     setSelectedWeapon(weapon.name);
     const aRoll = roll2d6();
@@ -98,15 +98,8 @@ function NPCGenerator() {
     const hs = roll2d6();
     const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
     const hasShield = hs >= 8 && hs <= 10 || hs >= 11;
-    const dexMod = mod(scores.Dexterity);
-    let dexBonus;
-    if (armour.name === "Chain Armour (AC14)") {
-      dexBonus = Math.min(dexMod, 2);
-    } else if (armour.name === "Plate Armour (AC16)") {
-      dexBonus = Math.min(dexMod, 1);
-    } else {
-      dexBonus = dexMod;
-    }
+    const dexMod = 0; // NPCs always have +0 modifier
+    let dexBonus = 0; // NPCs get no Dex bonus to AC
     const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
     const acDex = dexBonus;
@@ -130,7 +123,7 @@ function NPCGenerator() {
     );
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
-    const maxSlots = 10 + strengthAttr.check;
+    const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
     setPc({
       name: pick(names),
       level: 1,
@@ -302,10 +295,10 @@ function CharacterSheet({
   const baseHpSecondary = pc.hpSecondary;
   const rawHpPrimary = pc.rawHpPrimary;
   const rawHpSecondary = pc.rawHpSecondary;
-  const conMod = pc.attrs.find(a => a.attr === "Constitution")?.mod || 0;
+  const conMod = 0; // NPCs always have +0 modifier
 
   // Calculate HP to display (using pre-rolled arrays)
-  const minConMod = Math.max(conMod, -3);
+  const minConMod = 0; // NPCs get no Con modifier to HP
   const level = pc.level;
   const isConPrimary = primaries.has("Constitution");
   // For each level, HP = die + minConMod, min 1 per level
