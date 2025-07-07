@@ -135,7 +135,6 @@ function NPCGenerator() {
       rawHpSecondary: rawHpSecondaryArr,
       ac,
       acBreakdown: { base: acBase, shield: acShield, dex: acDex },
-      gold: (d6() + d6()) * 30,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
       appearance: pick(appearances),
@@ -542,7 +541,7 @@ function CharacterSheet({
   }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
   }, pc.occupations[0]))),
-  /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
@@ -634,10 +633,7 @@ function CharacterSheet({
     value: /*#__PURE__*/React.createElement(React.Fragment, null, pc.ac, " ", /*#__PURE__*/React.createElement("span", {
       className: "text-xs text-gray-500 italic"
     }, "(", pc.acBreakdown.base, " + ", pc.acBreakdown.shield, " + ", pc.acBreakdown.dex, " = " + pc.ac, ")"))
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Gold",
-    value: `${pc.gold} gp`
-  })), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
@@ -674,7 +670,7 @@ function CharacterSheet({
     className: "list-disc list-inside"
   }, displayInventory.map((it, i) => /*#__PURE__*/React.createElement("li", {
     key: i
-  }, it.name))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h3", {
+  }, it.name))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-2"
   }, "Character Details"), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
