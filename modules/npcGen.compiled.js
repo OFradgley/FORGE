@@ -384,13 +384,19 @@ function CharacterSheet({
   }
 
   // Build inventory for display
-  const displayInventory = [{
-    name: /*#__PURE__*/React.createElement("span", null, selectedWeapon, weaponObj && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement("span", null, "(", weaponObj.dmg, ")"))),
-    slots: weaponObj ? weaponObj.slots : 1
-  }, ...(ammoName ? [{
-    name: ammoName,
-    slots: 1
-  }] : []), ...pc.inventory.filter(i => !weapons.some(w => w.name === i.name) && i.name !== "Pouch of Bullets x20" && i.name !== "Case of Bolts x20" && i.name !== "Quiver of Arrows x20")];
+  const displayInventory = [
+    {
+      name: /*#__PURE__*/React.createElement("span", null, selectedWeapon, weaponObj && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement("span", null, "(", weaponObj.dmg, ")")))
+    },
+    ...(ammoName ? [{ name: ammoName }] : []),
+    ...pc.inventory.filter(i =>
+      (armours.some(a => a.name === i.name) ||
+      i.name === helmetItem.name ||
+      i.name === shieldItem.name)
+      // Exclude weapon if it matches selectedWeapon
+      && i.name !== selectedWeapon
+    )
+  ];
 
   // --- RECALCULATE total slots based on current weapon/ammo selection ---
   const currentSlotsUsed = displayInventory.reduce((sum, item) => sum + (item.slots || 0), 0);
@@ -635,14 +641,7 @@ function CharacterSheet({
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
-  }, "Inventory", " ", /*#__PURE__*/React.createElement("span", {
-    className: "text-sm text-gray-500"
-  }, "(Slots used:", " ", /*#__PURE__*/React.createElement("span", {
-    style: currentSlotsUsed > pc.maxSlots ? {
-      color: "red",
-      fontWeight: "bold"
-    } : {}
-  }, currentSlotsUsed), "/", pc.maxSlots, ")")), /*#__PURE__*/React.createElement("button", {
+  }, "Inventory"), /*#__PURE__*/React.createElement("button", {
     className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     onClick: () => setShowWeaponDropdown(v => !v),
     style: {
@@ -675,9 +674,7 @@ function CharacterSheet({
     className: "list-disc list-inside"
   }, displayInventory.map((it, i) => /*#__PURE__*/React.createElement("li", {
     key: i
-  }, it.name, /*#__PURE__*/React.createElement("span", {
-    className: "text-xs text-gray-500 italic"
-  }, " \u2014 ", it.slots, " slot", it.slots !== 1 ? "s" : "")))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h3", {
+  }, it.name))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-2"
   }, "Character Details"), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
