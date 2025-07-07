@@ -125,6 +125,7 @@ function NPCGenerator() {
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
+    const morale = roll2d6(); // Random value between 2 and 12
     setPc({
       name: pick(names),
       level: 1,
@@ -141,7 +142,8 @@ function NPCGenerator() {
       appearance: pick(appearances),
       detail: pick(details),
       clothing: pick(clothes),
-      quirk: pick(quirks)
+      quirk: pick(quirks),
+      morale
     });
   }
   React.useEffect(() => {
@@ -706,7 +708,7 @@ function CharacterSheet({
     }
   }, /*#__PURE__*/React.createElement(AttributeBlock, Object.assign({}, a, {
     onTogglePrimary: togglePrimary
-  }))))), /*#__PURE__*/React.createElement(Grid, {
+  }))))),  /*#__PURE__*/React.createElement(Grid, {
     cols: 2
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Hit Points",
@@ -727,6 +729,9 @@ function CharacterSheet({
     value: /*#__PURE__*/React.createElement(React.Fragment, null, pc.ac, " ", /*#__PURE__*/React.createElement("span", {
       className: "text-xs text-gray-500 italic"
     }, "(", pc.acBreakdown.base, " + ", pc.acBreakdown.shield, " + ", pc.acBreakdown.dex, " = " + pc.ac, ")"))
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Morale",
+    value: pc.morale
   })), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
