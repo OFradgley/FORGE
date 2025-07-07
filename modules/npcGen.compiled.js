@@ -53,6 +53,11 @@ function NPCGenerator() {
     setDarkMode(document.body.classList.contains("dark"));
     return () => observer.disconnect();
   }, []);
+
+  // Auto-roll character on component mount
+  React.useEffect(() => {
+    rollCharacter();
+  }, []);
   function rollCharacter() {
     setHpOverride(null);
     let occ1 = pick(occupations), occ2 = pick(occupations);

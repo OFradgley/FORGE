@@ -54,6 +54,11 @@ function CharacterGenerator() {
     setDarkMode(document.body.classList.contains("dark"));
     return () => observer.disconnect();
   }, []);
+
+  // Auto-roll character on component mount
+  React.useEffect(() => {
+    rollCharacter();
+  }, []);
   function rollCharacter() {
     setHpOverride(null); // <-- Reset HP override on new character roll
     // ---- Occupations (distinct) ----
