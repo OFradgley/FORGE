@@ -67,13 +67,13 @@ function NPCGenerator() {
     setPrimaries(new Set(primariesInit));
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
-      const m = mod(s);
+      const m = 0; // NPCs always have +0 modifier
       return {
         attr: a,
         score: s,
         mod: m,
         primary: primariesInit.has(a),
-        check: m + (primariesInit.has(a) ? 1 : 0)
+        check: m + (primariesInit.has(a) ? 1 : Math.floor(1 / 2)) // level 1: primary = +1, secondary = +0
       };
     });
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
@@ -144,7 +144,7 @@ function NPCGenerator() {
     const newAttrs = pc.attrs.map(a => ({
       ...a,
       primary: primaries.has(a.attr),
-      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2))
+      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2)) // Same formula as PC but mod is always 0
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
@@ -212,12 +212,8 @@ const AttributeBlock = ({
 }, primary && /*#__PURE__*/React.createElement("span", {
   className: "text-white font-bold"
 }, "P"))), /*#__PURE__*/React.createElement("div", {
-  className: "text-lg font-bold"
-}, score), /*#__PURE__*/React.createElement("div", {
-  className: "text-sm"
-}, "Mod ", fmt(mod)), /*#__PURE__*/React.createElement("div", {
   className: "text-xs text-gray-500"
-}, "Check ", fmt(check)));
+}, "Check ", check >= 0 ? `+${check}` : `${check}`));
 const Grid = ({
   cols = 2,
   children
@@ -581,8 +577,8 @@ function CharacterSheet({
         newAttrs[i] = { ...newAttrs[j], attr: newAttrs[i].attr };
         newAttrs[j] = { ...temp, attr: newAttrs[j].attr };
         [i, j].forEach(k => {
-          newAttrs[k].mod = mod(newAttrs[k].score);
-          newAttrs[k].check = newAttrs[k].mod + (newAttrs[k].primary ? 1 : 0);
+          newAttrs[k].mod = 0; // NPCs always have +0 modifier
+          newAttrs[k].check = newAttrs[k].mod + (newAttrs[k].primary ? pc.level : Math.floor(pc.level / 2)); // Same formula as PC
         });
         const strengthAttr = newAttrs.find(a => a.attr === "Strength");
         const maxSlots = 10 + strengthAttr.check;
