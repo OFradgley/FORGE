@@ -130,23 +130,23 @@ function NPCGenerator() {
     const competenceRoll = roll2d6();
     let competence, level, morale;
     if (competenceRoll <= 3) {
-      competence = "A liability (Level 1, ML5)";
+      competence = "A liability (L1, ML5)";
       level = 1;
       morale = 5;
     } else if (competenceRoll <= 6) {
-      competence = "Average (Level 1, ML6)";
+      competence = "Average (L1, ML6)";
       level = 1;
       morale = 6;
     } else if (competenceRoll <= 9) {
-      competence = "Competent (Level 1, ML7)";
+      competence = "Competent (L1, ML7)";
       level = 1;
       morale = 7;
     } else if (competenceRoll <= 11) {
-      competence = "Very capable (Level 2, ML8)";
+      competence = "Very capable (L2, ML8)";
       level = 2;
       morale = 8;
     } else {
-      competence = "Exceptional (Level 3, ML9)";
+      competence = "Exceptional (L3, ML9)";
       level = 3;
       morale = 9;
     }

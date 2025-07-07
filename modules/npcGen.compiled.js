@@ -143,34 +143,51 @@ function NPCGenerator() {
     const competenceRoll = roll2d6();
     let competence, level, morale;
     if (competenceRoll <= 3) {
-      competence = "A liability (Level 1, ML5)";
+      competence = "A liability (L1, ML5)";
       level = 1;
       morale = 5;
     } else if (competenceRoll <= 6) {
-      competence = "Average (Level 1, ML6)";
+      competence = "Average (L1, ML6)";
       level = 1;
       morale = 6;
     } else if (competenceRoll <= 9) {
-      competence = "Competent (Level 1, ML7)";
+      competence = "Competent (L1, ML7)";
       level = 1;
       morale = 7;
     } else if (competenceRoll <= 11) {
-      competence = "Very capable (Level 2, ML8)";
+      competence = "Very capable (L2, ML8)";
       level = 2;
       morale = 8;
     } else {
-      competence = "Exceptional (Level 3, ML9)";
+      competence = "Exceptional (L3, ML9)";
       level = 3;
       morale = 9;
     }
+    
+    // If level is 0, set all attributes as secondary
+    let finalPrimaries = primariesInit;
+    if (level === 0) {
+      finalPrimaries = new Set(); // No primary attributes for level 0
+      setPrimaries(new Set());
+    }
+    
+    // Update attributes with correct primaries based on level
+    const finalAttrs = attrs.map(a => ({
+      ...a,
+      primary: finalPrimaries.has(a.attr),
+      check: a.mod + (finalPrimaries.has(a.attr) ? level : Math.floor(level / 2))
+    }));
+    
+    const finalStrengthAttr = finalAttrs.find(a => a.attr === "Strength");
+    const finalMaxSlots = 10 + finalStrengthAttr.check;
     
     setPc({
       name: pick(names),
       level: level,
       alignment: pick(["Lawful", "Neutral", "Chaotic"]),
       occupations: [occ1],
-      attrs,
-      maxSlots,
+      attrs: finalAttrs,
+      maxSlots: finalMaxSlots,
       rawHpPrimary: rawHpPrimaryArr,
       rawHpSecondary: rawHpSecondaryArr,
       ac,
@@ -188,16 +205,29 @@ function NPCGenerator() {
   }
   React.useEffect(() => {
     if (!pc) return;
+    
+    // If level is 0, ensure all attributes are secondary
+    let effectivePrimaries = primaries;
+    if (pc.level === 0) {
+      effectivePrimaries = new Set();
+      setPrimaries(new Set());
+    }
+    
     const newAttrs = pc.attrs.map(a => ({
       ...a,
-      primary: primaries.has(a.attr),
-      check: a.mod + (primaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2)) // Same formula as PC but mod is always 0
+      primary: effectivePrimaries.has(a.attr),
+      check: a.mod + (effectivePrimaries.has(a.attr) ? pc.level : Math.floor(pc.level / 2)) // Same formula as PC but mod is always 0
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
     setPc({ ...pc, attrs: newAttrs, maxSlots });
   }, [primaries]);
   function togglePrimary(attr) {
+    // Don't allow setting primary attributes for level 0 NPCs
+    if (pc && pc.level === 0) {
+      return;
+    }
+    
     setPrimaries(prev => {
       const next = new Set(prev);
       if (next.has(attr)) next.delete(attr); else if (next.size < 2) next.add(attr);
@@ -354,6 +384,8 @@ function NPCGenerator() {
     setSelectedWeapon: setSelectedWeapon,
     setPc: setPc // Pass setPc to CharacterSheet
     ,
+    setPrimaries: setPrimaries // Pass setPrimaries to CharacterSheet
+    ,
     darkMode: darkMode // Pass darkMode as a prop
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
@@ -409,6 +441,7 @@ function CharacterSheet({
   selectedWeapon,
   setSelectedWeapon,
   setPc,
+  setPrimaries, // Accept setPrimaries as a prop
   darkMode // Accept darkMode as a prop
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
@@ -438,6 +471,11 @@ function CharacterSheet({
   const isConPrimary = primaries.has("Constitution");
   // For each level, HP = die + minConMod, min 1 per level
   function calcHp(arr) {
+    // If level is 0, HP is always 1
+    if (level === 0) {
+      return 1;
+    }
+    
     let total = 0;
     for (let i = 0; i < level; i++) {
       const hp = Math.max(1, arr[i] + minConMod);
@@ -549,9 +587,17 @@ function CharacterSheet({
   }
 
   function handleLevelChange(newLevel) {
+    // If level is 0, set all attributes as secondary
+    let newPrimaries = primaries;
+    if (newLevel === 0) {
+      newPrimaries = new Set(); // No primary attributes for level 0
+      setPrimaries(new Set());
+    }
+    
     const newAttrs = pc.attrs.map(a => ({
       ...a,
-      check: a.mod + (a.primary ? newLevel : Math.floor(newLevel / 2))
+      primary: newPrimaries.has(a.attr),
+      check: a.mod + (newPrimaries.has(a.attr) ? newLevel : Math.floor(newLevel / 2))
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
@@ -633,10 +679,10 @@ function CharacterSheet({
     className: "border rounded px-1 py-0.5 text-sm ml-2",
     autoFocus: true,
     onBlur: () => setLevelDropdown(false)
-  }, [...Array(10)].map((_, i) => /*#__PURE__*/React.createElement("option", {
-    key: i + 1,
-    value: i + 1
-  }, i + 1))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, [...Array(11)].map((_, i) => /*#__PURE__*/React.createElement("option", {
+    key: i,
+    value: i
+  }, i))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
