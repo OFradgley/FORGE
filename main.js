@@ -17,7 +17,9 @@ nav.style.justifyContent = "center";
 nav.style.alignItems = "center";
 nav.style.marginBottom = "40px"; // Increased margin for more separation
 nav.style.borderRadius = "0"; // Remove rounded edges
-nav.style.position = "relative"; // For positioning the dropdown menu
+nav.style.position = "sticky"; // Sticky positioning to stay at top
+nav.style.top = "0"; // Stick to the top of the viewport
+nav.style.zIndex = "1000"; // Ensure it stays above other content
 nav.style.overflow = "visible"; // Allow dropdown to extend beyond nav bar
 
 // Clear nav before adding buttons (prevents duplicates on hot reload)
