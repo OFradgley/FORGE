@@ -125,9 +125,49 @@ function NPCGenerator() {
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
+    
+    // Roll for Competence (2d6) and set Level and Morale accordingly
+    const competenceRoll = roll2d6();
+    let competence, level, morale;
+    if (competenceRoll <= 3) {
+      competence = "A liability (Level 1, ML5)";
+      level = 1;
+      morale = 5;
+    } else if (competenceRoll <= 6) {
+      competence = "Average (Level 1, ML6)";
+      level = 1;
+      morale = 6;
+    } else if (competenceRoll <= 9) {
+      competence = "Competent (Level 1, ML7)";
+      level = 1;
+      morale = 7;
+    } else if (competenceRoll <= 11) {
+      competence = "Very capable (Level 2, ML8)";
+      level = 2;
+      morale = 8;
+    } else {
+      competence = "Exceptional (Level 3, ML9)";
+      level = 3;
+      morale = 9;
+    }
+    
+    const equipmentRoll = roll2d6();
+    let equipment;
+    if (equipmentRoll <= 3) {
+      equipment = "No equipment of their own";
+    } else if (equipmentRoll <= 6) {
+      equipment = "Equipped for basic travel";
+    } else if (equipmentRoll <= 9) {
+      equipment = "Equipped for basic combat";
+    } else if (equipmentRoll <= 11) {
+      equipment = "Equipped for travel & combat";
+    } else {
+      equipment = "Best equipment money can buy";
+    }
+    
     setPc({
       name: pick(names),
-      level: 1,
+      level: level,
       alignment: pick(["Lawful", "Neutral", "Chaotic"]),
       occupations: [occ1],
       attrs,
@@ -142,7 +182,10 @@ function NPCGenerator() {
       appearance: pick(appearances),
       detail: pick(details),
       clothing: pick(clothes),
-      quirk: pick(quirks)
+      quirk: pick(quirks),
+      morale,
+      equipment,
+      competence
     });
   }
   useEffect(() => {
@@ -623,6 +666,9 @@ function CharacterSheet({
                 </>
               }
             />
+            <Field label="Morale" value={pc.morale} />
+            <Field label="Equipment" value={pc.equipment} />
+            <Field label="Competence" value={pc.competence} />
             <Field label="Gold" value={`${pc.gold} gp`} />
           </Grid>
           <section>

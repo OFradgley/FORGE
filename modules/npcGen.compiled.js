@@ -125,7 +125,6 @@ function NPCGenerator() {
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
-    const morale = roll2d6(); // Random value between 2 and 12
     const equipmentRoll = roll2d6();
     let equipment;
     if (equipmentRoll <= 3) {
@@ -139,9 +138,35 @@ function NPCGenerator() {
     } else {
       equipment = "Best equipment money can buy";
     }
+    
+    // Roll for Competence and set Level and Morale based on result
+    const competenceRoll = roll2d6();
+    let competence, level, morale;
+    if (competenceRoll <= 3) {
+      competence = "A liability (Level 1, ML5)";
+      level = 1;
+      morale = 5;
+    } else if (competenceRoll <= 6) {
+      competence = "Average (Level 1, ML6)";
+      level = 1;
+      morale = 6;
+    } else if (competenceRoll <= 9) {
+      competence = "Competent (Level 1, ML7)";
+      level = 1;
+      morale = 7;
+    } else if (competenceRoll <= 11) {
+      competence = "Very capable (Level 2, ML8)";
+      level = 2;
+      morale = 8;
+    } else {
+      competence = "Exceptional (Level 3, ML9)";
+      level = 3;
+      morale = 9;
+    }
+    
     setPc({
       name: pick(names),
-      level: 1,
+      level: level,
       alignment: pick(["Lawful", "Neutral", "Chaotic"]),
       occupations: [occ1],
       attrs,
@@ -157,7 +182,8 @@ function NPCGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       morale,
-      equipment
+      equipment,
+      competence
     });
   }
   React.useEffect(() => {
@@ -749,6 +775,9 @@ function CharacterSheet({
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Equipment",
     value: pc.equipment
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Competence",
+    value: pc.competence
   })), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
