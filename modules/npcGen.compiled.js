@@ -1,6 +1,6 @@
 // modules/npcGen.js
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
-import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -223,6 +223,7 @@ function NPCGenerator() {
       detail: pick(details),
       clothing: pick(clothes),
       quirk: pick(quirks),
+      personality: pick(personalities),
       morale,
       wage,
       equipment,
@@ -475,6 +476,7 @@ function CharacterSheet({
   const [showDetailDropdown, setShowDetailDropdown] = React.useState(false);
   const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
+  const [showPersonalityDropdown, setShowPersonalityDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
@@ -572,6 +574,10 @@ function CharacterSheet({
   function handleQuirkChange(e) {
     pc.quirk = e.target.value;
     setShowQuirkDropdown(false);
+  }
+  function handlePersonalityChange(e) {
+    pc.personality = e.target.value;
+    setShowPersonalityDropdown(false);
   }
 
   // Handler for occupation changes
@@ -1094,8 +1100,7 @@ function CharacterSheet({
     tabIndex: -1
   }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.clothing)),
-  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.clothing)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -1137,7 +1142,48 @@ function CharacterSheet({
   }, "Reroll")),
   /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.quirk)))))));
+  }, pc.quirk)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-start gap-1 mb-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Personality"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    onClick: () => setShowPersonalityDropdown(v => !v),
+    style: {
+      fontSize: "0.75rem"
+    }
+  }, "...")), showPersonalityDropdown && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.personality,
+    onChange: handlePersonalityChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowPersonalityDropdown(false)
+  }, personalities.map(p => /*#__PURE__*/React.createElement("option", {
+    key: p,
+    value: p
+  }, p))), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      let newVal = pick(personalities);
+      pc.personality = newVal;
+      setPc({
+        ...pc,
+        personality: newVal
+      });
+    },
+    tabIndex: -1
+  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, pc.personality)))))));
 }
 
 // Only one export for mount is needed. Remove duplicate export.
