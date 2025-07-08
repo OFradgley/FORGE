@@ -1235,61 +1235,223 @@ function CharacterSheet({
     // Column 1
     /*#__PURE__*/React.createElement("div", { className: "space-y-4" },
       // Row 1: Appearance
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Appearance"),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowAppearanceDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
-        showAppearanceDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-          /*#__PURE__*/React.createElement("select", { value: pc.appearance, onChange: handleAppearanceChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowAppearanceDropdown(false) }, appearances.map(a => /*#__PURE__*/React.createElement("option", { key: a, value: a }, a))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(appearances); pc.appearance = newVal; setPc({ ...pc, appearance: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.appearance)
+          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowAppearanceDropdown(v => !v), style: { fontSize: "0.75rem" } }, "..."),
+          showAppearanceDropdown && /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              marginLeft: "4px"
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(appearances);
+              pc.appearance = newVal;
+              setPc({ ...pc, appearance: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))),
+        showAppearanceDropdown ? /*#__PURE__*/React.createElement("select", { value: pc.appearance, onChange: handleAppearanceChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowAppearanceDropdown(false) }, appearances.map(a => /*#__PURE__*/React.createElement("option", { key: a, value: a }, a))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.appearance)
       ),
       // Row 2: Clothing
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Clothing"),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowClothingDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
-        showClothingDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-          /*#__PURE__*/React.createElement("select", { value: pc.clothing, onChange: handleClothingChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowClothingDropdown(false) }, clothes.map(c => /*#__PURE__*/React.createElement("option", { key: c, value: c }, c))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(clothes); pc.clothing = newVal; setPc({ ...pc, clothing: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.clothing)
+          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowClothingDropdown(v => !v), style: { fontSize: "0.75rem" } }, "..."),
+          showClothingDropdown && /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              marginLeft: "4px"
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(clothes);
+              pc.clothing = newVal;
+              setPc({ ...pc, clothing: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))),
+        showClothingDropdown ? /*#__PURE__*/React.createElement("select", { value: pc.clothing, onChange: handleClothingChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowClothingDropdown(false) }, clothes.map(c => /*#__PURE__*/React.createElement("option", { key: c, value: c }, c))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.clothing)
       ),
       // Row 3: Personality
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Personality"),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowPersonalityDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
-        showPersonalityDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-          /*#__PURE__*/React.createElement("select", { value: pc.personality, onChange: handlePersonalityChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowPersonalityDropdown(false) }, personalities.map(p => /*#__PURE__*/React.createElement("option", { key: p, value: p }, p))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(personalities); pc.personality = newVal; setPc({ ...pc, personality: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.personality)
+          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowPersonalityDropdown(v => !v), style: { fontSize: "0.75rem" } }, "..."),
+          showPersonalityDropdown && /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              marginLeft: "4px"
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(personalities);
+              pc.personality = newVal;
+              setPc({ ...pc, personality: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))),
+        showPersonalityDropdown ? /*#__PURE__*/React.createElement("select", { value: pc.personality, onChange: handlePersonalityChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowPersonalityDropdown(false) }, personalities.map(p => /*#__PURE__*/React.createElement("option", { key: p, value: p }, p))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.personality)
       )
     ),
     // Column 2
     /*#__PURE__*/React.createElement("div", { className: "space-y-4" },
       // Row 1: Detail
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Detail"),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowDetailDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
-        showDetailDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-          /*#__PURE__*/React.createElement("select", { value: pc.detail, onChange: handleDetailChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowDetailDropdown(false) }, details.map(d => /*#__PURE__*/React.createElement("option", { key: d, value: d }, d))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(details); pc.detail = newVal; setPc({ ...pc, detail: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.detail)
+          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowDetailDropdown(v => !v), style: { fontSize: "0.75rem" } }, "..."),
+          showDetailDropdown && /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              marginLeft: "4px"
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(details);
+              pc.detail = newVal;
+              setPc({ ...pc, detail: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))),
+        showDetailDropdown ? /*#__PURE__*/React.createElement("select", { value: pc.detail, onChange: handleDetailChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowDetailDropdown(false) }, details.map(d => /*#__PURE__*/React.createElement("option", { key: d, value: d }, d))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.detail)
       ),
       // Row 2: Quirk
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Quirk"),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowQuirkDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
-        showQuirkDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
-          /*#__PURE__*/React.createElement("select", { value: pc.quirk, onChange: handleQuirkChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowQuirkDropdown(false) }, quirks.map(q => /*#__PURE__*/React.createElement("option", { key: q, value: q }, q))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(quirks); pc.quirk = newVal; setPc({ ...pc, quirk: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.quirk)
+          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowQuirkDropdown(v => !v), style: { fontSize: "0.75rem" } }, "..."),
+          showQuirkDropdown && /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              marginLeft: "4px"
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(quirks);
+              pc.quirk = newVal;
+              setPc({ ...pc, quirk: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))),
+        showQuirkDropdown ? /*#__PURE__*/React.createElement("select", { value: pc.quirk, onChange: handleQuirkChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowQuirkDropdown(false) }, quirks.map(q => /*#__PURE__*/React.createElement("option", { key: q, value: q }, q))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.quirk)
       ),
-      // Row 3: Conversation Interest
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-col items-start gap-1 mb-1" },
-        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+      // Row 3: Conversation Interest (special case - dice button stays with dropdown)
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 mb-1" },
           /*#__PURE__*/React.createElement("span", { className: "text-xs text-gray-500" }, "Conversation Interest"),
           /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", onClick: () => setShowConversationInterestDropdown(v => !v), style: { fontSize: "0.75rem" } }, "...")),
         showConversationInterestDropdown ? /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
           /*#__PURE__*/React.createElement("select", { value: pc.conversationInterest, onChange: handleConversationInterestChange, className: "border rounded px-1 py-0.5 text-sm", autoFocus: true, onBlur: () => setShowConversationInterestDropdown(false) }, conversationInterests.map(ci => /*#__PURE__*/React.createElement("option", { key: ci, value: ci }, ci))),
-          /*#__PURE__*/React.createElement("button", { className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700", style: { fontSize: "0.75rem" }, type: "button", onMouseDown: e => e.preventDefault(), onClick: () => { let newVal = pick(conversationInterests); pc.conversationInterest = newVal; setPc({ ...pc, conversationInterest: newVal }); }, tabIndex: -1 }, "Reroll")) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
+          /*#__PURE__*/React.createElement("button", {
+            className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+            style: {
+              fontSize: "0.75rem",
+              height: "25px",
+              width: "25px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0
+            },
+            type: "button",
+            onMouseDown: e => e.preventDefault(),
+            onClick: () => {
+              let newVal = pick(conversationInterests);
+              pc.conversationInterest = newVal;
+              setPc({ ...pc, conversationInterest: newVal });
+            },
+            tabIndex: -1
+          }, /*#__PURE__*/React.createElement("img", {
+            src: "./d6.png",
+            alt: "Reroll",
+            style: {
+              width: "25px",
+              height: "25px",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
       )
     ) // Close second column div
   ) // Close Grid
