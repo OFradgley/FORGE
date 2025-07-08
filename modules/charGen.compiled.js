@@ -1,7 +1,7 @@
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // modules/charGen.js
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
-import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -173,7 +173,8 @@ function CharacterGenerator() {
       appearance: pick(appearances),
       detail: pick(details),
       clothing: pick(clothes),
-      quirk: pick(quirks)
+      quirk: pick(quirks),
+      personality: pick(personalities)
     });
   }
 
@@ -297,6 +298,7 @@ function CharacterSheet({
   const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
   const [showAlignmentDropdown, setShowAlignmentDropdown] = React.useState(false);
+  const [showPersonalityDropdown, setShowPersonalityDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
   const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
@@ -399,6 +401,12 @@ function CharacterSheet({
       alignment: e.target.value
     });
     setShowAlignmentDropdown(false);
+  }
+
+  // Handler for personality changes
+  function handlePersonalityChange(e) {
+    pc.personality = e.target.value;
+    setShowPersonalityDropdown(false);
   }
 
   // Handler for occupation changes
@@ -1011,7 +1019,62 @@ function CharacterSheet({
     value: "Chaotic"
   }, "Chaotic"))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.alignment)))));
+  }, pc.alignment)), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-start gap-1 mb-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Personality"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    onClick: () => setShowPersonalityDropdown(v => !v)
+  }, "..."), showPersonalityDropdown && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      const newPersonality = pick(personalities);
+      setPc({
+        ...pc,
+        personality: newPersonality
+      });
+    },
+    tabIndex: -1
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showPersonalityDropdown ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.personality,
+    onChange: handlePersonalityChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowPersonalityDropdown(false)
+  }, personalities.map(p => /*#__PURE__*/React.createElement("option", {
+    key: p,
+    value: p
+  }, p)))) : /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, pc.personality)))));
 }
 
 // Remove any internal call to mount or mountCharGen. Only export the mount function.
