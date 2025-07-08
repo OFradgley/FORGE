@@ -175,6 +175,20 @@ function NPCGenerator() {
       alignment = "Chaotic";
     }
     
+    // Calculate wage based on level
+    let wage;
+    if (level === 0) {
+      wage = "2gp";
+    } else if (level === 1) {
+      wage = "5gp";
+    } else if (level === 2) {
+      wage = "15gp";
+    } else if (level === 3) {
+      wage = "25gp";
+    } else {
+      wage = "1/2 Share";
+    }
+    
     // If level is 0, set all attributes as secondary
     let finalPrimaries = primariesInit;
     if (level === 0) {
@@ -210,6 +224,7 @@ function NPCGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       morale,
+      wage,
       equipment,
       competence
     });
@@ -622,11 +637,27 @@ function CharacterSheet({
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
+    
+    // Calculate wage based on new level
+    let newWage;
+    if (newLevel === 0) {
+      newWage = "2gp";
+    } else if (newLevel === 1) {
+      newWage = "5gp";
+    } else if (newLevel === 2) {
+      newWage = "15gp";
+    } else if (newLevel === 3) {
+      newWage = "25gp";
+    } else {
+      newWage = "1/2 Share";
+    }
+    
     setPc({
       ...pc,
       level: newLevel,
       attrs: newAttrs,
-      maxSlots
+      maxSlots,
+      wage: newWage
     });
     setLevelDropdown(false);
   }
@@ -890,6 +921,9 @@ function CharacterSheet({
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Morale",
     value: pc.morale
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Wage",
+    value: pc.wage
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Equipment",
     value: pc.equipment
