@@ -1,6 +1,6 @@
 // modules/npcGen.js
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
-import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, conversationInterests, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, conversationInterests, equipmentTypes, competenceTypes, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -479,6 +479,8 @@ function CharacterSheet({
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
   const [showPersonalityDropdown, setShowPersonalityDropdown] = React.useState(false);
   const [showConversationInterestDropdown, setShowConversationInterestDropdown] = React.useState(false);
+  const [showEquipmentDropdown, setShowEquipmentDropdown] = React.useState(false);
+  const [showCompetenceDropdown, setShowCompetenceDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
@@ -584,6 +586,67 @@ function CharacterSheet({
   function handleConversationInterestChange(e) {
     pc.conversationInterest = e.target.value;
     setShowConversationInterestDropdown(false);
+  }
+  function handleEquipmentChange(e) {
+    setPc({
+      ...pc,
+      equipment: e.target.value
+    });
+    setShowEquipmentDropdown(false);
+  }
+  function handleCompetenceChange(e) {
+    const newCompetence = e.target.value;
+    // Extract level and morale from competence string
+    let level, morale;
+    if (newCompetence.includes("L0")) {
+      level = 0;
+      morale = 5;
+    } else if (newCompetence.includes("L1, ML6")) {
+      level = 1;
+      morale = 6;
+    } else if (newCompetence.includes("L1, ML7")) {
+      level = 1;
+      morale = 7;
+    } else if (newCompetence.includes("L2")) {
+      level = 2;
+      morale = 8;
+    } else if (newCompetence.includes("L3")) {
+      level = 3;
+      morale = 9;
+    }
+    
+    // Update competence, level, and morale, and recalculate dependent values
+    const newAttrs = pc.attrs.map(a => ({
+      ...a,
+      check: a.mod + (primaries.has(a.attr) ? level : Math.floor(level / 2))
+    }));
+    const strengthAttr = newAttrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check;
+    
+    // Calculate wage based on new level
+    let newWage;
+    if (level === 0) {
+      newWage = "2gp";
+    } else if (level === 1) {
+      newWage = "5gp";
+    } else if (level === 2) {
+      newWage = "15gp";
+    } else if (level === 3) {
+      newWage = "25gp";
+    } else {
+      newWage = "1/2 Share";
+    }
+    
+    setPc({
+      ...pc,
+      competence: newCompetence,
+      level,
+      morale,
+      attrs: newAttrs,
+      maxSlots,
+      wage: newWage
+    });
+    setShowCompetenceDropdown(false);
   }
 
   // Handler for occupation changes
@@ -936,13 +999,141 @@ function CharacterSheet({
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Wage",
     value: pc.wage
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Equipment",
-    value: pc.equipment
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Competence",
-    value: pc.competence
-  })), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Equipment"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    onClick: () => setShowEquipmentDropdown(v => !v),
+    style: {
+      fontSize: "0.75rem"
+    }
+  }, "...")), showEquipmentDropdown && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.equipment,
+    onChange: handleEquipmentChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowEquipmentDropdown(false)
+  }, equipmentTypes.map(e => /*#__PURE__*/React.createElement("option", {
+    key: e,
+    value: e
+  }, e))), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      const equipmentRoll = roll2d6();
+      let newEquipment;
+      if (equipmentRoll <= 3) {
+        newEquipment = "No equipment of their own";
+      } else if (equipmentRoll <= 6) {
+        newEquipment = "Equipped for basic travel";
+      } else if (equipmentRoll <= 9) {
+        newEquipment = "Equipped for basic combat";
+      } else if (equipmentRoll <= 11) {
+        newEquipment = "Equipped for travel & combat";
+      } else {
+        newEquipment = "Best equipment money can buy";
+      }
+      setPc({ ...pc, equipment: newEquipment });
+    },
+    tabIndex: -1
+  }, "Reroll")), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, pc.equipment)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Competence"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    onClick: () => setShowCompetenceDropdown(v => !v),
+    style: {
+      fontSize: "0.75rem"
+    }
+  }, "...")), showCompetenceDropdown && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.competence,
+    onChange: handleCompetenceChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowCompetenceDropdown(false)
+  }, competenceTypes.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c))), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      const competenceRoll = roll2d6();
+      let newCompetence, level, morale;
+      if (competenceRoll <= 3) {
+        newCompetence = "A liability (L0, ML5)";
+        level = 0;
+        morale = 5;
+      } else if (competenceRoll <= 6) {
+        newCompetence = "Average (L1, ML6)";
+        level = 1;
+        morale = 6;
+      } else if (competenceRoll <= 9) {
+        newCompetence = "Competent (L1, ML7)";
+        level = 1;
+        morale = 7;
+      } else if (competenceRoll <= 11) {
+        newCompetence = "Very capable (L2, ML8)";
+        level = 2;
+        morale = 8;
+      } else {
+        newCompetence = "Exceptional (L3, ML9)";
+        level = 3;
+        morale = 9;
+      }
+      
+      // Update all dependent values
+      const newAttrs = pc.attrs.map(a => ({
+        ...a,
+        check: a.mod + (primaries.has(a.attr) ? level : Math.floor(level / 2))
+      }));
+      const strengthAttr = newAttrs.find(a => a.attr === "Strength");
+      const maxSlots = 10 + strengthAttr.check;
+      
+      let newWage;
+      if (level === 0) {
+        newWage = "2gp";
+      } else if (level === 1) {
+        newWage = "5gp";
+      } else if (level === 2) {
+        newWage = "15gp";
+      } else if (level === 3) {
+        newWage = "25gp";
+      } else {
+        newWage = "1/2 Share";
+      }
+      
+      setPc({
+        ...pc,
+        competence: newCompetence,
+        level,
+        morale,
+        attrs: newAttrs,
+        maxSlots,
+        wage: newWage
+      });
+    },
+    tabIndex: -1
+  }, "Reroll")), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, pc.competence))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
