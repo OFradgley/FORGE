@@ -43,6 +43,7 @@ function NPCGenerator() {
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
+  const [currentNpcType, setCurrentNpcType] = React.useState(null);
   const dropdownRef = React.useRef();
 
   React.useEffect(() => {
@@ -74,6 +75,7 @@ function NPCGenerator() {
   }, []);
   function rollCharacter(npcType = null) {
     setHpOverride(null);
+    setCurrentNpcType(npcType); // Track the current NPC type
     let occ1 = pick(occupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
     const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
@@ -140,7 +142,13 @@ function NPCGenerator() {
     }
     
     // Roll for Competence and set Level and Morale based on result
-    const competenceRoll = roll2d6();
+    let competenceRoll = roll2d6();
+    
+    // If "Unskilled" is selected, cap the competence roll at 3 (always "A liability")
+    if (npcType === "Unskilled") {
+      competenceRoll = Math.min(competenceRoll, 3);
+    }
+    
     let competence, level, morale;
     if (competenceRoll <= 3) {
       competence = "A liability";
@@ -1129,7 +1137,13 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      const competenceRoll = roll2d6();
+      let competenceRoll = roll2d6();
+      
+      // If current NPC type is "Unskilled", cap the competence roll at 3
+      if (currentNpcType === "Unskilled") {
+        competenceRoll = Math.min(competenceRoll, 3);
+      }
+      
       let newCompetence, level, morale;
       if (competenceRoll <= 3) {
         newCompetence = "A liability";
