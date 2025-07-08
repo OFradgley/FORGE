@@ -296,6 +296,7 @@ function CharacterSheet({
   const [showDetailDropdown, setShowDetailDropdown] = React.useState(false);
   const [showClothingDropdown, setShowClothingDropdown] = React.useState(false);
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
+  const [showAlignmentDropdown, setShowAlignmentDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
   const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
@@ -389,6 +390,15 @@ function CharacterSheet({
   function handleQuirkChange(e) {
     pc.quirk = e.target.value;
     setShowQuirkDropdown(false);
+  }
+
+  // Handler for alignment changes
+  function handleAlignmentChange(e) {
+    setPc({
+      ...pc,
+      alignment: e.target.value
+    });
+    setShowAlignmentDropdown(false);
   }
 
   // Handler for occupation changes
@@ -938,7 +948,70 @@ function CharacterSheet({
     tabIndex: -1
   }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.quirk)))));
+  }, pc.quirk)), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-start gap-1 mb-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "Alignment"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    onClick: () => setShowAlignmentDropdown(v => !v)
+  }, "..."), showAlignmentDropdown && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
+    },
+    type: "button",
+    onMouseDown: e => e.preventDefault(),
+    onClick: () => {
+      const alignmentRoll = d6();
+      let newAlignment;
+      if (alignmentRoll <= 2) {
+        newAlignment = "Lawful";
+      } else if (alignmentRoll <= 5) {
+        newAlignment = "Neutral";
+      } else {
+        newAlignment = "Chaotic";
+      }
+      setPc({ ...pc, alignment: newAlignment });
+    },
+    tabIndex: -1
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showAlignmentDropdown ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.alignment,
+    onChange: handleAlignmentChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowAlignmentDropdown(false)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "Lawful"
+  }, "Lawful"), /*#__PURE__*/React.createElement("option", {
+    value: "Neutral"
+  }, "Neutral"), /*#__PURE__*/React.createElement("option", {
+    value: "Chaotic"
+  }, "Chaotic"))) : /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, pc.alignment)))));
 }
 
 // Remove any internal call to mount or mountCharGen. Only export the mount function.
