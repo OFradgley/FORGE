@@ -1040,21 +1040,17 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showEquipmentDropdown ? /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.equipment,
-    onChange: handleEquipmentChange,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowEquipmentDropdown(false)
-  }, equipmentTypes.map(e => /*#__PURE__*/React.createElement("option", {
-    key: e,
-    value: e
-  }, e))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+  }, "..."), showEquipmentDropdown && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
@@ -1075,7 +1071,24 @@ function CharacterSheet({
       setPc({ ...pc, equipment: newEquipment });
     },
     tabIndex: -1
-  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showEquipmentDropdown ? /*#__PURE__*/React.createElement("select", {
+    value: pc.equipment,
+    onChange: handleEquipmentChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowEquipmentDropdown(false)
+  }, equipmentTypes.map(e => /*#__PURE__*/React.createElement("option", {
+    key: e,
+    value: e
+  }, e))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
   }, pc.equipment)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
@@ -1087,21 +1100,17 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showCompetenceDropdown ? /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.competence,
-    onChange: handleCompetenceChange,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowCompetenceDropdown(false)
-  }, competenceTypes.map(c => /*#__PURE__*/React.createElement("option", {
-    key: c,
-    value: c
-  }, c))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+  }, "..."), showCompetenceDropdown && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
@@ -1162,7 +1171,24 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showCompetenceDropdown ? /*#__PURE__*/React.createElement("select", {
+    value: pc.competence,
+    onChange: handleCompetenceChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowCompetenceDropdown(false)
+  }, competenceTypes.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
   }, pc.competence))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
