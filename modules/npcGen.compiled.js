@@ -744,31 +744,25 @@ function CharacterSheet({
     className: "flex items-center gap-2 mb-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Name"), /*#__PURE__*/React.createElement("button", {
+  }, "Name"),
+  /*#__PURE__*/React.createElement("button", {
     className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
       fontSize: "0.75rem"
     },
     onClick: () => setShowNameInput(true)
-  }, "...")), showNameInput ? /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    className: "border rounded px-1 py-0.5 text-sm",
-    value: nameInputValue,
-    autoFocus: true,
-    onChange: e => setNameInputValue(e.target.value),
-    onBlur: handleNameInputSave,
-    onKeyDown: e => {
-      if (e.key === "Enter") handleNameInputSave();
-    },
+  }, "..."),
+  /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      minWidth: 100
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
@@ -781,9 +775,33 @@ function CharacterSheet({
       setNameInputValue(newName);
     },
     tabIndex: -1
-  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
-    className: "font-semibold"
-  }, pc.name)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))
+), showNameInput ? /*#__PURE__*/React.createElement("div", {
+  className: "flex items-center gap-2"
+}, /*#__PURE__*/React.createElement("input", {
+  type: "text",
+  className: "border rounded px-1 py-0.5 text-sm",
+  value: nameInputValue,
+  autoFocus: true,
+  onChange: e => setNameInputValue(e.target.value),
+  onBlur: handleNameInputSave,
+  onKeyDown: e => {
+    if (e.key === "Enter") handleNameInputSave();
+  },
+  style: {
+    minWidth: 100
+  }
+})) : /*#__PURE__*/React.createElement("div", {
+  className: "font-semibold"
+}, pc.name)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
