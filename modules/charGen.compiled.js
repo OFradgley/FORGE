@@ -174,7 +174,8 @@ function CharacterGenerator() {
       detail: pick(details),
       clothing: pick(clothes),
       quirk: pick(quirks),
-      personality: pick(personalities)
+      personality: pick(personalities),
+      spellPowerType: pick(["Arcane", "Divine"])
     });
   }
 
@@ -299,6 +300,7 @@ function CharacterSheet({
   const [showQuirkDropdown, setShowQuirkDropdown] = React.useState(false);
   const [showAlignmentDropdown, setShowAlignmentDropdown] = React.useState(false);
   const [showPersonalityDropdown, setShowPersonalityDropdown] = React.useState(false);
+  const [showSpellPowerDropdown, setShowSpellPowerDropdown] = React.useState(false);
   const [showOccDropdown1, setShowOccDropdown1] = React.useState(false);
   const [showOccDropdown2, setShowOccDropdown2] = React.useState(false);
   const [swapMode, setSwapMode] = React.useState(false);
@@ -407,6 +409,15 @@ function CharacterSheet({
   function handlePersonalityChange(e) {
     pc.personality = e.target.value;
     setShowPersonalityDropdown(false);
+  }
+
+  // Handler for spell power type changes
+  function handleSpellPowerChange(e) {
+    setPc({
+      ...pc,
+      spellPowerType: e.target.value
+    });
+    setShowSpellPowerDropdown(false);
   }
 
   // Handler for occupation changes
@@ -772,6 +783,22 @@ function CharacterSheet({
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Gold",
     value: `${pc.gold} gp`
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Spell Power",
+    value: /*#__PURE__*/React.createElement(React.Fragment, null, (() => {
+      const intAttr = pc.attrs.find(a => a.attr === "Intelligence");
+      const wisAttr = pc.attrs.find(a => a.attr === "Wisdom");
+      const spellPower = pc.spellPowerType === "Arcane" ? intAttr.check + 10 : wisAttr.check + 10;
+      return spellPower;
+    })(), " ", /*#__PURE__*/React.createElement("select", {
+      value: pc.spellPowerType,
+      onChange: handleSpellPowerChange,
+      className: "ml-1 px-1 rounded text-xs border"
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "Arcane"
+    }, "Arcane"), /*#__PURE__*/React.createElement("option", {
+      value: "Divine"
+    }, "Divine")))
   })), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
