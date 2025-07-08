@@ -889,24 +889,17 @@ function CharacterSheet({
       fontSize: "0.75rem"
     },
     onClick: () => setShowAlignmentDropdown(v => !v)
-  }, "...")), showAlignmentDropdown ? /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.alignment,
-    onChange: handleAlignmentChange,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowAlignmentDropdown(false)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "Lawful"
-  }, "Lawful"), /*#__PURE__*/React.createElement("option", {
-    value: "Neutral"
-  }, "Neutral"), /*#__PURE__*/React.createElement("option", {
-    value: "Chaotic"
-  }, "Chaotic")), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+  }, "..."), showAlignmentDropdown && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
@@ -923,7 +916,29 @@ function CharacterSheet({
       setPc({ ...pc, alignment: newAlignment });
     },
     tabIndex: -1
-  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showAlignmentDropdown ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.alignment,
+    onChange: handleAlignmentChange,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowAlignmentDropdown(false)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "Lawful"
+  }, "Lawful"), /*#__PURE__*/React.createElement("option", {
+    value: "Neutral"
+  }, "Neutral"), /*#__PURE__*/React.createElement("option", {
+    value: "Chaotic"
+  }, "Chaotic"))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold text-base text-left",
     style: {
       color: darkMode ? '#fff' : '#222',
