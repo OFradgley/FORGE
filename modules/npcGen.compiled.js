@@ -128,38 +128,38 @@ function NPCGenerator() {
     const equipmentRoll = roll2d6();
     let equipment;
     if (equipmentRoll <= 3) {
-      equipment = "No equipment of their own";
+      equipment = "Nothing";
     } else if (equipmentRoll <= 6) {
-      equipment = "Equipped for basic travel";
+      equipment = "Basic travel";
     } else if (equipmentRoll <= 9) {
-      equipment = "Equipped for basic combat";
+      equipment = "Basic combat";
     } else if (equipmentRoll <= 11) {
-      equipment = "Equipped for travel & combat";
+      equipment = "Travel & combat";
     } else {
-      equipment = "Best equipment money can buy";
+      equipment = "Anything";
     }
     
     // Roll for Competence and set Level and Morale based on result
     const competenceRoll = roll2d6();
     let competence, level, morale;
     if (competenceRoll <= 3) {
-      competence = "A liability (L0, ML5)";
+      competence = "A liability";
       level = 0;
       morale = 5;
     } else if (competenceRoll <= 6) {
-      competence = "Average (L1, ML6)";
+      competence = "Average";
       level = 1;
       morale = 6;
     } else if (competenceRoll <= 9) {
-      competence = "Competent (L1, ML7)";
+      competence = "Competent";
       level = 1;
       morale = 7;
     } else if (competenceRoll <= 11) {
-      competence = "Very capable (L2, ML8)";
+      competence = "Very capable";
       level = 2;
       morale = 8;
     } else {
-      competence = "Exceptional (L3, ML9)";
+      competence = "Exceptional";
       level = 3;
       morale = 9;
     }
@@ -596,21 +596,21 @@ function CharacterSheet({
   }
   function handleCompetenceChange(e) {
     const newCompetence = e.target.value;
-    // Extract level and morale from competence string
+    // Map simplified competence values to level and morale
     let level, morale;
-    if (newCompetence.includes("L0")) {
+    if (newCompetence === "A liability") {
       level = 0;
       morale = 5;
-    } else if (newCompetence.includes("L1, ML6")) {
+    } else if (newCompetence === "Average") {
       level = 1;
       morale = 6;
-    } else if (newCompetence.includes("L1, ML7")) {
+    } else if (newCompetence === "Competent") {
       level = 1;
       morale = 7;
-    } else if (newCompetence.includes("L2")) {
+    } else if (newCompetence === "Very capable") {
       level = 2;
       morale = 8;
-    } else if (newCompetence.includes("L3")) {
+    } else if (newCompetence === "Exceptional") {
       level = 3;
       morale = 9;
     }
@@ -1003,7 +1003,7 @@ function CharacterSheet({
     className: "flex items-center gap-2 mb-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Equipment"), /*#__PURE__*/React.createElement("button", {
+  }, "Equipped for:"), /*#__PURE__*/React.createElement("button", {
     className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     onClick: () => setShowEquipmentDropdown(v => !v),
     style: {
@@ -1031,15 +1031,15 @@ function CharacterSheet({
       const equipmentRoll = roll2d6();
       let newEquipment;
       if (equipmentRoll <= 3) {
-        newEquipment = "No equipment of their own";
+        newEquipment = "Nothing";
       } else if (equipmentRoll <= 6) {
-        newEquipment = "Equipped for basic travel";
+        newEquipment = "Basic travel";
       } else if (equipmentRoll <= 9) {
-        newEquipment = "Equipped for basic combat";
+        newEquipment = "Basic combat";
       } else if (equipmentRoll <= 11) {
-        newEquipment = "Equipped for travel & combat";
+        newEquipment = "Travel & combat";
       } else {
-        newEquipment = "Best equipment money can buy";
+        newEquipment = "Anything";
       }
       setPc({ ...pc, equipment: newEquipment });
     },
@@ -1078,23 +1078,23 @@ function CharacterSheet({
       const competenceRoll = roll2d6();
       let newCompetence, level, morale;
       if (competenceRoll <= 3) {
-        newCompetence = "A liability (L0, ML5)";
+        newCompetence = "A liability";
         level = 0;
         morale = 5;
       } else if (competenceRoll <= 6) {
-        newCompetence = "Average (L1, ML6)";
+        newCompetence = "Average";
         level = 1;
         morale = 6;
       } else if (competenceRoll <= 9) {
-        newCompetence = "Competent (L1, ML7)";
+        newCompetence = "Competent";
         level = 1;
         morale = 7;
       } else if (competenceRoll <= 11) {
-        newCompetence = "Very capable (L2, ML8)";
+        newCompetence = "Very capable";
         level = 2;
         morale = 8;
       } else {
-        newCompetence = "Exceptional (L3, ML9)";
+        newCompetence = "Exceptional";
         level = 3;
         morale = 9;
       }
