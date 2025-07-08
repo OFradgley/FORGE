@@ -517,12 +517,20 @@ function CharacterSheet({
     className: "flex items-center gap-2 mt-2"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-xs text-gray-500"
-  }, "Level"), /*#__PURE__*/React.createElement("div", {
+  }, "Level"), levelDropdown ? /*#__PURE__*/React.createElement("select", {
+    value: pc.level,
+    onChange: e => handleLevelChange(Number(e.target.value)),
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setLevelDropdown(false)
+  }, [...Array(10)].map((_, i) => /*#__PURE__*/React.createElement("option", {
+    key: i + 1,
+    value: i + 1
+  }, i + 1))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold text-base text-left",
     style: {
       color: darkMode ? '#fff' : '#222',
       borderRadius: '0.375rem',
-      // Remove padding and minWidth for left alignment
       display: 'block'
     }
   }, pc.level)), /*#__PURE__*/React.createElement("button", {
@@ -531,16 +539,7 @@ function CharacterSheet({
       fontSize: "0.75rem"
     },
     onClick: () => setLevelDropdown(v => !v)
-  }, "..."), levelDropdown && /*#__PURE__*/React.createElement("select", {
-    value: pc.level,
-    onChange: e => handleLevelChange(Number(e.target.value)),
-    className: "border rounded px-1 py-0.5 text-sm ml-2",
-    autoFocus: true,
-    onBlur: () => setLevelDropdown(false)
-  }, [...Array(10)].map((_, i) => /*#__PURE__*/React.createElement("option", {
-    key: i + 1,
-    value: i + 1
-  }, i + 1))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "..."))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -773,7 +772,7 @@ function CharacterSheet({
     className: "text-xl font-semibold mb-2"
   }, "Character Details"), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -785,7 +784,7 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showAppearanceDropdown && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showAppearanceDropdown ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.appearance,
@@ -812,9 +811,9 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.appearance)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.appearance)), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -826,7 +825,7 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showDetailDropdown && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showDetailDropdown ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.detail,
@@ -853,9 +852,9 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.detail)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.detail)), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -867,7 +866,7 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showClothingDropdown && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showClothingDropdown ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.clothing,
@@ -894,9 +893,9 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.clothing)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.clothing)), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
@@ -908,7 +907,7 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showQuirkDropdown && /*#__PURE__*/React.createElement("div", {
+  }, "...")), showQuirkDropdown ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("select", {
     value: pc.quirk,
@@ -935,7 +934,7 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+  }, "Reroll")) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
   }, pc.quirk)))));
 }
