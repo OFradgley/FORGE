@@ -750,9 +750,9 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     },
-    onClick: () => setShowNameInput(true)
+    onClick: () => setShowNameInput(v => !v)
   }, "..."),
-  /*#__PURE__*/React.createElement("button", {
+  showNameInput && /*#__PURE__*/React.createElement("button", {
     className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
       fontSize: "0.75rem",
