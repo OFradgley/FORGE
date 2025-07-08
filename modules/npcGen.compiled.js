@@ -784,9 +784,7 @@ function CharacterSheet({
       filter: darkMode ? "invert(1)" : "none"
     }
   }))
-), showNameInput ? /*#__PURE__*/React.createElement("div", {
-  className: "flex items-center gap-2"
-}, /*#__PURE__*/React.createElement("input", {
+), showNameInput ? /*#__PURE__*/React.createElement("input", {
   type: "text",
   className: "border rounded px-1 py-0.5 text-sm",
   value: nameInputValue,
@@ -797,9 +795,10 @@ function CharacterSheet({
     if (e.key === "Enter") handleNameInputSave();
   },
   style: {
-    minWidth: 100
+    minWidth: 120,
+    maxWidth: 120
   }
-})) : /*#__PURE__*/React.createElement("div", {
+}) : /*#__PURE__*/React.createElement("div", {
   className: "font-semibold"
 }, pc.name)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
