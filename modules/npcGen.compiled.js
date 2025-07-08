@@ -813,21 +813,17 @@ function CharacterSheet({
     style: {
       fontSize: "0.75rem"
     }
-  }, "...")), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mt-1"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: pc.occupations[0],
-    onChange: handleOcc1Change,
-    className: "border rounded px-1 py-0.5 text-sm",
-    autoFocus: true,
-    onBlur: () => setShowOccDropdown1(false)
-  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
-    key: o,
-    value: o
-  }, o))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+  }, "..."), showOccDropdown1 && /*#__PURE__*/React.createElement("button", {
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      marginLeft: "4px"
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
@@ -839,7 +835,26 @@ function CharacterSheet({
       });
     },
     tabIndex: -1
-  }, "Reroll"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), showOccDropdown1 && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mt-1"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: pc.occupations[0],
+    onChange: handleOcc1Change,
+    className: "border rounded px-1 py-0.5 text-sm",
+    autoFocus: true,
+    onBlur: () => setShowOccDropdown1(false)
+  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o))))), /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
   }, pc.occupations[0])), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
