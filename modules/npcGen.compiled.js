@@ -1215,15 +1215,29 @@ function CharacterSheet({
     key: w.name,
     value: w.name
   }, w.name))), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
     style: {
-      fontSize: "0.75rem"
+      fontSize: "0.75rem",
+      height: "25px",
+      width: "25px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0
     },
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => setSelectedWeapon(pick(weapons).name),
     tabIndex: -1
-  }, "Reroll")), /*#__PURE__*/React.createElement("ul", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "./d6.png",
+    alt: "Reroll",
+    style: {
+      width: "25px",
+      height: "25px",
+      filter: darkMode ? "invert(1)" : "none"
+    }
+  }))), /*#__PURE__*/React.createElement("ul", {
     className: "list-disc list-inside"
   }, displayInventory.map((it, i) => /*#__PURE__*/React.createElement("li", {
     key: i
