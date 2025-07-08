@@ -516,8 +516,16 @@ function CharacterSheet({
   }, pc.name), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-2"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Level"), levelDropdown ? /*#__PURE__*/React.createElement("select", {
+  }, "Level"), /*#__PURE__*/React.createElement("button", {
+    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+    style: {
+      fontSize: "0.75rem"
+    },
+    onClick: () => setLevelDropdown(v => !v)
+  }, "...")), levelDropdown ? /*#__PURE__*/React.createElement("select", {
     value: pc.level,
     onChange: e => handleLevelChange(Number(e.target.value)),
     className: "border rounded px-1 py-0.5 text-sm",
@@ -533,13 +541,7 @@ function CharacterSheet({
       borderRadius: '0.375rem',
       display: 'block'
     }
-  }, pc.level)), /*#__PURE__*/React.createElement("button", {
-    className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-    style: {
-      fontSize: "0.75rem"
-    },
-    onClick: () => setLevelDropdown(v => !v)
-  }, "..."))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, pc.level)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-start gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
