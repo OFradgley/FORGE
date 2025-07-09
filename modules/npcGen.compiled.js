@@ -76,7 +76,17 @@ function NPCGenerator() {
   function rollCharacter(npcType = null) {
     setHpOverride(null);
     setCurrentNpcType(npcType); // Track the current NPC type
-    let occ1 = pick(occupations);
+    
+    // Define unskilled occupations list
+    const unskilledOccupations = [
+      "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
+      "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
+      "Vagrant", "Villager"
+    ];
+    
+    // Select occupation based on NPC type
+    const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : occupations;
+    let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
     const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
     setPrimaries(new Set(primariesInit));
@@ -508,6 +518,14 @@ function CharacterSheet({
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
 
+  // Define unskilled occupations list for dropdowns and rerolls
+  const unskilledOccupations = [
+    "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
+    "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
+    "Vagrant", "Villager"
+  ];
+  const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : occupations;
+
   // Determine base HP rolls and raw rolls
   const baseHpPrimary = pc.hpPrimary;
   const baseHpSecondary = pc.hpSecondary;
@@ -850,7 +868,7 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      let newVal = pick(occupations);
+      let newVal = pick(availableOccupations);
       setPc({
         ...pc,
         occupations: [newVal]
@@ -873,7 +891,7 @@ function CharacterSheet({
     className: "border rounded px-1 py-0.5 text-sm",
     autoFocus: true,
     onBlur: () => setShowOccDropdown1(false)
-  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
+  }, availableOccupations.map(o => /*#__PURE__*/React.createElement("option", {
     key: o,
     value: o
   }, o)))) : /*#__PURE__*/React.createElement("div", {
