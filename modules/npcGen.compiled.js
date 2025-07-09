@@ -127,7 +127,13 @@ function NPCGenerator() {
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
-    const equipmentRoll = roll2d6();
+    let equipmentRoll = roll2d6();
+    
+    // If "Unskilled" is selected, cap the equipment roll at 6 (max "Basic travel")
+    if (npcType === "Unskilled") {
+      equipmentRoll = Math.min(equipmentRoll, 6);
+    }
+    
     let equipment;
     if (equipmentRoll <= 3) {
       equipment = "Nothing";
@@ -423,6 +429,8 @@ function NPCGenerator() {
     setPrimaries: setPrimaries // Pass setPrimaries to CharacterSheet
     ,
     darkMode: darkMode // Pass darkMode as a prop
+    ,
+    currentNpcType: currentNpcType // Pass currentNpcType to CharacterSheet
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
   }, "Click \u201CNew NPC\u201D to begin.")))));
@@ -478,7 +486,8 @@ function CharacterSheet({
   setSelectedWeapon,
   setPc,
   setPrimaries, // Accept setPrimaries as a prop
-  darkMode // Accept darkMode as a prop
+  darkMode, // Accept darkMode as a prop
+  currentNpcType // Accept currentNpcType as a prop
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
   const [showAppearanceDropdown, setShowAppearanceDropdown] = React.useState(false);
@@ -1077,7 +1086,13 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      const equipmentRoll = roll2d6();
+      let equipmentRoll = roll2d6();
+      
+      // If current NPC type is "Unskilled", cap the equipment roll at 6
+      if (currentNpcType === "Unskilled") {
+        equipmentRoll = Math.min(equipmentRoll, 6);
+      }
+      
       let newEquipment;
       if (equipmentRoll <= 3) {
         newEquipment = "Nothing";
@@ -1218,7 +1233,7 @@ function CharacterSheet({
     value: c
   }, c))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.competence))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
+  }, pc.competence))), currentNpcType !== "Unskilled" && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
@@ -1269,7 +1284,7 @@ function CharacterSheet({
     className: "list-disc list-inside"
   }, displayInventory.map((it, i) => /*#__PURE__*/React.createElement("li", {
     key: i
-  }, it.name))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("h3", {
+  }, it.name)))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-2"
   }, "Character Details"), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
@@ -1495,11 +1510,10 @@ function CharacterSheet({
             }
           }))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
       )
-    ) // Close second column div
-  ) // Close Grid
-  ) // Close Character Details section
-  ) // Close main div
-  ); // Close return statement
+      )
+    )
+  )
+  );
 }
 
 // Only one export for mount is needed. Remove duplicate export.
