@@ -755,7 +755,15 @@ function CharacterSheet({
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
-  }, /*#__PURE__*/React.createElement(Grid, {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "NPC Type")), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, currentNpcType || "Random")), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
