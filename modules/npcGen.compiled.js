@@ -96,8 +96,18 @@ function NPCGenerator() {
                                   occupations;
     let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
-    setPrimaries(new Set(primariesInit));
+    
+    // Special handling for Mercenary NPCs - randomize first primary between Strength and Dexterity
+    let primariesInit;
+    if (npcType === "Mercenary") {
+      const firstPrimary = pick(["Strength", "Dexterity"]);
+      const secondPrimary = pick(attributeOrder.filter(a => a !== firstPrimary));
+      primariesInit = new Set([firstPrimary, secondPrimary]);
+    } else {
+      primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
+    }
+    
+    setPrimaries(primariesInit);
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
       const m = 0; // NPCs always have +0 modifier
