@@ -368,35 +368,6 @@ function NPCGenerator() {
           e.target.style.color = darkMode ? '#fff' : '#000';
         },
         onClick: () => {
-          rollCharacter("Random");
-          setShowRollDropdown(false);
-        }
-      }, "Random"),
-      /*#__PURE__*/React.createElement("button", {
-        className: `w-full px-4 py-2 text-left`,
-        style: {
-          backgroundColor: 'transparent',
-          color: darkMode ? '#fff' : '#000',
-          border: 'none',
-          cursor: 'pointer'
-        },
-        onMouseEnter: (e) => {
-          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
-          e.target.style.color = '#fff';
-        },
-        onMouseLeave: (e) => {
-          e.target.style.backgroundColor = 'transparent';
-          e.target.style.color = darkMode ? '#fff' : '#000';
-        },
-        onFocus: (e) => {
-          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
-          e.target.style.color = '#fff';
-        },
-        onBlur: (e) => {
-          e.target.style.backgroundColor = 'transparent';
-          e.target.style.color = darkMode ? '#fff' : '#000';
-        },
-        onClick: () => {
           rollCharacter("Unskilled");
           setShowRollDropdown(false);
         }
@@ -458,7 +429,36 @@ function NPCGenerator() {
           rollCharacter("Mercenary");
           setShowRollDropdown(false);
         }
-      }, "Mercenary")
+      }, "Mercenary"),
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
+          rollCharacter("Random");
+          setShowRollDropdown(false);
+        }
+      }, "Random")
     ))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
