@@ -92,6 +92,7 @@ function NPCGenerator() {
     // Select occupation based on NPC type
     const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : 
                                   npcType === "Skilled" ? skilledOccupations : 
+                                  npcType === "Mercenary" ? ["Mercenary"] :
                                   occupations;
     let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
@@ -543,6 +544,7 @@ function CharacterSheet({
   
   const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : 
                                 currentNpcType === "Skilled" ? skilledOccupations : 
+                                currentNpcType === "Mercenary" ? ["Mercenary"] :
                                 occupations;
 
   // Determine base HP rolls and raw rolls
