@@ -122,8 +122,6 @@ function NPCGenerator() {
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
     const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
     const conMod = 0; // NPCs always have +0 modifier
-    const weapon = pick(weapons);
-    setSelectedWeapon(weapon.name);
     
     // Handle armor and shield generation based on NPC type
     let armour, hasHelmet, hasShield;
@@ -142,28 +140,6 @@ function NPCGenerator() {
     }
     const dexMod = 0; // NPCs always have +0 modifier
     let dexBonus = 0; // NPCs get no Dex bonus to AC
-    const acBase = armour.ac;
-    const acShield = hasShield ? 1 : 0;
-    const acDex = dexBonus;
-    const ac = acBase + acShield + acDex;
-    let inventory = [{ name: weapon.name, slots: weapon.slots }];
-    if (weapon.name === "Sling") {
-      inventory.push({ name: "Pouch of Bullets x20", slots: 1 });
-    } else if (weapon.name === "Hand Crossbow" || weapon.name === "Crossbow") {
-      inventory.push({ name: "Case of Bolts x20", slots: 1 });
-    } else if (weapon.name === "Shortbow" || weapon.name === "Longbow" || weapon.name === "Warbow") {
-      inventory.push({ name: "Quiver of Arrows x20", slots: 1 });
-    }
-    inventory.push(
-      armour.name !== "No Armour" ? { name: armour.name, slots: armour.slots } : null,
-      hasHelmet ? helmetItem : null,
-      hasShield ? shieldItem : null,
-      pick(dungeonGear),
-      (() => { let g1 = pick(generalGear), g2 = pick(generalGear); while (g2.name === g1.name) g2 = pick(generalGear); return [g1, g2]; })(),
-      rationItem,
-      { ...rationItem }
-    );
-    inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
     let equipmentRoll = roll2d6();
@@ -185,6 +161,51 @@ function NPCGenerator() {
     } else {
       equipment = "Anything";
     }
+    
+    // Adjust armor based on equipment type
+    if (equipment === "Basic combat") {
+      // Limit Basic combat to leather armor or no armor (AC 10-12)
+      if (armour.ac > 12) {
+        // If current armor is better than leather, downgrade to leather or no armor
+        armour = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance of no armor vs leather
+        hasShield = false; // Basic combat doesn't get shields
+      }
+    }
+    
+    // Recalculate AC after potential armor adjustment
+    const acBase = armour.ac;
+    const acShield = hasShield ? 1 : 0;
+    const acDex = 0; // NPCs get no Dex bonus to AC
+    const ac = acBase + acShield + acDex;
+    
+    // Select weapon based on equipment type
+    let availableWeapons = weapons;
+    if (equipment === "Basic combat") {
+      // Limit to 1-slot weapons for Basic combat
+      availableWeapons = weapons.filter(w => w.slots === 1);
+    }
+    const weapon = pick(availableWeapons);
+    setSelectedWeapon(weapon.name);
+    
+    // Create inventory with the selected weapon
+    let inventory = [{ name: weapon.name, slots: weapon.slots }];
+    if (weapon.name === "Sling") {
+      inventory.push({ name: "Pouch of Bullets x20", slots: 1 });
+    } else if (weapon.name === "Hand Crossbow" || weapon.name === "Crossbow") {
+      inventory.push({ name: "Case of Bolts x20", slots: 1 });
+    } else if (weapon.name === "Shortbow" || weapon.name === "Longbow" || weapon.name === "Warbow") {
+      inventory.push({ name: "Quiver of Arrows x20", slots: 1 });
+    }
+    inventory.push(
+      armour.name !== "No Armour" ? { name: armour.name, slots: armour.slots } : null,
+      hasHelmet ? helmetItem : null,
+      hasShield ? shieldItem : null,
+      pick(dungeonGear),
+      (() => { let g1 = pick(generalGear), g2 = pick(generalGear); while (g2.name === g1.name) g2 = pick(generalGear); return [g1, g2]; })(),
+      rationItem,
+      { ...rationItem }
+    );
+    inventory = inventory.flat().filter(Boolean);
     
     // Roll for Competence and set Level and Morale based on result
     let competenceRoll = roll2d6();
@@ -689,6 +710,72 @@ function CharacterSheet({
     if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
       updatedPc.ac = 10;
       updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+    
+    // If equipment is "Basic combat", ensure weapon is 1-slot and limit armor
+    if (newEquipment === "Basic combat") {
+      const oneSlotWeapons = weapons.filter(w => w.slots === 1);
+      const currentWeapon = weapons.find(w => w.name === selectedWeapon);
+      
+      // If current weapon is not 1-slot, select a new one
+      if (!currentWeapon || currentWeapon.slots !== 1) {
+        const newWeapon = pick(oneSlotWeapons);
+        setSelectedWeapon(newWeapon.name);
+        
+        // Update inventory to replace the weapon
+        const newInventory = updatedPc.inventory.map(item => {
+          if (weapons.some(w => w.name === item.name)) {
+            return { name: newWeapon.name, slots: newWeapon.slots };
+          }
+          return item;
+        });
+        updatedPc.inventory = newInventory;
+        updatedPc.totalSlots = newInventory.reduce((s, i) => s + i.slots, 0);
+      }
+      
+      // Recalculate AC based on actual armor in inventory for Basic combat
+      const armorInInventory = updatedPc.inventory.find(item => 
+        armours.some(a => a.name === item.name)
+      );
+      const actualArmor = armorInInventory ? 
+        armours.find(a => a.name === armorInInventory.name) : 
+        armours[0]; // Default to "No Armour"
+      
+      const hasShieldInInventory = updatedPc.inventory.some(item => item.name === "Shield");
+      
+      // Limit armor to leather or no armor (AC 10-12) and no shield for Basic combat
+      if (actualArmor.ac > 12 || hasShieldInInventory) {
+        // If current armor is better than leather or has shield, downgrade
+        const newArmor = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance
+        updatedPc.ac = newArmor.ac;
+        updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+        
+        // Update inventory to remove better armor and shield
+        updatedPc.inventory = updatedPc.inventory.filter(item => {
+          return !(armours.some(a => a.name === item.name && a.ac > 12)) && // Remove heavy armor
+                 item.name !== "Shield"; // Remove shield
+        });
+        
+        // Add new armor if it's not "No Armour" and not already in inventory
+        if (newArmor.name !== "No Armour" && !updatedPc.inventory.some(item => item.name === newArmor.name)) {
+          updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+        }
+        
+        updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+      } else {
+        // Armor is acceptable for Basic combat, restore proper AC calculation
+        const shieldBonus = hasShieldInInventory ? 1 : 0;
+        updatedPc.ac = actualArmor.ac + shieldBonus;
+        updatedPc.acBreakdown = { base: actualArmor.ac, shield: shieldBonus, dex: 0 };
+        
+        // Remove shield if present (Basic combat doesn't allow shields)
+        if (hasShieldInInventory) {
+          updatedPc.inventory = updatedPc.inventory.filter(item => item.name !== "Shield");
+          updatedPc.ac = actualArmor.ac;
+          updatedPc.acBreakdown = { base: actualArmor.ac, shield: 0, dex: 0 };
+          updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+        }
+      }
     }
     
     setPc(updatedPc);
@@ -1207,6 +1294,72 @@ function CharacterSheet({
       if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
         updatedPc.ac = 10;
         updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+      }
+      
+      // If equipment is "Basic combat", ensure weapon is 1-slot
+      if (newEquipment === "Basic combat") {
+        const oneSlotWeapons = weapons.filter(w => w.slots === 1);
+        const currentWeapon = weapons.find(w => w.name === selectedWeapon);
+        
+        // If current weapon is not 1-slot, select a new one
+        if (!currentWeapon || currentWeapon.slots !== 1) {
+          const newWeapon = pick(oneSlotWeapons);
+          setSelectedWeapon(newWeapon.name);
+          
+          // Update inventory to replace the weapon
+          const newInventory = updatedPc.inventory.map(item => {
+            if (weapons.some(w => w.name === item.name)) {
+              return { name: newWeapon.name, slots: newWeapon.slots };
+            }
+            return item;
+          });
+          updatedPc.inventory = newInventory;
+          updatedPc.totalSlots = newInventory.reduce((s, i) => s + i.slots, 0);
+        }
+        
+        // Recalculate AC based on actual armor in inventory for Basic combat
+        const armorInInventory = updatedPc.inventory.find(item => 
+          armours.some(a => a.name === item.name)
+        );
+        const actualArmor = armorInInventory ? 
+          armours.find(a => a.name === armorInInventory.name) : 
+          armours[0]; // Default to "No Armour"
+        
+        const hasShieldInInventory = updatedPc.inventory.some(item => item.name === "Shield");
+        
+        // Limit armor to leather or no armor (AC 10-12) and no shield for Basic combat
+        if (actualArmor.ac > 12 || hasShieldInInventory) {
+          // If current armor is better than leather or has shield, downgrade
+          const newArmor = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance
+          updatedPc.ac = newArmor.ac;
+          updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+          
+          // Update inventory to remove better armor and shield
+          updatedPc.inventory = updatedPc.inventory.filter(item => {
+            return !(armours.some(a => a.name === item.name && a.ac > 12)) && // Remove heavy armor
+                   item.name !== "Shield"; // Remove shield
+          });
+          
+          // Add new armor if it's not "No Armour" and not already in inventory
+          if (newArmor.name !== "No Armour" && !updatedPc.inventory.some(item => item.name === newArmor.name)) {
+            updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+          }
+          
+          updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+        } else {
+          // Armor is acceptable for Basic combat, restore proper AC calculation
+          const shieldBonus = hasShieldInInventory ? 1 : 0;
+          updatedPc.ac = actualArmor.ac + shieldBonus;
+          updatedPc.acBreakdown = { base: actualArmor.ac, shield: shieldBonus, dex: 0 };
+          
+          // Remove shield if present (Basic combat doesn't allow shields)
+          if (hasShieldInInventory) {
+            updatedPc.inventory = updatedPc.inventory.filter(item => item.name !== "Shield");
+            updatedPc.ac = actualArmor.ac;
+            updatedPc.acBreakdown = { base: actualArmor.ac, shield: 0, dex: 0 };
+            updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+          }
+        }
       }
       
       setPc(updatedPc);
