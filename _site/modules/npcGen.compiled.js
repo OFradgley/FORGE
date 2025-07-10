@@ -84,8 +84,15 @@ function NPCGenerator() {
       "Vagrant", "Villager"
     ];
     
+    // Define skilled occupations list
+    const skilledOccupations = [
+      "Acolyte", "Acrobat", "Actor", "Alchemist", "Apothecary", "Architect", "Armorer", "Artificer", "Assassin", "Astrologer", "Barbarian", "Blacksmith", "Bodyguard", "Builder", "Burglar", "Butcher", "Carpenter", "Cartographer", "Chronicler", "Cleric", "Cook", "Courtier", "Dealer", "Driver", "Druid", "Duellist", "Dungeoneer", "Engineer", "Executioner", "Explorer", "Falconer", "Fence", "Fisherman", "Gamekeeper", "Gardener", "Herald", "Herbalist", "Hitman", "Hunter", "Illusionist", "Inventor", "Jailer", "Jester", "Judge", "Locksmith", "Mage", "Magister", "Merchant", "Missionary", "Monk", "Musician", "Navigator", "Occultist", "Paladin", "Pickpocket", "Pit-fighter", "Politician", "Preacher", "Racketeer", "Ranger", "Researcher", "Reverend", "Rogue", "Sailor", "Scientist", "Scrapper", "Scribe", "Shopkeeper", "Slaver", "Smuggler", "Sorcerer", "Spy", "Statesman", "Steward", "Teacher", "Thief", "Tracker", "Trader", "Undertaker", "Warlock", "Warrior", "Witch", "Wizard", "Woodsman"
+    ];
+    
     // Select occupation based on NPC type
-    const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : occupations;
+    const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : 
+                                  npcType === "Skilled" ? skilledOccupations : 
+                                  occupations;
     let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
     const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
@@ -422,6 +429,35 @@ function NPCGenerator() {
           e.target.style.color = darkMode ? '#fff' : '#000';
         },
         onClick: () => {
+          rollCharacter("Skilled");
+          setShowRollDropdown(false);
+        }
+      }, "Skilled"),
+      /*#__PURE__*/React.createElement("button", {
+        className: `w-full px-4 py-2 text-left`,
+        style: {
+          backgroundColor: 'transparent',
+          color: darkMode ? '#fff' : '#000',
+          border: 'none',
+          cursor: 'pointer'
+        },
+        onMouseEnter: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onMouseLeave: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onFocus: (e) => {
+          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
+          e.target.style.color = '#fff';
+        },
+        onBlur: (e) => {
+          e.target.style.backgroundColor = 'transparent';
+          e.target.style.color = darkMode ? '#fff' : '#000';
+        },
+        onClick: () => {
           rollCharacter("Mercenary");
           setShowRollDropdown(false);
         }
@@ -524,7 +560,15 @@ function CharacterSheet({
     "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
     "Vagrant", "Villager"
   ];
-  const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : occupations;
+  
+  // Define skilled occupations list for dropdowns and rerolls
+  const skilledOccupations = [
+    "Acolyte", "Acrobat", "Actor", "Alchemist", "Apothecary", "Architect", "Armorer", "Artificer", "Assassin", "Astrologer", "Barbarian", "Blacksmith", "Bodyguard", "Builder", "Burglar", "Butcher", "Carpenter", "Cartographer", "Chronicler", "Cleric", "Cook", "Courtier", "Dealer", "Driver", "Druid", "Duellist", "Dungeoneer", "Engineer", "Executioner", "Explorer", "Falconer", "Fence", "Fisherman", "Gamekeeper", "Gardener", "Herald", "Herbalist", "Hitman", "Hunter", "Illusionist", "Inventor", "Jailer", "Jester", "Judge", "Locksmith", "Mage", "Magister", "Merchant", "Missionary", "Monk", "Musician", "Navigator", "Occultist", "Paladin", "Pickpocket", "Pit-fighter", "Politician", "Preacher", "Racketeer", "Ranger", "Researcher", "Reverend", "Rogue", "Sailor", "Scientist", "Scrapper", "Scribe", "Shopkeeper", "Slaver", "Smuggler", "Sorcerer", "Spy", "Statesman", "Steward", "Teacher", "Thief", "Tracker", "Trader", "Undertaker", "Warlock", "Warrior", "Witch", "Wizard", "Woodsman"
+  ];
+  
+  const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : 
+                                currentNpcType === "Skilled" ? skilledOccupations : 
+                                occupations;
 
   // Determine base HP rolls and raw rolls
   const baseHpPrimary = pc.hpPrimary;
