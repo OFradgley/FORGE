@@ -76,7 +76,17 @@ function NPCGenerator() {
   function rollCharacter(npcType = null) {
     setHpOverride(null);
     setCurrentNpcType(npcType); // Track the current NPC type
-    let occ1 = pick(occupations);
+    
+    // Define unskilled occupations list
+    const unskilledOccupations = [
+      "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
+      "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
+      "Vagrant", "Villager"
+    ];
+    
+    // Select occupation based on NPC type
+    const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : occupations;
+    let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
     const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
     setPrimaries(new Set(primariesInit));
@@ -127,7 +137,13 @@ function NPCGenerator() {
     inventory = inventory.flat().filter(Boolean);
     const strengthAttr = attrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
-    const equipmentRoll = roll2d6();
+    let equipmentRoll = roll2d6();
+    
+    // If "Unskilled" is selected, cap the equipment roll at 6 (max "Basic travel")
+    if (npcType === "Unskilled") {
+      equipmentRoll = Math.min(equipmentRoll, 6);
+    }
+    
     let equipment;
     if (equipmentRoll <= 3) {
       equipment = "Nothing";
@@ -256,7 +272,7 @@ function NPCGenerator() {
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
-    setPc({ ...pc, attrs: newAttrs, maxSlots });
+    setPc(prevPc => ({ ...prevPc, attrs: newAttrs, maxSlots }));
   }, [primaries]);
   function togglePrimary(attr) {
     // Don't allow setting primary attributes for level 0 NPCs
@@ -423,6 +439,8 @@ function NPCGenerator() {
     setPrimaries: setPrimaries // Pass setPrimaries to CharacterSheet
     ,
     darkMode: darkMode // Pass darkMode as a prop
+    ,
+    currentNpcType: currentNpcType // Pass currentNpcType to CharacterSheet
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
   }, "Click \u201CNew NPC\u201D to begin.")))));
@@ -478,7 +496,8 @@ function CharacterSheet({
   setSelectedWeapon,
   setPc,
   setPrimaries, // Accept setPrimaries as a prop
-  darkMode // Accept darkMode as a prop
+  darkMode, // Accept darkMode as a prop
+  currentNpcType // Accept currentNpcType as a prop
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
   const [showAppearanceDropdown, setShowAppearanceDropdown] = React.useState(false);
@@ -498,6 +517,14 @@ function CharacterSheet({
   const [showAlignmentDropdown, setShowAlignmentDropdown] = React.useState(false);
   const overLimit = pc.totalSlots > pc.maxSlots;
   const conPrimary = primaries.has("Constitution");
+
+  // Define unskilled occupations list for dropdowns and rerolls
+  const unskilledOccupations = [
+    "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
+    "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
+    "Vagrant", "Villager"
+  ];
+  const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : occupations;
 
   // Determine base HP rolls and raw rolls
   const baseHpPrimary = pc.hpPrimary;
@@ -659,10 +686,11 @@ function CharacterSheet({
 
   // Handler for occupation changes
   function handleOcc1Change(e) {
-    setPc({
-      ...pc,
-      occupations: [e.target.value]
-    });
+    const newOccupation = e.target.value;
+    setPc(prevPc => ({
+      ...prevPc,
+      occupations: [newOccupation]
+    }));
     setShowOccDropdown1(false);
   }
 
@@ -746,7 +774,15 @@ function CharacterSheet({
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
-  }, /*#__PURE__*/React.createElement(Grid, {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-500"
+  }, "NPC Type")), /*#__PURE__*/React.createElement("div", {
+    className: "font-semibold"
+  }, currentNpcType || "Random")), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
@@ -833,11 +869,11 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      let newVal = pick(occupations);
-      setPc({
-        ...pc,
+      let newVal = pick(availableOccupations);
+      setPc(prevPc => ({
+        ...prevPc,
         occupations: [newVal]
-      });
+      }));
     },
     tabIndex: -1
   }, /*#__PURE__*/React.createElement("img", {
@@ -856,7 +892,7 @@ function CharacterSheet({
     className: "border rounded px-1 py-0.5 text-sm",
     autoFocus: true,
     onBlur: () => setShowOccDropdown1(false)
-  }, occupations.map(o => /*#__PURE__*/React.createElement("option", {
+  }, availableOccupations.map(o => /*#__PURE__*/React.createElement("option", {
     key: o,
     value: o
   }, o)))) : /*#__PURE__*/React.createElement("div", {
@@ -1077,7 +1113,13 @@ function CharacterSheet({
     type: "button",
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
-      const equipmentRoll = roll2d6();
+      let equipmentRoll = roll2d6();
+      
+      // If current NPC type is "Unskilled", cap the equipment roll at 6
+      if (currentNpcType === "Unskilled") {
+        equipmentRoll = Math.min(equipmentRoll, 6);
+      }
+      
       let newEquipment;
       if (equipmentRoll <= 3) {
         newEquipment = "Nothing";
@@ -1218,7 +1260,7 @@ function CharacterSheet({
     value: c
   }, c))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.competence))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
+  }, pc.competence))), currentNpcType !== "Unskilled" && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
@@ -1269,7 +1311,7 @@ function CharacterSheet({
     className: "list-disc list-inside"
   }, displayInventory.map((it, i) => /*#__PURE__*/React.createElement("li", {
     key: i
-  }, it.name))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("h3", {
+  }, it.name)))), /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-2"
   }, "Character Details"), /*#__PURE__*/React.createElement(Grid, {
     cols: 2
@@ -1495,11 +1537,10 @@ function CharacterSheet({
             }
           }))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
       )
-    ) // Close second column div
-  ) // Close Grid
-  ) // Close Character Details section
-  ) // Close main div
-  ); // Close return statement
+      )
+    )
+  )
+  );
 }
 
 // Only one export for mount is needed. Remove duplicate export.

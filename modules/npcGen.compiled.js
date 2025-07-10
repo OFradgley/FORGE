@@ -272,7 +272,7 @@ function NPCGenerator() {
     }));
     const strengthAttr = newAttrs.find(a => a.attr === "Strength");
     const maxSlots = 10 + strengthAttr.check;
-    setPc({ ...pc, attrs: newAttrs, maxSlots });
+    setPc(prevPc => ({ ...prevPc, attrs: newAttrs, maxSlots }));
   }, [primaries]);
   function togglePrimary(attr) {
     // Don't allow setting primary attributes for level 0 NPCs
@@ -686,10 +686,11 @@ function CharacterSheet({
 
   // Handler for occupation changes
   function handleOcc1Change(e) {
-    setPc({
-      ...pc,
-      occupations: [e.target.value]
-    });
+    const newOccupation = e.target.value;
+    setPc(prevPc => ({
+      ...prevPc,
+      occupations: [newOccupation]
+    }));
     setShowOccDropdown1(false);
   }
 
@@ -869,10 +870,10 @@ function CharacterSheet({
     onMouseDown: e => e.preventDefault(),
     onClick: () => {
       let newVal = pick(availableOccupations);
-      setPc({
-        ...pc,
+      setPc(prevPc => ({
+        ...prevPc,
         occupations: [newVal]
-      });
+      }));
     },
     tabIndex: -1
   }, /*#__PURE__*/React.createElement("img", {
