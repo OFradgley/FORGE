@@ -171,6 +171,10 @@ function NPCGenerator() {
     if (npcType === "Unskilled") {
       competenceRoll = Math.min(competenceRoll, 3);
     }
+    // If "Skilled" is selected, limit competence roll to 4-11 (Average to Very capable)
+    else if (npcType === "Skilled") {
+      competenceRoll = Math.max(4, Math.min(competenceRoll, 11));
+    }
     
     let competence, level, morale;
     if (competenceRoll <= 3) {
@@ -1199,6 +1203,10 @@ function CharacterSheet({
       // If current NPC type is "Unskilled", cap the competence roll at 3
       if (currentNpcType === "Unskilled") {
         competenceRoll = Math.min(competenceRoll, 3);
+      }
+      // If current NPC type is "Skilled", limit competence roll to 4-11 (Average to Very capable)
+      else if (currentNpcType === "Skilled") {
+        competenceRoll = Math.max(4, Math.min(competenceRoll, 11));
       }
       
       let newCompetence, level, morale;
