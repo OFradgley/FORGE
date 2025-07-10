@@ -193,9 +193,9 @@ function NPCGenerator() {
     if (npcType === "Unskilled") {
       competenceRoll = Math.min(competenceRoll, 3);
     }
-    // If "Skilled" is selected, limit competence roll to 4-11 (Average to Very capable)
+    // If "Skilled" is selected, limit competence roll to 4-9 (Average to Competent)
     else if (npcType === "Skilled") {
-      competenceRoll = Math.max(4, Math.min(competenceRoll, 11));
+      competenceRoll = Math.max(4, Math.min(competenceRoll, 9));
     }
     
     let competence, level, morale;
@@ -244,6 +244,11 @@ function NPCGenerator() {
       wage = "25gp";
     } else {
       wage = "1/2 Share";
+    }
+    
+    // Override wage for Skilled NPCs
+    if (npcType === "Skilled") {
+      wage = "15gp";
     }
     
     // If level is 0, set all attributes as secondary
@@ -1257,9 +1262,9 @@ function CharacterSheet({
       if (currentNpcType === "Unskilled") {
         competenceRoll = Math.min(competenceRoll, 3);
       }
-      // If current NPC type is "Skilled", limit competence roll to 4-11 (Average to Very capable)
+      // If current NPC type is "Skilled", limit competence roll to 4-9 (Average to Competent)
       else if (currentNpcType === "Skilled") {
-        competenceRoll = Math.max(4, Math.min(competenceRoll, 11));
+        competenceRoll = Math.max(4, Math.min(competenceRoll, 9));
       }
       
       let newCompetence, level, morale;
