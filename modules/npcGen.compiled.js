@@ -175,6 +175,9 @@ function NPCGenerator() {
         armour = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance of no armor vs leather
         hasShield = false; // Basic combat doesn't get shields
       }
+    } else if (equipment === "Anything") {
+      // For "Anything" equipment, set armor to either chain or plate
+      armour = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
     }
     
     // Recalculate AC after potential armor adjustment
@@ -783,6 +786,22 @@ function CharacterSheet({
       }
     }
     
+    // If equipment is "Anything", set armor to either chain or plate
+    if (newEquipment === "Anything") {
+      const newArmor = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+      updatedPc.ac = newArmor.ac;
+      updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+      
+      // Update inventory to remove current armor and add new armor
+      updatedPc.inventory = updatedPc.inventory.filter(item => {
+        return !armours.some(a => a.name === item.name);
+      });
+      
+      // Add the new armor
+      updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+      updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+    }
+    
     setPc(updatedPc);
     setShowEquipmentDropdown(false);
   }
@@ -1370,6 +1389,22 @@ function CharacterSheet({
             updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
           }
         }
+      }
+      
+      // If equipment is "Anything", set armor to either chain or plate
+      if (newEquipment === "Anything") {
+        const newArmor = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+        updatedPc.ac = newArmor.ac;
+        updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+        
+        // Update inventory to remove current armor and add new armor
+        updatedPc.inventory = updatedPc.inventory.filter(item => {
+          return !armours.some(a => a.name === item.name);
+        });
+        
+        // Add the new armor
+        updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+        updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
       }
       
       setPc(updatedPc);
