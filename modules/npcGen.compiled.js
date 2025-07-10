@@ -124,11 +124,22 @@ function NPCGenerator() {
     const conMod = 0; // NPCs always have +0 modifier
     const weapon = pick(weapons);
     setSelectedWeapon(weapon.name);
-    const aRoll = roll2d6();
-    const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
-    const hs = roll2d6();
-    const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
-    const hasShield = hs >= 8 && hs <= 10 || hs >= 11;
+    
+    // Handle armor and shield generation based on NPC type
+    let armour, hasHelmet, hasShield;
+    if (npcType === "Unskilled") {
+      // Unskilled NPCs get no armor and no shield
+      armour = armours[0]; // "No Armour" (AC 10)
+      hasHelmet = false;
+      hasShield = false;
+    } else {
+      // All other NPCs roll for armor and shield normally
+      const aRoll = roll2d6();
+      armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
+      const hs = roll2d6();
+      hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
+      hasShield = hs >= 8 && hs <= 10 || hs >= 11;
+    }
     const dexMod = 0; // NPCs always have +0 modifier
     let dexBonus = 0; // NPCs get no Dex bonus to AC
     const acBase = armour.ac;
