@@ -263,6 +263,14 @@ function NPCGenerator() {
     const finalStrengthAttr = finalAttrs.find(a => a.attr === "Strength");
     const finalMaxSlots = 10 + finalStrengthAttr.check;
     
+    // Override AC if equipment is "Nothing" or "Basic travel"
+    let finalAc = ac;
+    let finalAcBreakdown = { base: acBase, shield: acShield, dex: acDex };
+    if (equipment === "Nothing" || equipment === "Basic travel") {
+      finalAc = 10;
+      finalAcBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+    
     setPc({
       name: pick(names),
       level: level,
@@ -272,8 +280,8 @@ function NPCGenerator() {
       maxSlots: finalMaxSlots,
       rawHpPrimary: rawHpPrimaryArr,
       rawHpSecondary: rawHpSecondaryArr,
-      ac,
-      acBreakdown: { base: acBase, shield: acShield, dex: acDex },
+      ac: finalAc,
+      acBreakdown: finalAcBreakdown,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
       appearance: pick(appearances),
@@ -665,10 +673,20 @@ function CharacterSheet({
     setShowConversationInterestDropdown(false);
   }
   function handleEquipmentChange(e) {
-    setPc({
+    const newEquipment = e.target.value;
+    
+    let updatedPc = {
       ...pc,
-      equipment: e.target.value
-    });
+      equipment: newEquipment
+    };
+    
+    // If equipment is "Nothing" or "Basic travel", set AC to 10 (no armor, no shield)
+    if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
+      updatedPc.ac = 10;
+      updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+    
+    setPc(updatedPc);
     setShowEquipmentDropdown(false);
   }
   function handleCompetenceChange(e) {
@@ -1174,7 +1192,19 @@ function CharacterSheet({
       } else {
         newEquipment = "Anything";
       }
-      setPc({ ...pc, equipment: newEquipment });
+      
+      let updatedPc = {
+        ...pc,
+        equipment: newEquipment
+      };
+      
+      // If equipment is "Nothing" or "Basic travel", set AC to 10 (no armor, no shield)
+      if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
+        updatedPc.ac = 10;
+        updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+      }
+      
+      setPc(updatedPc);
     },
     tabIndex: -1
   }, /*#__PURE__*/React.createElement("img", {
@@ -1306,7 +1336,7 @@ function CharacterSheet({
     value: c
   }, c))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.competence))), currentNpcType !== "Unskilled" && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
+  }, pc.competence))), (currentNpcType !== "Unskilled" && pc.equipment !== "Nothing" && pc.equipment !== "Basic travel") && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"
