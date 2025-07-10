@@ -149,6 +149,11 @@ function NPCGenerator() {
       equipmentRoll = Math.min(equipmentRoll, 6);
     }
     
+    // If "Mercenary" is selected, ensure minimum "Basic combat" (min roll 7)
+    if (npcType === "Mercenary") {
+      equipmentRoll = Math.max(equipmentRoll, 7);
+    }
+    
     let equipment;
     if (equipmentRoll <= 3) {
       equipment = "Nothing";
@@ -1270,6 +1275,11 @@ function CharacterSheet({
       // If current NPC type is "Unskilled", cap the equipment roll at 6
       if (currentNpcType === "Unskilled") {
         equipmentRoll = Math.min(equipmentRoll, 6);
+      }
+      
+      // If current NPC type is "Mercenary", ensure minimum "Basic combat" (min roll 7)
+      if (currentNpcType === "Mercenary") {
+        equipmentRoll = Math.max(equipmentRoll, 7);
       }
       
       let newEquipment;
