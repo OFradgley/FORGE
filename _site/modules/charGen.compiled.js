@@ -1206,7 +1206,23 @@ function CharacterSheet({
     value: p
   }, p)))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.personality)))));
+  }, pc.personality)))), /*#__PURE__*/React.createElement("div", {
+    key: "attributions",
+    className: "text-center text-xs text-gray-500 mt-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    key: "forge-license",
+    className: "text-xs mb-2"
+  }, [
+    "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023",
+    /*#__PURE__*/React.createElement("br", null),
+    /*#__PURE__*/React.createElement("a", {
+      key: "forge-link",
+      href: "https://zap-forge.itch.io/forge",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "text-blue-500 hover:text-blue-700 underline"
+    }, "https://zap-forge.itch.io/forge")
+  ])));
 }
 
 // Remove any internal call to mount or mountCharGen. Only export the mount function.
