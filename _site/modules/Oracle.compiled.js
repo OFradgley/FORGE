@@ -17,27 +17,12 @@ const oracleLikelihoods = {
   "Certain": { threshold: 2, description: "5/6 chance for Yes" }
 };
 
-const inspirations = [
-  "Ancient ruins",
-  "Mysterious stranger",
-  "Hidden treasure",
-  "Urgent message",
-  "Dangerous creature",
-  "Lost artifact",
-  "Secret door",
-  "Abandoned camp",
-  "Strange weather",
-  "Unusual sound",
-  "Flickering light",
-  "Foul odor",
-  "Fresh tracks",
-  "Broken weapon",
-  "Torn clothing",
-  "Spilled blood",
-  "Carved symbol",
-  "Glowing crystal",
-  "Whispered voice",
-  "Sudden silence"
+const verbs = [
+  "Abandon", "Abuse", "Activate", "Adapt", "Agree", "Ambush", "Antagonise", "Arrive", "Assist", "Attach", "Attract", "Avenge", "Banish", "Befriend", "Begrudge", "Bestow", "Betray", "Block", "Break", "Carry", "Care", "Celebrate", "Change", "Collaborate", "Communicate", "Control", "Create", "Debase", "Deceive", "Decrease", "Delay", "Desert", "Destroy", "Develop", "Deviate", "Discover", "Dispute", "Disrupt", "Divide", "Dominate", "Drop", "Endure", "Excite", "Expose", "Fail", "Fight", "Finance", "Gratify", "Guide", "Haggle", "Harm", "Heal", "Imprison", "Imitate", "Increase", "Inform", "Inquire", "Inspect", "Inspire", "Judge", "Kill", "Lie", "Love", "Mistrust", "Move", "Navigate", "Neglect", "Oppose", "Oppress", "Open", "Overindulge", "Overthrow", "Persecute", "Postpone", "Preserve", "Proceed", "Procrastinate", "Propose", "Protect", "Provoke", "Pursue", "Praise", "Recruit", "Refuse", "Release", "Return", "Ruin", "Separate", "Spy", "Start", "Stop", "Struggle", "Surrender", "Take", "Thrive", "Throw", "Tolerate", "Transform", "Triumph", "Trick", "Truce", "Trust", "Usurp", "Violate", "Waste", "Work", "Wield", "Yield"
+];
+
+const nouns = [
+  "Advantage", "Adversity", "Advice", "Agreement", "Ally", "Ambush", "Anger", "Animal", "Art", "Attention", "Balance", "Battle", "Benefit", "Burden", "Bureaucracy", "Business", "Chaos", "Competition", "Danger", "Death", "Defence", "Disadvantage", "Distraction", "Dream", "Element", "Emotion", "Enemy", "Energy", "Environment", "Evil", "Expectation", "Exterior", "Extravagance", "Failure", "Fame", "Fear", "Food", "Freedom", "Friendship", "Goal", "Good", "Group", "Guilty", "Home", "Hope", "Idea", "Illness", "Illusion", "Information", "Innocent", "Inside", "Intellectual", "Invention", "Investment", "Jealousy", "Joy", "Law", "Leadership", "Legal", "Liberty", "Love", "Magic", "Message", "Military", "Misfortune", "Mundane", "Nature", "Neutrality", "Obscurity", "Official", "Opulence", "Outside", "Pain", "Path", "Peace", "Penance", "People", "Physical", "Pleasure", "Plot", "Portal", "Possession", "Poverty", "Power", "Prison", "Project", "Protection", "Reality", "Riches", "Rumour", "Status", "Success", "Suffering", "Support", "Surprise", "Tactic", "Technology", "Tension", "Travel", "Value", "Vehicle", "Victory", "War", "Weapon", "Weather", "Wish", "Work", "Wound"
 ];
 
 // Main Oracle component
@@ -46,7 +31,9 @@ function Oracle() {
   const [currentLikelihood, setCurrentLikelihood] = React.useState(null);
   const [currentRoll, setCurrentRoll] = React.useState(null);
   const [currentModifierRoll, setCurrentModifierRoll] = React.useState(null);
-  const [currentInspiration, setCurrentInspiration] = React.useState(null);
+  const [currentVerbNoun, setCurrentVerbNoun] = React.useState(null);
+  const [currentVerb, setCurrentVerb] = React.useState(null);
+  const [currentNoun, setCurrentNoun] = React.useState(null);
   const [questionHistory, setQuestionHistory] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
 
@@ -92,8 +79,24 @@ function Oracle() {
     setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
   };
 
-  const getInspiration = () => {
-    setCurrentInspiration(pick(inspirations));
+  const getVerbNoun = () => {
+    const verb = pick(verbs);
+    const noun = pick(nouns);
+    setCurrentVerb(verb);
+    setCurrentNoun(noun);
+    setCurrentVerbNoun(`${verb} ${noun}`);
+  };
+
+  const rerollVerb = () => {
+    const newVerb = pick(verbs);
+    setCurrentVerb(newVerb);
+    setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
+  };
+
+  const rerollNoun = () => {
+    const newNoun = pick(nouns);
+    setCurrentNoun(newNoun);
+    setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
   };
 
   const clearHistory = () => {
@@ -102,7 +105,9 @@ function Oracle() {
     setCurrentLikelihood(null);
     setCurrentRoll(null);
     setCurrentModifierRoll(null);
-    setCurrentInspiration(null);
+    setCurrentVerbNoun(null);
+    setCurrentVerb(null);
+    setCurrentNoun(null);
   };
 
   return /*#__PURE__*/React.createElement("div", {
@@ -190,35 +195,71 @@ function Oracle() {
       ])
     ]),
 
-    // Inspiration Section
+    // Verb + Noun Section
     /*#__PURE__*/React.createElement("div", {
-      key: "inspiration-section",
+      key: "verbnoun-section",
       className: "text-center space-y-4 p-4 border rounded-lg"
     }, [
       /*#__PURE__*/React.createElement("h3", {
-        key: "inspiration-title",
+        key: "verbnoun-title",
         className: "text-lg font-semibold"
-      }, "Get Inspiration"),
+      }, "Roll for Inspiration"),
       
       /*#__PURE__*/React.createElement("button", {
-        key: "inspire-button",
+        key: "verbnoun-button",
         className: "px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold",
-        onClick: getInspiration
-      }, "Inspire Me"),
+        onClick: getVerbNoun
+      }, "Verb + Noun"),
 
-      // Current Inspiration
-      currentInspiration && /*#__PURE__*/React.createElement("div", {
-        key: "current-inspiration",
+      // Current Verb + Noun
+      currentVerbNoun && /*#__PURE__*/React.createElement("div", {
+        key: "current-verbnoun",
         className: "p-4 border rounded-lg bg-green-50"
       }, [
-        /*#__PURE__*/React.createElement("h4", {
-          key: "inspiration-label",
-          className: "font-semibold text-green-800"
-        }, "Inspiration:"),
-        /*#__PURE__*/React.createElement("p", {
-          key: "inspiration-text",
-          className: "text-lg text-green-700 mt-2"
-        }, currentInspiration)
+        /*#__PURE__*/React.createElement("div", {
+          key: "verbnoun-text",
+          className: "text-lg text-green-700",
+          style: { 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            gap: "10px" 
+          }
+        }, [
+          /*#__PURE__*/React.createElement("img", {
+            key: "verb-dice",
+            src: "./d6.png",
+            alt: "Reroll Verb",
+            onClick: rerollVerb,
+            style: {
+              width: "25px",
+              height: "25px",
+              cursor: "pointer",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          }),
+          /*#__PURE__*/React.createElement("span", {
+            key: "verb-text"
+          }, currentVerb),
+          /*#__PURE__*/React.createElement("span", {
+            key: "space-text"
+          }, " "),
+          /*#__PURE__*/React.createElement("span", {
+            key: "noun-text"
+          }, currentNoun),
+          /*#__PURE__*/React.createElement("img", {
+            key: "noun-dice",
+            src: "./d6.png",
+            alt: "Reroll Noun",
+            onClick: rerollNoun,
+            style: {
+              width: "25px",
+              height: "25px",
+              cursor: "pointer",
+              filter: darkMode ? "invert(1)" : "none"
+            }
+          })
+        ])
       ])
     ]),
 
@@ -278,7 +319,7 @@ function Oracle() {
         /*#__PURE__*/React.createElement("p", { key: "instruction-1" }, "• Choose a likelihood and click the button to ask the Oracle"),
         /*#__PURE__*/React.createElement("p", { key: "instruction-2" }, "• Each likelihood has different chances: Impossible (1/6), Unlikely (2/6), Even Odds (3/6), Likely (4/6), Certain (5/6)"),
         /*#__PURE__*/React.createElement("p", { key: "instruction-3" }, "• The Oracle rolls 1d6 and compares to the threshold for Yes/No"),
-        /*#__PURE__*/React.createElement("p", { key: "instruction-4" }, "• Use 'Inspire Me' when you need creative ideas for your game"),
+        /*#__PURE__*/React.createElement("p", { key: "instruction-4" }, "• Use 'Verb + Noun' to generate random action prompts for your game"),
         /*#__PURE__*/React.createElement("p", { key: "instruction-5" }, "• Recent questions are saved to help track your session")
       ])
     ])
