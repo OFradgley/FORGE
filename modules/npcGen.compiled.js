@@ -284,7 +284,7 @@ function NPCGenerator() {
     let finalPrimaries = primariesInit;
     if (level === 0) {
       finalPrimaries = new Set(); // No primary attributes for level 0
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     // Update attributes with correct primaries based on level
@@ -337,7 +337,7 @@ function NPCGenerator() {
     let effectivePrimaries = primaries;
     if (pc.level === 0) {
       effectivePrimaries = new Set();
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     const newAttrs = pc.attrs.map(a => ({
@@ -914,7 +914,7 @@ function CharacterSheet({
     let newPrimaries = primaries;
     if (newLevel === 0) {
       newPrimaries = new Set(); // No primary attributes for level 0
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     const newAttrs = pc.attrs.map(a => ({
