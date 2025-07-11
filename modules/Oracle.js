@@ -59,6 +59,7 @@ function Oracle() {
   const [currentAnswer, setCurrentAnswer] = React.useState(null);
   const [currentLikelihood, setCurrentLikelihood] = React.useState(null);
   const [currentRoll, setCurrentRoll] = React.useState(null);
+  const [currentModifierRoll, setCurrentModifierRoll] = React.useState(null);
   const [currentInspiration, setCurrentInspiration] = React.useState(null);
   const [questionHistory, setQuestionHistory] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
@@ -77,18 +78,28 @@ function Oracle() {
 
   const askOracle = (likelihood) => {
     const roll = d6();
+    const modifierRoll = d6();
     const threshold = oracleLikelihoods[likelihood].threshold;
-    const answer = roll >= threshold ? "Yes" : "No";
+    let answer = roll >= threshold ? "Yes" : "No";
+    
+    // Apply modifier based on modifier roll
+    if (modifierRoll === 1) {
+      answer += ", but";
+    } else if (modifierRoll === 6) {
+      answer += ", and";
+    }
     
     setCurrentAnswer(answer);
     setCurrentLikelihood(likelihood);
     setCurrentRoll(roll);
+    setCurrentModifierRoll(modifierRoll);
 
     // Add to history
     const newEntry = {
       answer,
       likelihood,
       roll,
+      modifierRoll,
       threshold,
       timestamp: new Date().toLocaleTimeString()
     };
@@ -104,6 +115,7 @@ function Oracle() {
     setCurrentAnswer(null);
     setCurrentLikelihood(null);
     setCurrentRoll(null);
+    setCurrentModifierRoll(null);
     setCurrentInspiration(null);
   };
 
@@ -180,18 +192,14 @@ function Oracle() {
           key: "current-answer",
           className: "p-4 border rounded-lg bg-blue-50"
         }, [
-          React.createElement("h4", {
-            key: "answer-title",
-            className: "font-semibold text-blue-800"
-          }, "Oracle Says:"),
           React.createElement("p", {
             key: "answer-text",
-            className: "text-lg text-blue-700 mt-2"
+            className: "text-lg text-blue-700 font-semibold"
           }, currentAnswer),
           React.createElement("p", {
             key: "roll-details",
             className: "text-sm text-blue-600 mt-1"
-          }, `${currentLikelihood} (${currentRoll}/6 needed ≥${oracleLikelihoods[currentLikelihood].threshold})`)
+          }, `${currentLikelihood} - Oracle: ${currentRoll}, Modifier: ${currentModifierRoll}`)
         ])
       ])
     ]),
@@ -267,7 +275,7 @@ function Oracle() {
         React.createElement("div", {
           key: "entry-details",
           className: "text-gray-500 text-xs mt-1"
-        }, `Roll: ${entry.roll}/${entry.threshold} • ${entry.timestamp}`)
+        }, `Roll: ${entry.roll}/${entry.threshold} • Modifier: ${entry.modifierRoll} • ${entry.timestamp}`)
         ])
       ))
     ]),
