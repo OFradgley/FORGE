@@ -160,7 +160,7 @@ function Oracle() {
       React.createElement(CardTitle, { key: "title" }, "FORGE Oracle"),
       React.createElement("p", {
         key: "description",
-        className: "text-center text-gray-600"
+        className: darkMode ? "text-left text-white" : "text-left text-gray-600"
       }, "Ask questions, get answers, find inspiration for your game.")
     ]),
 
@@ -224,11 +224,11 @@ function Oracle() {
         }, [
           React.createElement("p", {
             key: "answer-text",
-            className: "text-lg text-blue-700 font-semibold"
+            className: darkMode ? "text-lg text-blue-300 font-semibold" : "text-lg text-blue-700 font-semibold"
           }, currentAnswer),
           React.createElement("p", {
             key: "roll-details",
-            className: "text-sm text-blue-600 mt-1"
+            className: darkMode ? "text-xs text-gray-300 mt-1" : "text-xs text-blue-600 mt-1"
           }, `${currentLikelihood} - Oracle: ${currentRoll}, Modifier: ${currentModifierRoll}`)
         ])
       ])
@@ -261,7 +261,7 @@ function Oracle() {
         }, [
           React.createElement("div", {
             key: "verbnoun-text",
-            className: "text-lg text-green-700",
+            className: darkMode ? "text-lg text-green-300" : "text-lg text-green-700",
             style: { 
               display: "flex", 
               alignItems: "center", 
