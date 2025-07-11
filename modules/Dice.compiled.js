@@ -141,16 +141,15 @@ function Dice() {
       }, commonDice.map(dice => 
         /*#__PURE__*/React.createElement("button", {
           key: dice.name,
-          className: "w-[54px] h-[54px] px-1 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
+          className: "w-[50px] h-[50px] bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
           onClick: () => addDieToTray(dice.sides),
           title: `Add ${dice.name} to dice tray`
         },        /*#__PURE__*/React.createElement("img", {
           src: dice.image,
           alt: dice.name,
           style: {
-            width: "42px",
-            height: "42px",
-            filter: "invert(1)", // Makes the dice white on blue background
+            width: "50px",
+            height: "50px",
             borderRadius: "0.25rem" // Matches the button's rounded corners
           }
         }))
@@ -233,12 +232,12 @@ function Dice() {
     }, [
       /*#__PURE__*/React.createElement("div", {
         key: "result-content",
-        className: darkMode ? "text-blue-300" : "text-blue-700"
+        className: `text-center ${darkMode ? "text-blue-300" : "text-blue-700"}`
       }, [
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
           className: "text-xl font-bold"
-        }, `Total: ${lastRoll.total}`),
+        }, `${lastRoll.total}`),
         
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
@@ -278,7 +277,7 @@ function Dice() {
           /*#__PURE__*/React.createElement("div", {
             key: "roll-result",
             className: "font-medium"
-          }, `Total: ${roll.total}`),
+          }, `${roll.total}`),
           /*#__PURE__*/React.createElement("div", {
             key: "roll-details",
             className: "text-gray-500 text-xs mt-1"
