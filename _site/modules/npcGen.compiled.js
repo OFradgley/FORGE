@@ -45,6 +45,24 @@ function NPCGenerator() {
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
   const [currentNpcType, setCurrentNpcType] = React.useState(null);
   const dropdownRef = React.useRef();
+  const [savedCharacters, setSavedCharacters] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('saved-npcs');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading saved NPCs:', error);
+      return [];
+    }
+  });
+
+  // Save NPCs to localStorage whenever the list changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('saved-npcs', JSON.stringify(savedCharacters));
+    } catch (error) {
+      console.error('Error saving NPCs to localStorage:', error);
+    }
+  }, [savedCharacters]);
 
   React.useEffect(() => {
     // Listen for changes to dark mode (in case nav toggles it)
@@ -330,6 +348,34 @@ function NPCGenerator() {
       competence
     });
   }
+
+  // NPC save/load/delete functions
+  const saveCharacter = () => {
+    if (!pc) return;
+    const characterData = {
+      id: Date.now(),
+      name: pc.name,
+      level: pc.level,
+      occupation: pc.occupations[0],
+      savedAt: new Date().toLocaleDateString(),
+      data: pc
+    };
+    setSavedCharacters(prev => [characterData, ...prev]);
+  };
+
+  const loadCharacter = (characterData) => {
+    setPc(characterData.data);
+    const primariesFromData = new Set(characterData.data.attrs.filter(a => a.primary).map(a => a.attr));
+    setPrimaries(primariesFromData);
+    setHpOverride(null);
+    setSelectedWeapon(null);
+    setSwapMode(false);
+    setSwapSelection([]);
+  };
+
+  const deleteCharacter = (characterId) => {
+    setSavedCharacters(prev => prev.filter(char => char.id !== characterId));
+  };
   React.useEffect(() => {
     if (!pc) return;
     
@@ -1817,7 +1863,65 @@ function CharacterSheet({
           }))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
       )
       )
-    ), /*#__PURE__*/React.createElement("div", {
+    ), pc && /*#__PURE__*/React.createElement("div", {
+      key: "save-load-section",
+      className: "mt-6"
+    }, [
+      /*#__PURE__*/React.createElement("div", {
+        key: "save-button-container",
+        className: "text-center mb-4"
+      }, /*#__PURE__*/React.createElement("button", {
+        key: "save-button",
+        onClick: saveCharacter,
+        className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+      }, "Save NPC")),
+      
+      savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+        key: "saved-characters",
+        className: "border rounded-lg p-4"
+      }, [
+        /*#__PURE__*/React.createElement("h3", {
+          key: "saved-title",
+          className: "text-lg font-semibold mb-3"
+        }, "Saved NPCs"),
+        /*#__PURE__*/React.createElement("div", {
+          key: "saved-list",
+          className: "space-y-2"
+        }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
+          key: char.id,
+          className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
+        }, [
+          /*#__PURE__*/React.createElement("div", {
+            key: "char-info",
+            className: "flex-1"
+          }, [
+            /*#__PURE__*/React.createElement("div", {
+              key: "char-name",
+              className: "font-semibold"
+            }, char.name),
+            /*#__PURE__*/React.createElement("div", {
+              key: "char-details",
+              className: "text-gray-600"
+            }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
+          ]),
+          /*#__PURE__*/React.createElement("div", {
+            key: "char-actions",
+            className: "flex gap-2"
+          }, [
+            /*#__PURE__*/React.createElement("button", {
+              key: "load-btn",
+              onClick: () => loadCharacter(char),
+              className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+            }, "Load"),
+            /*#__PURE__*/React.createElement("button", {
+              key: "delete-btn",
+              onClick: () => deleteCharacter(char.id),
+              className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+            }, "Delete")
+          ])
+        ])))
+      ])
+    ]), /*#__PURE__*/React.createElement("div", {
       key: "attributions",
       className: "text-center text-xs text-gray-500 mt-4"
     }, /*#__PURE__*/React.createElement("p", {

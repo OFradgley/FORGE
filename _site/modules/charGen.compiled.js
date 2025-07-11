@@ -43,6 +43,24 @@ function CharacterGenerator() {
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [savedCharacters, setSavedCharacters] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('saved-characters');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading saved characters:', error);
+      return [];
+    }
+  });
+
+  // Save characters to localStorage whenever the list changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('saved-characters', JSON.stringify(savedCharacters));
+    } catch (error) {
+      console.error('Error saving characters to localStorage:', error);
+    }
+  }, [savedCharacters]);
 
   React.useEffect(() => {
     // Listen for changes to dark mode (in case nav toggles it)
@@ -179,6 +197,34 @@ function CharacterGenerator() {
     });
   }
 
+  // Character save/load/delete functions
+  const saveCharacter = () => {
+    if (!pc) return;
+    const characterData = {
+      id: Date.now(),
+      name: pc.name,
+      level: pc.level,
+      occupation: pc.occupation,
+      savedAt: new Date().toLocaleDateString(),
+      data: pc
+    };
+    setSavedCharacters(prev => [characterData, ...prev]);
+  };
+
+  const loadCharacter = (characterData) => {
+    setPc(characterData.data);
+    const primariesFromData = new Set(characterData.data.attrs.filter(a => a.primary).map(a => a.attr));
+    setPrimaries(primariesFromData);
+    setHpOverride(null);
+    setSelectedWeapon(null);
+    setSwapMode(false);
+    setSwapSelection([]);
+  };
+
+  const deleteCharacter = (characterId) => {
+    setSavedCharacters(prev => prev.filter(char => char.id !== characterId));
+  };
+
   // Update attrs and dependent values when primaries change
   React.useEffect(() => {
     if (!pc) return;
@@ -229,10 +275,69 @@ function CharacterGenerator() {
     setSelectedWeapon: setSelectedWeapon,
     setPc: setPc // Pass setPc to CharacterSheet
     ,
-    darkMode: darkMode // Pass darkMode as a prop
+    darkMode: darkMode,
+    saveCharacter: saveCharacter,
+    savedCharacters: savedCharacters,
+    loadCharacter: loadCharacter,
+    deleteCharacter: deleteCharacter
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CNew Character\u201D to begin.")))));
+  }, "Click \u201CNew Character\u201D to begin.")), pc && [
+    /*#__PURE__*/React.createElement("div", {
+      key: "save-button-container",
+      className: "text-center mb-4"
+    }, /*#__PURE__*/React.createElement("button", {
+      key: "save-button",
+      onClick: saveCharacter,
+      className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+    }, "Save Character")),
+    
+    savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+      key: "saved-characters",
+      className: "border rounded-lg p-4"
+    }, [
+      /*#__PURE__*/React.createElement("h3", {
+        key: "saved-title",
+        className: "text-lg font-semibold mb-3"
+      }, "Saved Characters"),
+      /*#__PURE__*/React.createElement("div", {
+        key: "saved-list",
+        className: "space-y-2"
+      }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
+        key: char.id,
+        className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
+      }, [
+        /*#__PURE__*/React.createElement("div", {
+          key: "char-info",
+          className: "flex-1"
+        }, [
+          /*#__PURE__*/React.createElement("div", {
+            key: "char-name",
+            className: "font-semibold"
+          }, char.name),
+          /*#__PURE__*/React.createElement("div", {
+            key: "char-details",
+            className: "text-gray-600"
+          }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
+        ]),
+        /*#__PURE__*/React.createElement("div", {
+          key: "char-actions",
+          className: "flex gap-2"
+        }, [
+          /*#__PURE__*/React.createElement("button", {
+            key: "load-btn",
+            onClick: () => loadCharacter(char),
+            className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+          }, "Load"),
+          /*#__PURE__*/React.createElement("button", {
+            key: "delete-btn",
+            onClick: () => deleteCharacter(char.id),
+            className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+          }, "Delete")
+        ])
+      ])))
+    ])
+  ])));
 }
 
 // Replace CharacterSheet with the original, pixel-perfect version from app.js
@@ -291,7 +396,11 @@ function CharacterSheet({
   selectedWeapon,
   setSelectedWeapon,
   setPc,
-  darkMode // Accept darkMode as a prop
+  darkMode,
+  saveCharacter,
+  savedCharacters,
+  loadCharacter,
+  deleteCharacter
 }) {
   const [showWeaponDropdown, setShowWeaponDropdown] = React.useState(false);
   const [showAppearanceDropdown, setShowAppearanceDropdown] = React.useState(false);
