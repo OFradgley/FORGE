@@ -135,26 +135,21 @@ function Dice() {
       key: "common-dice",
       className: "p-4 border rounded-lg"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "common-title",
-        className: "text-lg font-semibold mb-4"
-      }, "Common Dice"),
-      
       /*#__PURE__*/React.createElement("div", {
         key: "common-buttons",
         className: "grid grid-cols-4 gap-2 sm:grid-cols-7"
       }, commonDice.map(dice => 
         /*#__PURE__*/React.createElement("button", {
           key: dice.name,
-          className: "px-1 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
+          className: "w-[54px] h-[54px] px-1 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
           onClick: () => addDieToTray(dice.sides),
           title: `Add ${dice.name} to dice tray`
-        }, /*#__PURE__*/React.createElement("img", {
+        },        /*#__PURE__*/React.createElement("img", {
           src: dice.image,
           alt: dice.name,
           style: {
-            width: "50px",
-            height: "50px",
+            width: "42px",
+            height: "42px",
             filter: "invert(1)", // Makes the dice white on blue background
             borderRadius: "0.25rem" // Matches the button's rounded corners
           }
