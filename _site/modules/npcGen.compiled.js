@@ -564,7 +564,74 @@ function NPCGenerator() {
     currentNpcType: currentNpcType // Pass currentNpcType to CharacterSheet
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CNew NPC\u201D to begin.")))));
+  }, "Click \u201CNew NPC\u201D to begin.")))), pc && /*#__PURE__*/React.createElement("div", {
+    key: "save-button-container",
+    className: "text-center mb-4"
+  }, /*#__PURE__*/React.createElement("button", {
+    key: "save-button",
+    onClick: saveCharacter,
+    className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+  }, "Save NPC")), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+    key: "saved-characters",
+    className: "border rounded-lg p-4"
+  }, [
+    /*#__PURE__*/React.createElement("h3", {
+      key: "saved-title",
+      className: "text-lg font-semibold mb-3"
+    }, "Saved NPCs"),
+    /*#__PURE__*/React.createElement("div", {
+      key: "saved-list",
+      className: "space-y-2"
+    }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
+      key: char.id,
+      className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
+    }, [
+      /*#__PURE__*/React.createElement("div", {
+        key: "char-info",
+        className: "flex-1"
+      }, [
+        /*#__PURE__*/React.createElement("div", {
+          key: "char-name",
+          className: "font-semibold"
+        }, char.name),
+        /*#__PURE__*/React.createElement("div", {
+          key: "char-details",
+          className: "text-gray-600"
+        }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
+      ]),
+      /*#__PURE__*/React.createElement("div", {
+        key: "char-actions",
+        className: "flex gap-2"
+      }, [
+        /*#__PURE__*/React.createElement("button", {
+          key: "load-btn",
+          onClick: () => loadCharacter(char),
+          className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+        }, "Load"),
+        /*#__PURE__*/React.createElement("button", {
+          key: "delete-btn",
+          onClick: () => deleteCharacter(char.id),
+          className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+        }, "Delete")
+      ])
+    ])))
+  ]), /*#__PURE__*/React.createElement("div", {
+    key: "attributions",
+    className: "text-center text-xs text-gray-500 mt-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    key: "forge-license",
+    className: "text-xs mb-2"
+  }, [
+    "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023",
+    /*#__PURE__*/React.createElement("br", null),
+    /*#__PURE__*/React.createElement("a", {
+      key: "forge-link",
+      href: "https://zap-forge.itch.io/forge",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "text-blue-500 hover:text-blue-700 underline"
+    }, "https://zap-forge.itch.io/forge")
+  ])));
 }
 
 const AttributeBlock = ({
@@ -1863,81 +1930,7 @@ function CharacterSheet({
           }))) : /*#__PURE__*/React.createElement("div", { className: "font-semibold" }, pc.conversationInterest)
       )
       )
-    ), pc && /*#__PURE__*/React.createElement("div", {
-      key: "save-load-section",
-      className: "mt-6"
-    }, [
-      /*#__PURE__*/React.createElement("div", {
-        key: "save-button-container",
-        className: "text-center mb-4"
-      }, /*#__PURE__*/React.createElement("button", {
-        key: "save-button",
-        onClick: saveCharacter,
-        className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-      }, "Save NPC")),
-      
-      savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
-        key: "saved-characters",
-        className: "border rounded-lg p-4"
-      }, [
-        /*#__PURE__*/React.createElement("h3", {
-          key: "saved-title",
-          className: "text-lg font-semibold mb-3"
-        }, "Saved NPCs"),
-        /*#__PURE__*/React.createElement("div", {
-          key: "saved-list",
-          className: "space-y-2"
-        }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
-          key: char.id,
-          className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
-        }, [
-          /*#__PURE__*/React.createElement("div", {
-            key: "char-info",
-            className: "flex-1"
-          }, [
-            /*#__PURE__*/React.createElement("div", {
-              key: "char-name",
-              className: "font-semibold"
-            }, char.name),
-            /*#__PURE__*/React.createElement("div", {
-              key: "char-details",
-              className: "text-gray-600"
-            }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
-          ]),
-          /*#__PURE__*/React.createElement("div", {
-            key: "char-actions",
-            className: "flex gap-2"
-          }, [
-            /*#__PURE__*/React.createElement("button", {
-              key: "load-btn",
-              onClick: () => loadCharacter(char),
-              className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-            }, "Load"),
-            /*#__PURE__*/React.createElement("button", {
-              key: "delete-btn",
-              onClick: () => deleteCharacter(char.id),
-              className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-            }, "Delete")
-          ])
-        ])))
-      ])
-    ]), /*#__PURE__*/React.createElement("div", {
-      key: "attributions",
-      className: "text-center text-xs text-gray-500 mt-4"
-    }, /*#__PURE__*/React.createElement("p", {
-      key: "forge-license",
-      className: "text-xs mb-2"
-    }, [
-      "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023",
-      /*#__PURE__*/React.createElement("br", null),
-      /*#__PURE__*/React.createElement("a", {
-        key: "forge-link",
-        href: "https://zap-forge.itch.io/forge",
-        target: "_blank",
-        rel: "noopener noreferrer",
-        className: "text-blue-500 hover:text-blue-700 underline"
-      }, "https://zap-forge.itch.io/forge")
-    ]))
+    )
   )
   );
 }
