@@ -92,11 +92,22 @@ function NPCGenerator() {
     // Select occupation based on NPC type
     const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : 
                                   npcType === "Skilled" ? skilledOccupations : 
+                                  npcType === "Mercenary" ? ["Mercenary"] :
                                   occupations;
     let occ1 = pick(availableOccupations);
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    const primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
-    setPrimaries(new Set(primariesInit));
+    
+    // Special handling for Mercenary NPCs - randomize first primary between Strength and Dexterity
+    let primariesInit;
+    if (npcType === "Mercenary") {
+      const firstPrimary = pick(["Strength", "Dexterity"]);
+      const secondPrimary = pick(attributeOrder.filter(a => a !== firstPrimary));
+      primariesInit = new Set([firstPrimary, secondPrimary]);
+    } else {
+      primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
+    }
+    
+    setPrimaries(primariesInit);
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
       const m = 0; // NPCs always have +0 modifier
@@ -111,19 +122,80 @@ function NPCGenerator() {
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
     const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
     const conMod = 0; // NPCs always have +0 modifier
-    const weapon = pick(weapons);
-    setSelectedWeapon(weapon.name);
-    const aRoll = roll2d6();
-    const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
-    const hs = roll2d6();
-    const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
-    const hasShield = hs >= 8 && hs <= 10 || hs >= 11;
+    
+    // Handle armor and shield generation based on NPC type
+    let armour, hasHelmet, hasShield;
+    if (npcType === "Unskilled") {
+      // Unskilled NPCs get no armor and no shield
+      armour = armours[0]; // "No Armour" (AC 10)
+      hasHelmet = false;
+      hasShield = false;
+    } else {
+      // All other NPCs roll for armor and shield normally
+      const aRoll = roll2d6();
+      armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
+      const hs = roll2d6();
+      hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
+      hasShield = hs >= 8 && hs <= 10 || hs >= 11;
+    }
     const dexMod = 0; // NPCs always have +0 modifier
     let dexBonus = 0; // NPCs get no Dex bonus to AC
+    const strengthAttr = attrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
+    let equipmentRoll = roll2d6();
+    
+    // If "Unskilled" is selected, cap the equipment roll at 6 (max "Basic travel")
+    if (npcType === "Unskilled") {
+      equipmentRoll = Math.min(equipmentRoll, 6);
+    }
+    
+    // If "Mercenary" is selected, ensure minimum "Basic combat" (min roll 7)
+    if (npcType === "Mercenary") {
+      equipmentRoll = Math.max(equipmentRoll, 7);
+    }
+    
+    let equipment;
+    if (equipmentRoll <= 3) {
+      equipment = "Nothing";
+    } else if (equipmentRoll <= 6) {
+      equipment = "Basic travel";
+    } else if (equipmentRoll <= 9) {
+      equipment = "Basic combat";
+    } else if (equipmentRoll <= 11) {
+      equipment = "Travel & combat";
+    } else {
+      equipment = "Anything";
+    }
+    
+    // Adjust armor based on equipment type
+    if (equipment === "Basic combat") {
+      // Limit Basic combat to leather armor or no armor (AC 10-12)
+      if (armour.ac > 12) {
+        // If current armor is better than leather, downgrade to leather or no armor
+        armour = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance of no armor vs leather
+        hasShield = false; // Basic combat doesn't get shields
+      }
+    } else if (equipment === "Anything") {
+      // For "Anything" equipment, set armor to either chain or plate
+      armour = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+    }
+    
+    // Recalculate AC after potential armor adjustment
     const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
-    const acDex = dexBonus;
+    const acDex = 0; // NPCs get no Dex bonus to AC
     const ac = acBase + acShield + acDex;
+    
+    // Select weapon based on equipment type
+    let availableWeapons = weapons;
+    if (equipment === "Basic combat") {
+      // Limit to 1-slot weapons for Basic combat
+      availableWeapons = weapons.filter(w => w.slots === 1);
+    }
+    const weapon = pick(availableWeapons);
+    setSelectedWeapon(weapon.name);
+    
+    // Create inventory with the selected weapon
     let inventory = [{ name: weapon.name, slots: weapon.slots }];
     if (weapon.name === "Sling") {
       inventory.push({ name: "Pouch of Bullets x20", slots: 1 });
@@ -142,27 +214,6 @@ function NPCGenerator() {
       { ...rationItem }
     );
     inventory = inventory.flat().filter(Boolean);
-    const strengthAttr = attrs.find(a => a.attr === "Strength");
-    const maxSlots = 10 + strengthAttr.check; // Uses check bonus (+1 primary, +0 secondary), not ability modifier
-    let equipmentRoll = roll2d6();
-    
-    // If "Unskilled" is selected, cap the equipment roll at 6 (max "Basic travel")
-    if (npcType === "Unskilled") {
-      equipmentRoll = Math.min(equipmentRoll, 6);
-    }
-    
-    let equipment;
-    if (equipmentRoll <= 3) {
-      equipment = "Nothing";
-    } else if (equipmentRoll <= 6) {
-      equipment = "Basic travel";
-    } else if (equipmentRoll <= 9) {
-      equipment = "Basic combat";
-    } else if (equipmentRoll <= 11) {
-      equipment = "Travel & combat";
-    } else {
-      equipment = "Anything";
-    }
     
     // Roll for Competence and set Level and Morale based on result
     let competenceRoll = roll2d6();
@@ -170,6 +221,10 @@ function NPCGenerator() {
     // If "Unskilled" is selected, cap the competence roll at 3 (always "A liability")
     if (npcType === "Unskilled") {
       competenceRoll = Math.min(competenceRoll, 3);
+    }
+    // If "Skilled" is selected, limit competence roll to 4-9 (Average to Competent)
+    else if (npcType === "Skilled") {
+      competenceRoll = Math.max(4, Math.min(competenceRoll, 9));
     }
     
     let competence, level, morale;
@@ -220,11 +275,16 @@ function NPCGenerator() {
       wage = "1/2 Share";
     }
     
+    // Override wage for Skilled NPCs
+    if (npcType === "Skilled") {
+      wage = "15gp";
+    }
+    
     // If level is 0, set all attributes as secondary
     let finalPrimaries = primariesInit;
     if (level === 0) {
       finalPrimaries = new Set(); // No primary attributes for level 0
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     // Update attributes with correct primaries based on level
@@ -237,6 +297,14 @@ function NPCGenerator() {
     const finalStrengthAttr = finalAttrs.find(a => a.attr === "Strength");
     const finalMaxSlots = 10 + finalStrengthAttr.check;
     
+    // Override AC if equipment is "Nothing" or "Basic travel"
+    let finalAc = ac;
+    let finalAcBreakdown = { base: acBase, shield: acShield, dex: acDex };
+    if (equipment === "Nothing" || equipment === "Basic travel") {
+      finalAc = 10;
+      finalAcBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+    
     setPc({
       name: pick(names),
       level: level,
@@ -246,8 +314,8 @@ function NPCGenerator() {
       maxSlots: finalMaxSlots,
       rawHpPrimary: rawHpPrimaryArr,
       rawHpSecondary: rawHpSecondaryArr,
-      ac,
-      acBreakdown: { base: acBase, shield: acShield, dex: acDex },
+      ac: finalAc,
+      acBreakdown: finalAcBreakdown,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
       appearance: pick(appearances),
@@ -269,7 +337,7 @@ function NPCGenerator() {
     let effectivePrimaries = primaries;
     if (pc.level === 0) {
       effectivePrimaries = new Set();
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     const newAttrs = pc.attrs.map(a => ({
@@ -317,35 +385,6 @@ function NPCGenerator() {
   }, "▼")),    showRollDropdown && /*#__PURE__*/React.createElement("div", {
       className: `absolute top-full left-0 mt-1 border rounded shadow-lg z-10 min-w-[140px] ${darkMode ? 'bg-gray-800' : 'bg-white'}`
     },
-      /*#__PURE__*/React.createElement("button", {
-        className: `w-full px-4 py-2 text-left`,
-        style: {
-          backgroundColor: 'transparent',
-          color: darkMode ? '#fff' : '#000',
-          border: 'none',
-          cursor: 'pointer'
-        },
-        onMouseEnter: (e) => {
-          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
-          e.target.style.color = '#fff';
-        },
-        onMouseLeave: (e) => {
-          e.target.style.backgroundColor = 'transparent';
-          e.target.style.color = darkMode ? '#fff' : '#000';
-        },
-        onFocus: (e) => {
-          e.target.style.backgroundColor = darkMode ? '#1d4ed8' : '#2563eb';
-          e.target.style.color = '#fff';
-        },
-        onBlur: (e) => {
-          e.target.style.backgroundColor = 'transparent';
-          e.target.style.color = darkMode ? '#fff' : '#000';
-        },
-        onClick: () => {
-          rollCharacter("Random");
-          setShowRollDropdown(false);
-        }
-      }, "Random"),
       /*#__PURE__*/React.createElement("button", {
         className: `w-full px-4 py-2 text-left`,
         style: {
@@ -429,10 +468,10 @@ function NPCGenerator() {
           e.target.style.color = darkMode ? '#fff' : '#000';
         },
         onClick: () => {
-          rollCharacter("Skilled");
+          rollCharacter("Mercenary");
           setShowRollDropdown(false);
         }
-      }, "Skilled"),
+      }, "Mercenary"),
       /*#__PURE__*/React.createElement("button", {
         className: `w-full px-4 py-2 text-left`,
         style: {
@@ -458,10 +497,10 @@ function NPCGenerator() {
           e.target.style.color = darkMode ? '#fff' : '#000';
         },
         onClick: () => {
-          rollCharacter("Mercenary");
+          rollCharacter("Random");
           setShowRollDropdown(false);
         }
-      }, "Mercenary")
+      }, "Random")
     ))), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
@@ -568,6 +607,7 @@ function CharacterSheet({
   
   const availableOccupations = currentNpcType === "Unskilled" ? unskilledOccupations : 
                                 currentNpcType === "Skilled" ? skilledOccupations : 
+                                currentNpcType === "Mercenary" ? ["Mercenary"] :
                                 occupations;
 
   // Determine base HP rolls and raw rolls
@@ -667,10 +707,102 @@ function CharacterSheet({
     setShowConversationInterestDropdown(false);
   }
   function handleEquipmentChange(e) {
-    setPc({
+    const newEquipment = e.target.value;
+    
+    let updatedPc = {
       ...pc,
-      equipment: e.target.value
-    });
+      equipment: newEquipment
+    };
+    
+    // If equipment is "Nothing" or "Basic travel", set AC to 10 (no armor, no shield)
+    if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
+      updatedPc.ac = 10;
+      updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+    
+    // If equipment is "Basic combat", ensure weapon is 1-slot and limit armor
+    if (newEquipment === "Basic combat") {
+      const oneSlotWeapons = weapons.filter(w => w.slots === 1);
+      const currentWeapon = weapons.find(w => w.name === selectedWeapon);
+      
+      // If current weapon is not 1-slot, select a new one
+      if (!currentWeapon || currentWeapon.slots !== 1) {
+        const newWeapon = pick(oneSlotWeapons);
+        setSelectedWeapon(newWeapon.name);
+        
+        // Update inventory to replace the weapon
+        const newInventory = updatedPc.inventory.map(item => {
+          if (weapons.some(w => w.name === item.name)) {
+            return { name: newWeapon.name, slots: newWeapon.slots };
+          }
+          return item;
+        });
+        updatedPc.inventory = newInventory;
+        updatedPc.totalSlots = newInventory.reduce((s, i) => s + i.slots, 0);
+      }
+      
+      // Recalculate AC based on actual armor in inventory for Basic combat
+      const armorInInventory = updatedPc.inventory.find(item => 
+        armours.some(a => a.name === item.name)
+      );
+      const actualArmor = armorInInventory ? 
+        armours.find(a => a.name === armorInInventory.name) : 
+        armours[0]; // Default to "No Armour"
+      
+      const hasShieldInInventory = updatedPc.inventory.some(item => item.name === "Shield");
+      
+      // Limit armor to leather or no armor (AC 10-12) and no shield for Basic combat
+      if (actualArmor.ac > 12 || hasShieldInInventory) {
+        // If current armor is better than leather or has shield, downgrade
+        const newArmor = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance
+        updatedPc.ac = newArmor.ac;
+        updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+        
+        // Update inventory to remove better armor and shield
+        updatedPc.inventory = updatedPc.inventory.filter(item => {
+          return !(armours.some(a => a.name === item.name && a.ac > 12)) && // Remove heavy armor
+                 item.name !== "Shield"; // Remove shield
+        });
+        
+        // Add new armor if it's not "No Armour" and not already in inventory
+        if (newArmor.name !== "No Armour" && !updatedPc.inventory.some(item => item.name === newArmor.name)) {
+          updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+        }
+        
+        updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+      } else {
+        // Armor is acceptable for Basic combat, restore proper AC calculation
+        const shieldBonus = hasShieldInInventory ? 1 : 0;
+        updatedPc.ac = actualArmor.ac + shieldBonus;
+        updatedPc.acBreakdown = { base: actualArmor.ac, shield: shieldBonus, dex: 0 };
+        
+        // Remove shield if present (Basic combat doesn't allow shields)
+        if (hasShieldInInventory) {
+          updatedPc.inventory = updatedPc.inventory.filter(item => item.name !== "Shield");
+          updatedPc.ac = actualArmor.ac;
+          updatedPc.acBreakdown = { base: actualArmor.ac, shield: 0, dex: 0 };
+          updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+        }
+      }
+    }
+    
+    // If equipment is "Anything", set armor to either chain or plate
+    if (newEquipment === "Anything") {
+      const newArmor = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+      updatedPc.ac = newArmor.ac;
+      updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+      
+      // Update inventory to remove current armor and add new armor
+      updatedPc.inventory = updatedPc.inventory.filter(item => {
+        return !armours.some(a => a.name === item.name);
+      });
+      
+      // Add the new armor
+      updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+      updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+    }
+    
+    setPc(updatedPc);
     setShowEquipmentDropdown(false);
   }
   function handleCompetenceChange(e) {
@@ -782,7 +914,7 @@ function CharacterSheet({
     let newPrimaries = primaries;
     if (newLevel === 0) {
       newPrimaries = new Set(); // No primary attributes for level 0
-      setPrimaries(new Set());
+      // Note: Don't clear the component's primaries state here as it affects subsequent generations
     }
     
     const newAttrs = pc.attrs.map(a => ({
@@ -1164,6 +1296,11 @@ function CharacterSheet({
         equipmentRoll = Math.min(equipmentRoll, 6);
       }
       
+      // If current NPC type is "Mercenary", ensure minimum "Basic combat" (min roll 7)
+      if (currentNpcType === "Mercenary") {
+        equipmentRoll = Math.max(equipmentRoll, 7);
+      }
+      
       let newEquipment;
       if (equipmentRoll <= 3) {
         newEquipment = "Nothing";
@@ -1176,7 +1313,101 @@ function CharacterSheet({
       } else {
         newEquipment = "Anything";
       }
-      setPc({ ...pc, equipment: newEquipment });
+      
+      let updatedPc = {
+        ...pc,
+        equipment: newEquipment
+      };
+      
+      // If equipment is "Nothing" or "Basic travel", set AC to 10 (no armor, no shield)
+      if (newEquipment === "Nothing" || newEquipment === "Basic travel") {
+        updatedPc.ac = 10;
+        updatedPc.acBreakdown = { base: 10, shield: 0, dex: 0 };
+      }
+      
+      // If equipment is "Basic combat", ensure weapon is 1-slot
+      if (newEquipment === "Basic combat") {
+        const oneSlotWeapons = weapons.filter(w => w.slots === 1);
+        const currentWeapon = weapons.find(w => w.name === selectedWeapon);
+        
+        // If current weapon is not 1-slot, select a new one
+        if (!currentWeapon || currentWeapon.slots !== 1) {
+          const newWeapon = pick(oneSlotWeapons);
+          setSelectedWeapon(newWeapon.name);
+          
+          // Update inventory to replace the weapon
+          const newInventory = updatedPc.inventory.map(item => {
+            if (weapons.some(w => w.name === item.name)) {
+              return { name: newWeapon.name, slots: newWeapon.slots };
+            }
+            return item;
+          });
+          updatedPc.inventory = newInventory;
+          updatedPc.totalSlots = newInventory.reduce((s, i) => s + i.slots, 0);
+        }
+        
+        // Recalculate AC based on actual armor in inventory for Basic combat
+        const armorInInventory = updatedPc.inventory.find(item => 
+          armours.some(a => a.name === item.name)
+        );
+        const actualArmor = armorInInventory ? 
+          armours.find(a => a.name === armorInInventory.name) : 
+          armours[0]; // Default to "No Armour"
+        
+        const hasShieldInInventory = updatedPc.inventory.some(item => item.name === "Shield");
+        
+        // Limit armor to leather or no armor (AC 10-12) and no shield for Basic combat
+        if (actualArmor.ac > 12 || hasShieldInInventory) {
+          // If current armor is better than leather or has shield, downgrade
+          const newArmor = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance
+          updatedPc.ac = newArmor.ac;
+          updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+          
+          // Update inventory to remove better armor and shield
+          updatedPc.inventory = updatedPc.inventory.filter(item => {
+            return !(armours.some(a => a.name === item.name && a.ac > 12)) && // Remove heavy armor
+                   item.name !== "Shield"; // Remove shield
+          });
+          
+          // Add new armor if it's not "No Armour" and not already in inventory
+          if (newArmor.name !== "No Armour" && !updatedPc.inventory.some(item => item.name === newArmor.name)) {
+            updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+          }
+          
+          updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+        } else {
+          // Armor is acceptable for Basic combat, restore proper AC calculation
+          const shieldBonus = hasShieldInInventory ? 1 : 0;
+          updatedPc.ac = actualArmor.ac + shieldBonus;
+          updatedPc.acBreakdown = { base: actualArmor.ac, shield: shieldBonus, dex: 0 };
+          
+          // Remove shield if present (Basic combat doesn't allow shields)
+          if (hasShieldInInventory) {
+            updatedPc.inventory = updatedPc.inventory.filter(item => item.name !== "Shield");
+            updatedPc.ac = actualArmor.ac;
+            updatedPc.acBreakdown = { base: actualArmor.ac, shield: 0, dex: 0 };
+            updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+          }
+        }
+      }
+      
+      // If equipment is "Anything", set armor to either chain or plate
+      if (newEquipment === "Anything") {
+        const newArmor = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+        updatedPc.ac = newArmor.ac;
+        updatedPc.acBreakdown = { base: newArmor.ac, shield: 0, dex: 0 };
+        
+        // Update inventory to remove current armor and add new armor
+        updatedPc.inventory = updatedPc.inventory.filter(item => {
+          return !armours.some(a => a.name === item.name);
+        });
+        
+        // Add the new armor
+        updatedPc.inventory.push({ name: newArmor.name, slots: newArmor.slots });
+        updatedPc.totalSlots = updatedPc.inventory.reduce((s, i) => s + i.slots, 0);
+      }
+      
+      setPc(updatedPc);
     },
     tabIndex: -1
   }, /*#__PURE__*/React.createElement("img", {
@@ -1228,6 +1459,10 @@ function CharacterSheet({
       // If current NPC type is "Unskilled", cap the competence roll at 3
       if (currentNpcType === "Unskilled") {
         competenceRoll = Math.min(competenceRoll, 3);
+      }
+      // If current NPC type is "Skilled", limit competence roll to 4-9 (Average to Competent)
+      else if (currentNpcType === "Skilled") {
+        competenceRoll = Math.max(4, Math.min(competenceRoll, 9));
       }
       
       let newCompetence, level, morale;
@@ -1304,7 +1539,7 @@ function CharacterSheet({
     value: c
   }, c))) : /*#__PURE__*/React.createElement("div", {
     className: "font-semibold"
-  }, pc.competence))), currentNpcType !== "Unskilled" && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
+  }, pc.competence))), (currentNpcType !== "Unskilled" && pc.equipment !== "Nothing" && pc.equipment !== "Basic travel") && /*#__PURE__*/React.createElement("section", { className: "mt-6" }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center flex-wrap gap-2 mb-2"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-xl font-semibold mb-0"

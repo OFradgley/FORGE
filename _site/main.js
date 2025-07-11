@@ -3,6 +3,7 @@ const root = document.getElementById("root");
 const nav = document.getElementById("nav"); // Always use the existing #nav inside #root
 
 const modules = [
+  { label: "Oracle", file: "./modules/Oracle.compiled.js" },
   { label: "PC", file: "./modules/charGen.compiled.js" },
   { label: "NPC", file: "./modules/npcGen.compiled.js" }
   // Add more generators here as you create them

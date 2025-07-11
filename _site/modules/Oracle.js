@@ -1,8 +1,5 @@
-// Oracle.compiled.js - FORGE Oracle Module (Compiled for browser)
+// Oracle.js - FORGE Oracle Module
 // A simple oracle system for answering questions and providing inspiration
-
-// Import UI components
-import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
 
 // Utility functions
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -60,6 +57,23 @@ const inspirations = [
   "Whispered voice",
   "Sudden silence"
 ];
+
+// Card styling component
+const Card = ({ children, className = "", style = {} }) => {
+  return React.createElement("div", {
+    className: `bg-white rounded-lg shadow-lg p-6 ${className}`,
+    style: {
+      border: "1px solid #e5e7eb",
+      ...style
+    }
+  }, children);
+};
+
+const CardTitle = ({ children }) => {
+  return React.createElement("h2", {
+    className: "text-xl font-bold mb-4 text-center"
+  }, children);
+};
 
 // Main Oracle component
 function Oracle() {
@@ -136,129 +150,134 @@ function Oracle() {
     setCurrentInspiration(null);
   };
 
-  return /*#__PURE__*/React.createElement("div", {
-    className: "w-full max-w-3xl"
-  }, /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "favicon.ico",
-    alt: "Forge Favicon",
-    style: {
-      width: 32,
-      height: 32
-    }
-  }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE Oracle"))), /*#__PURE__*/React.createElement(CardContent, null, /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+  return React.createElement("div", {
+    className: "max-w-4xl mx-auto p-6 space-y-6"
   }, [
-    // Description
-    /*#__PURE__*/React.createElement("p", {
-      key: "description",
-      className: "text-center text-gray-600"
-    }, "Ask questions, get answers, find inspiration for your game."),
-
-    // Oracle Section
-    /*#__PURE__*/React.createElement("div", {
-      key: "oracle-section",
-      className: "text-center space-y-4 p-4 border rounded-lg"
+    // Header
+    React.createElement(Card, {
+      key: "header",
+      className: darkMode ? "bg-gray-800 text-white" : "bg-white"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "oracle-title",
-        className: "text-lg font-semibold"
-      }, "Ask the Oracle"),
-      
-      /*#__PURE__*/React.createElement("button", {
-        key: "ask-button",
-        className: "px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg",
-        onClick: askOracle
-      }, "Ask Question"),
+      React.createElement(CardTitle, { key: "title" }, "FORGE Oracle"),
+      React.createElement("p", {
+        key: "description",
+        className: "text-center text-gray-600"
+      }, "Ask questions, get answers, find inspiration for your game.")
+    ]),
 
-      // Current Answer
-      currentAnswer && /*#__PURE__*/React.createElement("div", {
-        key: "current-answer",
-        className: "p-4 border rounded-lg bg-blue-50"
+    // Main Oracle Section
+    React.createElement(Card, {
+      key: "oracle",
+      className: darkMode ? "bg-gray-800 text-white" : "bg-white"
+    }, [
+      React.createElement("div", {
+        key: "oracle-content",
+        className: "text-center space-y-6"
       }, [
-        /*#__PURE__*/React.createElement("h4", {
-          key: "answer-title",
-          className: "font-semibold text-blue-800"
-        }, "Oracle Says:"),
-        /*#__PURE__*/React.createElement("p", {
-          key: "answer-text",
-          className: "text-lg text-blue-700 mt-2"
-        }, currentAnswer),
+        React.createElement("h3", {
+          key: "oracle-title",
+          className: "text-lg font-semibold"
+        }, "Ask the Oracle"),
         
-        // Complication if present
-        currentComplication && /*#__PURE__*/React.createElement("p", {
-          key: "complication",
-          className: "text-sm text-blue-600 mt-2 italic"
-        }, currentComplication)
+        React.createElement("button", {
+          key: "ask-button",
+          className: "px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg",
+          onClick: askOracle
+        }, "Ask Question"),
+
+        // Current Answer
+        currentAnswer && React.createElement("div", {
+          key: "current-answer",
+          className: "p-4 border rounded-lg bg-blue-50"
+        }, [
+          React.createElement("h4", {
+            key: "answer-title",
+            className: "font-semibold text-blue-800"
+          }, "Oracle Says:"),
+          React.createElement("p", {
+            key: "answer-text",
+            className: "text-lg text-blue-700 mt-2"
+          }, currentAnswer),
+          
+          // Complication if present
+          currentComplication && React.createElement("p", {
+            key: "complication",
+            className: "text-sm text-blue-600 mt-2 italic"
+          }, currentComplication)
+        ])
       ])
     ]),
 
     // Inspiration Section
-    /*#__PURE__*/React.createElement("div", {
-      key: "inspiration-section",
-      className: "text-center space-y-4 p-4 border rounded-lg"
+    React.createElement(Card, {
+      key: "inspiration",
+      className: darkMode ? "bg-gray-800 text-white" : "bg-white"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "inspiration-title",
-        className: "text-lg font-semibold"
-      }, "Get Inspiration"),
-      
-      /*#__PURE__*/React.createElement("button", {
-        key: "inspire-button",
-        className: "px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold",
-        onClick: getInspiration
-      }, "Inspire Me"),
-
-      // Current Inspiration
-      currentInspiration && /*#__PURE__*/React.createElement("div", {
-        key: "current-inspiration",
-        className: "p-4 border rounded-lg bg-green-50"
+      React.createElement("div", {
+        key: "inspiration-content",
+        className: "text-center space-y-4"
       }, [
-        /*#__PURE__*/React.createElement("h4", {
-          key: "inspiration-label",
-          className: "font-semibold text-green-800"
-        }, "Inspiration:"),
-        /*#__PURE__*/React.createElement("p", {
-          key: "inspiration-text",
-          className: "text-lg text-green-700 mt-2"
-        }, currentInspiration)
+        React.createElement("h3", {
+          key: "inspiration-title",
+          className: "text-lg font-semibold"
+        }, "Get Inspiration"),
+        
+        React.createElement("button", {
+          key: "inspire-button",
+          className: "px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold",
+          onClick: getInspiration
+        }, "Inspire Me"),
+
+        // Current Inspiration
+        currentInspiration && React.createElement("div", {
+          key: "current-inspiration",
+          className: "p-4 border rounded-lg bg-green-50"
+        }, [
+          React.createElement("h4", {
+            key: "inspiration-label",
+            className: "font-semibold text-green-800"
+          }, "Inspiration:"),
+          React.createElement("p", {
+            key: "inspiration-text",
+            className: "text-lg text-green-700 mt-2"
+          }, currentInspiration)
+        ])
       ])
     ]),
 
     // History Section
-    questionHistory.length > 0 && /*#__PURE__*/React.createElement("div", {
-      key: "history-section",
-      className: "p-4 border rounded-lg"
+    questionHistory.length > 0 && React.createElement(Card, {
+      key: "history",
+      className: darkMode ? "bg-gray-800 text-white" : "bg-white"
     }, [
-      /*#__PURE__*/React.createElement("div", {
+      React.createElement("div", {
         key: "history-header",
         className: "flex justify-between items-center mb-4"
       }, [
-        /*#__PURE__*/React.createElement("h3", {
+        React.createElement("h3", {
           key: "history-title",
           className: "text-lg font-semibold"
         }, "Recent Questions"),
-        /*#__PURE__*/React.createElement("button", {
+        React.createElement("button", {
           key: "clear-button",
           className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
           onClick: clearHistory
         }, "Clear")
       ]),
       
-      /*#__PURE__*/React.createElement("div", {
+      React.createElement("div", {
         key: "history-list",
         className: "space-y-2"
       }, questionHistory.map((entry, index) => 
-        /*#__PURE__*/React.createElement("div", {
+        React.createElement("div", {
           key: `history-${index}`,
           className: "p-3 border rounded bg-gray-50 text-sm"
         }, [
-          /*#__PURE__*/React.createElement("div", {
+          React.createElement("div", {
             key: "entry-answer",
             className: "font-medium"
           }, entry.answer),
-          /*#__PURE__*/React.createElement("div", {
+          React.createElement("div", {
             key: "entry-details",
             className: "text-gray-500 text-xs mt-1"
           }, `Roll: ${entry.roll} • ${entry.timestamp}`)
@@ -267,26 +286,26 @@ function Oracle() {
     ]),
 
     // Instructions
-    /*#__PURE__*/React.createElement("div", {
-      key: "instructions-section",
-      className: "p-4 border rounded-lg"
+    React.createElement(Card, {
+      key: "instructions",
+      className: darkMode ? "bg-gray-800 text-white" : "bg-white"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
+      React.createElement("h3", {
         key: "instructions-title",
         className: "text-lg font-semibold mb-3"
       }, "How to Use"),
-      /*#__PURE__*/React.createElement("div", {
+      React.createElement("div", {
         key: "instructions-content",
         className: "space-y-2 text-sm"
       }, [
-        /*#__PURE__*/React.createElement("p", { key: "instruction-1" }, "• Ask yes/no questions and click 'Ask Question' for guidance"),
-        /*#__PURE__*/React.createElement("p", { key: "instruction-2" }, "• Use 'Inspire Me' when you need creative ideas for your game"),
-        /*#__PURE__*/React.createElement("p", { key: "instruction-3" }, "• The Oracle provides answers based on 2d6 rolls"),
-        /*#__PURE__*/React.createElement("p", { key: "instruction-4" }, "• Some answers include complications or additional effects"),
-        /*#__PURE__*/React.createElement("p", { key: "instruction-5" }, "• Recent questions are saved to help track your session")
+        React.createElement("p", { key: "instruction-1" }, "• Ask yes/no questions and click 'Ask Question' for guidance"),
+        React.createElement("p", { key: "instruction-2" }, "• Use 'Inspire Me' when you need creative ideas for your game"),
+        React.createElement("p", { key: "instruction-3" }, "• The Oracle provides answers based on 2d6 rolls"),
+        React.createElement("p", { key: "instruction-4" }, "• Some answers include complications or additional effects"),
+        React.createElement("p", { key: "instruction-5" }, "• Recent questions are saved to help track your session")
       ])
     ])
-  ]))));
+  ]);
 }
 
 // Mount function for module loading
