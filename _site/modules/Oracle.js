@@ -4,36 +4,15 @@
 // Utility functions
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const d6 = () => Math.floor(Math.random() * 6) + 1;
-const roll2d6 = () => d6() + d6();
 
-// Oracle tables
-const oracleAnswers = [
-  "Yes, absolutely",
-  "Yes, but with a complication",
-  "Yes, and something unexpected happens",
-  "Likely yes",
-  "Possibly, depends on circumstances",
-  "Unclear, ask again differently",
-  "Unlikely",
-  "No, but there's an alternative",
-  "No, and there's a negative consequence",
-  "Absolutely not"
-];
-
-const complications = [
-  "But it attracts unwanted attention",
-  "But it costs more than expected",
-  "But it takes longer than anticipated",
-  "But someone gets hurt",
-  "But it creates a new problem",
-  "But it alerts enemies",
-  "But it damages equipment",
-  "But it exhausts resources",
-  "But it reveals a secret",
-  "But it angers someone important",
-  "But it breaks something valuable",
-  "But it causes a misunderstanding"
-];
+// Oracle likelihood definitions
+const oracleLikelihoods = {
+  "Impossible": { threshold: 6, description: "1/6 chance for Yes" },
+  "Unlikely": { threshold: 5, description: "2/6 chance for Yes" },
+  "Even Odds": { threshold: 4, description: "3/6 chance for Yes" },
+  "Likely": { threshold: 3, description: "4/6 chance for Yes" },
+  "Certain": { threshold: 2, description: "5/6 chance for Yes" }
+};
 
 const inspirations = [
   "Ancient ruins",
@@ -78,7 +57,8 @@ const CardTitle = ({ children }) => {
 // Main Oracle component
 function Oracle() {
   const [currentAnswer, setCurrentAnswer] = React.useState(null);
-  const [currentComplication, setCurrentComplication] = React.useState(null);
+  const [currentLikelihood, setCurrentLikelihood] = React.useState(null);
+  const [currentRoll, setCurrentRoll] = React.useState(null);
   const [currentInspiration, setCurrentInspiration] = React.useState(null);
   const [questionHistory, setQuestionHistory] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
@@ -95,45 +75,21 @@ function Oracle() {
     return () => observer.disconnect();
   }, []);
 
-  const askOracle = () => {
-    const roll = roll2d6();
-    let answer;
+  const askOracle = (likelihood) => {
+    const roll = d6();
+    const threshold = oracleLikelihoods[likelihood].threshold;
+    const answer = roll >= threshold ? "Yes" : "No";
     
-    if (roll <= 2) {
-      answer = oracleAnswers[0]; // "Yes, absolutely"
-    } else if (roll <= 3) {
-      answer = oracleAnswers[1]; // "Yes, but with a complication"
-    } else if (roll <= 4) {
-      answer = oracleAnswers[2]; // "Yes, and something unexpected happens"
-    } else if (roll <= 5) {
-      answer = oracleAnswers[3]; // "Likely yes"
-    } else if (roll <= 6) {
-      answer = oracleAnswers[4]; // "Possibly, depends on circumstances"
-    } else if (roll <= 7) {
-      answer = oracleAnswers[5]; // "Unclear, ask again differently"
-    } else if (roll <= 8) {
-      answer = oracleAnswers[6]; // "Unlikely"
-    } else if (roll <= 9) {
-      answer = oracleAnswers[7]; // "No, but there's an alternative"
-    } else if (roll <= 10) {
-      answer = oracleAnswers[8]; // "No, and there's a negative consequence"
-    } else {
-      answer = oracleAnswers[9]; // "Absolutely not"
-    }
-
     setCurrentAnswer(answer);
-    
-    // Add complication if answer includes "but" or "and"
-    if (answer.includes("but") || answer.includes("and")) {
-      setCurrentComplication(pick(complications));
-    } else {
-      setCurrentComplication(null);
-    }
+    setCurrentLikelihood(likelihood);
+    setCurrentRoll(roll);
 
     // Add to history
     const newEntry = {
       answer,
+      likelihood,
       roll,
+      threshold,
       timestamp: new Date().toLocaleTimeString()
     };
     setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
@@ -146,7 +102,8 @@ function Oracle() {
   const clearHistory = () => {
     setQuestionHistory([]);
     setCurrentAnswer(null);
-    setCurrentComplication(null);
+    setCurrentLikelihood(null);
+    setCurrentRoll(null);
     setCurrentInspiration(null);
   };
 
@@ -179,11 +136,44 @@ function Oracle() {
           className: "text-lg font-semibold"
         }, "Ask the Oracle"),
         
-        React.createElement("button", {
-          key: "ask-button",
-          className: "px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg",
-          onClick: askOracle
-        }, "Ask Question"),
+        React.createElement("div", {
+          key: "oracle-buttons",
+          className: "space-y-2"
+        }, [
+          // Top row - Certain and Likely
+          React.createElement("div", {
+            key: "row-1",
+            className: "flex justify-center gap-2"
+          }, ["Certain", "Likely"].map(likelihood =>
+            React.createElement("button", {
+              key: likelihood,
+              className: "flex-1 max-w-[120px] px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
+              onClick: () => askOracle(likelihood)
+            }, likelihood)
+          )),
+          
+          // Middle row - Even Odds
+          React.createElement("div", {
+            key: "row-2",
+            className: "flex justify-center"
+          }, React.createElement("button", {
+            key: "Even Odds",
+            className: "w-[248px] px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
+            onClick: () => askOracle("Even Odds")
+          }, "Even Odds")),
+          
+          // Bottom row - Unlikely and Impossible
+          React.createElement("div", {
+            key: "row-3",
+            className: "flex justify-center gap-2"
+          }, ["Unlikely", "Impossible"].map(likelihood =>
+            React.createElement("button", {
+              key: likelihood,
+              className: "flex-1 max-w-[120px] px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
+              onClick: () => askOracle(likelihood)
+            }, likelihood)
+          ))
+        ]),
 
         // Current Answer
         currentAnswer && React.createElement("div", {
@@ -198,12 +188,10 @@ function Oracle() {
             key: "answer-text",
             className: "text-lg text-blue-700 mt-2"
           }, currentAnswer),
-          
-          // Complication if present
-          currentComplication && React.createElement("p", {
-            key: "complication",
-            className: "text-sm text-blue-600 mt-2 italic"
-          }, currentComplication)
+          React.createElement("p", {
+            key: "roll-details",
+            className: "text-sm text-blue-600 mt-1"
+          }, `${currentLikelihood} (${currentRoll}/6 needed ≥${oracleLikelihoods[currentLikelihood].threshold})`)
         ])
       ])
     ]),
@@ -272,15 +260,14 @@ function Oracle() {
         React.createElement("div", {
           key: `history-${index}`,
           className: "p-3 border rounded bg-gray-50 text-sm"
-        }, [
-          React.createElement("div", {
-            key: "entry-answer",
-            className: "font-medium"
-          }, entry.answer),
-          React.createElement("div", {
-            key: "entry-details",
-            className: "text-gray-500 text-xs mt-1"
-          }, `Roll: ${entry.roll} • ${entry.timestamp}`)
+        }, [        React.createElement("div", {
+          key: "entry-answer",
+          className: "font-medium"
+        }, `${entry.answer} (${entry.likelihood})`),
+        React.createElement("div", {
+          key: "entry-details",
+          className: "text-gray-500 text-xs mt-1"
+        }, `Roll: ${entry.roll}/${entry.threshold} • ${entry.timestamp}`)
         ])
       ))
     ]),
@@ -298,10 +285,10 @@ function Oracle() {
         key: "instructions-content",
         className: "space-y-2 text-sm"
       }, [
-        React.createElement("p", { key: "instruction-1" }, "• Ask yes/no questions and click 'Ask Question' for guidance"),
-        React.createElement("p", { key: "instruction-2" }, "• Use 'Inspire Me' when you need creative ideas for your game"),
-        React.createElement("p", { key: "instruction-3" }, "• The Oracle provides answers based on 2d6 rolls"),
-        React.createElement("p", { key: "instruction-4" }, "• Some answers include complications or additional effects"),
+        React.createElement("p", { key: "instruction-1" }, "• Choose a likelihood and click the button to ask the Oracle"),
+        React.createElement("p", { key: "instruction-2" }, "• Each likelihood has different chances: Impossible (1/6), Unlikely (2/6), Even Odds (3/6), Likely (4/6), Certain (5/6)"),
+        React.createElement("p", { key: "instruction-3" }, "• The Oracle rolls 1d6 and compares to the threshold for Yes/No"),
+        React.createElement("p", { key: "instruction-4" }, "• Use 'Inspire Me' when you need creative ideas for your game"),
         React.createElement("p", { key: "instruction-5" }, "• Recent questions are saved to help track your session")
       ])
     ])
