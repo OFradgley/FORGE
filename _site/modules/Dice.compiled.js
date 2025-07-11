@@ -295,7 +295,8 @@ function Dice() {
         key: "forge-license",
         className: "text-xs mb-2"
       }, [
-        "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023 ",
+        "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023",
+        /*#__PURE__*/React.createElement("br", null),
         /*#__PURE__*/React.createElement("a", {
           key: "forge-link",
           href: "https://zap-forge.itch.io/forge",

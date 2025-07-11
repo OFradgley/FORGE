@@ -459,6 +459,22 @@ function Oracle() {
         React.createElement("p", { key: "instruction-4" }, "• Use 'Verb + Noun' to generate random action prompts for your game"),
         React.createElement("p", { key: "instruction-5" }, "• Recent rolls are saved to help track your session")
       ])
+    ]),
+
+    // Attribution
+    React.createElement("div", {
+      key: "attribution",
+      className: "text-center text-sm mt-4 p-2 bg-gray-100 border border-gray-300 rounded",
+      style: { color: "black" }
+    }, [
+      "FORGE by Oliver Fradgley is licensed under a Creative Commons Attribution 4.0 International License. 2023 ",
+      React.createElement("a", {
+        key: "forge-link",
+        href: "https://zap-forge.itch.io/forge",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        className: "text-blue-500 hover:text-blue-700 underline"
+      }, "https://zap-forge.itch.io/forge")
     ])
   ]);
 }
