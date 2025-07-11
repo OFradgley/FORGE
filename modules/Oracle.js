@@ -69,8 +69,25 @@ function Oracle() {
   const [currentNoun, setCurrentNoun] = React.useState(null);
   const [showRandomEvent, setShowRandomEvent] = React.useState(false);
   const [currentRandomEvent, setCurrentRandomEvent] = React.useState(null);
-  const [questionHistory, setQuestionHistory] = React.useState([]);
+  const [questionHistory, setQuestionHistory] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('oracle-history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading history from localStorage:', error);
+      return [];
+    }
+  });
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+
+  // Save history to localStorage whenever it changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('oracle-history', JSON.stringify(questionHistory));
+    } catch (error) {
+      console.error('Error saving history to localStorage:', error);
+    }
+  }, [questionHistory]);
 
   // Listen for dark mode changes
   React.useEffect(() => {
@@ -195,6 +212,12 @@ function Oracle() {
     setCurrentNoun(null);
     setShowRandomEvent(false);
     setCurrentRandomEvent(null);
+    // Clear localStorage as well
+    try {
+      localStorage.removeItem('oracle-history');
+    } catch (error) {
+      console.error('Error clearing history from localStorage:', error);
+    }
   };
 
   return React.createElement("div", {
