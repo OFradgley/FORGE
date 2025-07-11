@@ -170,16 +170,27 @@ function Dice() {
           key: "tray-title",
           className: "text-lg font-semibold"
         }, "Dice Tray"),
-        /*#__PURE__*/React.createElement("button", {
-          key: "clear-tray",
-          className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
-          onClick: clearTray
-        }, "Clear Tray")
+        /*#__PURE__*/React.createElement("div", {
+          key: "tray-buttons",
+          className: "flex gap-2"
+        }, [
+          /*#__PURE__*/React.createElement("button", {
+            key: "roll-tray",
+            className: `px-4 py-2 rounded font-medium text-sm ${diceTray.length === 0 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`,
+            onClick: rollDiceTray,
+            disabled: diceTray.length === 0
+          }, `Roll ${diceTray.length > 0 ? `(${diceTray.length})` : ''}`),
+          /*#__PURE__*/React.createElement("button", {
+            key: "clear-tray",
+            className: "px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
+            onClick: clearTray
+          }, "Clear")
+        ])
       ]),
       
       /*#__PURE__*/React.createElement("div", {
         key: "tray-content",
-        className: "min-h-[80px] p-4 border-2 border-dashed border-gray-300 rounded-lg mb-4"
+        className: "min-h-[80px] p-4 border-2 border-dashed border-gray-300 rounded-lg"
       }, [
         diceTray.length === 0 ? 
           /*#__PURE__*/React.createElement("div", {
@@ -212,17 +223,7 @@ function Dice() {
               }, "×")
             ])
           ))
-      ]),
-      
-      /*#__PURE__*/React.createElement("div", {
-        key: "tray-actions",
-        className: "flex justify-center"
-      }, /*#__PURE__*/React.createElement("button", {
-        key: "roll-tray",
-        className: `px-6 py-3 rounded-lg font-semibold ${diceTray.length === 0 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`,
-        onClick: rollDiceTray,
-        disabled: diceTray.length === 0
-      }, `Roll ${diceTray.length > 0 ? `(${diceTray.length} dice)` : ''}`))
+      ])
     ]),
 
     // Last Roll Result
@@ -230,11 +231,6 @@ function Dice() {
       key: "last-roll",
       className: "p-4 border rounded-lg bg-blue-50"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "result-title",
-        className: "text-lg font-semibold mb-2"
-      }, "Last Roll"),
-      
       /*#__PURE__*/React.createElement("div", {
         key: "result-content",
         className: darkMode ? "text-blue-300" : "text-blue-700"
@@ -244,15 +240,10 @@ function Dice() {
           className: "text-xl font-bold"
         }, `Total: ${lastRoll.total}`),
         
-        /*#__PURE__*/React.createElement("p", {
-          key: "result-dice",
-          className: "text-sm mt-1"
-        }, `Dice: ${lastRoll.dice}`),
-        
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
           className: "text-sm mt-1"
-        }, `Individual rolls: ${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
+        }, `${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
       ])
     ]),
 
@@ -291,7 +282,7 @@ function Dice() {
           /*#__PURE__*/React.createElement("div", {
             key: "roll-details",
             className: "text-gray-500 text-xs mt-1"
-          }, `${roll.dice} • ${roll.timestamp}`)
+          }, `${roll.results.map(r => `${r.die}: ${r.result}`).join(', ')} • ${roll.timestamp}`)
         ])
       ))
     ])
