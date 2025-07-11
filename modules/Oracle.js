@@ -83,6 +83,7 @@ function Oracle() {
 
     // Add to history
     const newEntry = {
+      type: "oracle",
       answer,
       likelihood,
       roll,
@@ -99,18 +100,42 @@ function Oracle() {
     setCurrentVerb(verb);
     setCurrentNoun(noun);
     setCurrentVerbNoun(`${verb} ${noun}`);
+
+    // Add to history
+    const newEntry = {
+      type: "inspiration",
+      result: `${verb} ${noun}`,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
   };
 
   const rerollVerb = () => {
     const newVerb = pick(verbs);
     setCurrentVerb(newVerb);
     setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
+
+    // Add to history
+    const newEntry = {
+      type: "inspiration",
+      result: `${newVerb} ${currentNoun} (Re-rolled)`,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
   };
 
   const rerollNoun = () => {
     const newNoun = pick(nouns);
     setCurrentNoun(newNoun);
     setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
+
+    // Add to history
+    const newEntry = {
+      type: "inspiration",
+      result: `${currentVerb} ${newNoun} (Re-rolled)`,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
   };
 
   const clearHistory = () => {
@@ -294,7 +319,7 @@ function Oracle() {
         React.createElement("h3", {
           key: "history-title",
           className: "text-lg font-semibold"
-        }, "Recent Questions"),
+        }, "Recent Rolls"),
         React.createElement("button", {
           key: "clear-button",
           className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
@@ -310,13 +335,15 @@ function Oracle() {
           key: `history-${index}`,
           className: "p-3 border rounded bg-gray-50 text-sm"
         }, [        React.createElement("div", {
-          key: "entry-answer",
+          key: "entry-result",
           className: "font-medium"
-        }, `${entry.answer} (${entry.likelihood})`),
+        }, entry.type === "oracle" ? entry.answer : entry.result),
         React.createElement("div", {
           key: "entry-details",
           className: "text-gray-500 text-xs mt-1"
-        }, `Roll: ${entry.roll}/${entry.threshold} • Modifier: ${entry.modifierRoll} • ${entry.timestamp}`)
+        }, entry.type === "oracle" ? 
+          `(${entry.likelihood}) Roll: ${entry.roll},${entry.modifierRoll} • ${entry.timestamp}` :
+          `Verb + Noun • ${entry.timestamp}`)
         ])
       ))
     ]),
@@ -338,7 +365,7 @@ function Oracle() {
         React.createElement("p", { key: "instruction-2" }, "• Each likelihood has different chances: Impossible (1/6), Unlikely (2/6), Even Odds (3/6), Likely (4/6), Certain (5/6)"),
         React.createElement("p", { key: "instruction-3" }, "• The Oracle rolls 1d6 and compares to the threshold for Yes/No"),
         React.createElement("p", { key: "instruction-4" }, "• Use 'Verb + Noun' to generate random action prompts for your game"),
-        React.createElement("p", { key: "instruction-5" }, "• Recent questions are saved to help track your session")
+        React.createElement("p", { key: "instruction-5" }, "• Recent rolls are saved to help track your session")
       ])
     ])
   ]);
