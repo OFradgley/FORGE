@@ -14,6 +14,25 @@ const oracleLikelihoods = {
   "Certain": { threshold: 2, description: "5/6 chance for Yes" }
 };
 
+// Random Event definitions
+const eventFocus = [
+  "Remote Event",
+  "NPC Related", 
+  "Quest Related",
+  "PC Related",
+  "Ambiguous Event",
+  "Current Situation"
+];
+
+const focusEffect = [
+  "Negative Spin", // 1-3
+  "Negative Spin",
+  "Negative Spin", 
+  "Positive Spin", // 4-6
+  "Positive Spin",
+  "Positive Spin"
+];
+
 const verbs = [
   "Abandon", "Abuse", "Activate", "Adapt", "Agree", "Ambush", "Antagonise", "Arrive", "Assist", "Attach", "Attract", "Avenge", "Banish", "Befriend", "Begrudge", "Bestow", "Betray", "Block", "Break", "Carry", "Care", "Celebrate", "Change", "Collaborate", "Communicate", "Control", "Create", "Debase", "Deceive", "Decrease", "Delay", "Desert", "Destroy", "Develop", "Deviate", "Discover", "Dispute", "Disrupt", "Divide", "Dominate", "Drop", "Endure", "Excite", "Expose", "Fail", "Fight", "Finance", "Gratify", "Guide", "Haggle", "Harm", "Heal", "Imprison", "Imitate", "Increase", "Inform", "Inquire", "Inspect", "Inspire", "Judge", "Kill", "Lie", "Love", "Mistrust", "Move", "Navigate", "Neglect", "Oppose", "Oppress", "Open", "Overindulge", "Overthrow", "Persecute", "Postpone", "Preserve", "Proceed", "Procrastinate", "Propose", "Protect", "Provoke", "Pursue", "Praise", "Recruit", "Refuse", "Release", "Return", "Ruin", "Separate", "Spy", "Start", "Stop", "Struggle", "Surrender", "Take", "Thrive", "Throw", "Tolerate", "Transform", "Triumph", "Trick", "Truce", "Trust", "Usurp", "Violate", "Waste", "Work", "Wield", "Yield"
 ];
@@ -48,6 +67,8 @@ function Oracle() {
   const [currentVerbNoun, setCurrentVerbNoun] = React.useState(null);
   const [currentVerb, setCurrentVerb] = React.useState(null);
   const [currentNoun, setCurrentNoun] = React.useState(null);
+  const [showRandomEvent, setShowRandomEvent] = React.useState(false);
+  const [currentRandomEvent, setCurrentRandomEvent] = React.useState(null);
   const [questionHistory, setQuestionHistory] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
 
@@ -80,6 +101,10 @@ function Oracle() {
     setCurrentLikelihood(likelihood);
     setCurrentRoll(roll);
     setCurrentModifierRoll(modifierRoll);
+    
+    // Check for doubles (same roll on both dice)
+    setShowRandomEvent(roll === modifierRoll);
+    setCurrentRandomEvent(null); // Reset any previous random event
 
     // Add to history
     const newEntry = {
@@ -89,6 +114,27 @@ function Oracle() {
       roll,
       modifierRoll,
       threshold,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+  };
+
+  const rollRandomEvent = () => {
+    const focusRoll = d6();
+    const effectRoll = d6();
+    
+    const focus = eventFocus[focusRoll - 1];
+    const effect = focusEffect[effectRoll - 1];
+    
+    const eventResult = `${focus} with a ${effect}`;
+    setCurrentRandomEvent(eventResult);
+    
+    // Add to history
+    const newEntry = {
+      type: "random-event",
+      result: eventResult,
+      focusRoll,
+      effectRoll,
       timestamp: new Date().toLocaleTimeString()
     };
     setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
@@ -147,6 +193,8 @@ function Oracle() {
     setCurrentVerbNoun(null);
     setCurrentVerb(null);
     setCurrentNoun(null);
+    setShowRandomEvent(false);
+    setCurrentRandomEvent(null);
   };
 
   return React.createElement("div", {
@@ -230,7 +278,26 @@ function Oracle() {
             key: "roll-details",
             className: darkMode ? "text-xs text-gray-300 mt-1" : "text-xs text-blue-600 mt-1"
           }, `${currentLikelihood} - Oracle: ${currentRoll}, Modifier: ${currentModifierRoll}`)
-        ])
+        ]),
+
+        // Random Event Button (appears when doubles are rolled)
+        showRandomEvent && !currentRandomEvent && React.createElement("div", {
+          key: "random-event-button",
+          className: "text-center"
+        }, React.createElement("button", {
+          key: "event-button",
+          className: "px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium text-sm",
+          onClick: rollRandomEvent
+        }, "Random Event - Click to Roll, or Ignore")),
+
+        // Random Event Result
+        currentRandomEvent && React.createElement("div", {
+          key: "random-event-result",
+          className: "p-4 border rounded-lg bg-red-50"
+        }, React.createElement("p", {
+          key: "event-text",
+          className: darkMode ? "text-lg text-red-300 font-semibold" : "text-lg text-red-700 font-semibold"
+        }, currentRandomEvent))
       ])
     ]),
 
@@ -337,12 +404,14 @@ function Oracle() {
         }, [        React.createElement("div", {
           key: "entry-result",
           className: "font-medium"
-        }, entry.type === "oracle" ? entry.answer : entry.result),
+        }, entry.type === "oracle" ? entry.answer : entry.type === "random-event" ? entry.result : entry.result),
         React.createElement("div", {
           key: "entry-details",
           className: "text-gray-500 text-xs mt-1"
         }, entry.type === "oracle" ? 
           `(${entry.likelihood}) Roll: ${entry.roll},${entry.modifierRoll} • ${entry.timestamp}` :
+          entry.type === "random-event" ?
+          `Random Event • ${entry.timestamp}` :
           `Verb + Noun • ${entry.timestamp}`)
         ])
       ))
