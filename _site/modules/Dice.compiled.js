@@ -146,16 +146,17 @@ function Dice() {
       }, commonDice.map(dice => 
         /*#__PURE__*/React.createElement("button", {
           key: dice.name,
-          className: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
+          className: "px-1 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
           onClick: () => addDieToTray(dice.sides),
           title: `Add ${dice.name} to dice tray`
         }, /*#__PURE__*/React.createElement("img", {
           src: dice.image,
           alt: dice.name,
           style: {
-            width: "32px",
-            height: "32px",
-            filter: "invert(1)" // Makes the dice white on blue background
+            width: "50px",
+            height: "50px",
+            filter: "invert(1)", // Makes the dice white on blue background
+            borderRadius: "0.25rem" // Matches the button's rounded corners
           }
         }))
       ))
