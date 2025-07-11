@@ -17,17 +17,18 @@ const rollMultiple = (count, sides) => {
 
 // Common dice types
 const commonDice = [
-  { name: "d4", sides: 4 },
-  { name: "d6", sides: 6 },
-  { name: "d8", sides: 8 },
-  { name: "d10", sides: 10 },
-  { name: "d12", sides: 12 },
-  { name: "d20", sides: 20 },
-  { name: "d100", sides: 100 }
+  { name: "d4", sides: 4, image: "d4.png" },
+  { name: "d6", sides: 6, image: "d6_3.png" },
+  { name: "d8", sides: 8, image: "d8.png" },
+  { name: "d10", sides: 10, image: "d10.png" },
+  { name: "d12", sides: 12, image: "d12.png" },
+  { name: "d20", sides: 20, image: "d20.png" },
+  { name: "d100", sides: 100, image: "d10.png" } // Using d10 image for d100
 ];
 
 // Main Dice component
 function Dice() {
+  const [diceTray, setDiceTray] = React.useState([]);
   const [lastRoll, setLastRoll] = React.useState(null);
   const [rollHistory, setRollHistory] = React.useState(() => {
     try {
@@ -38,7 +39,6 @@ function Dice() {
       return [];
     }
   });
-  const [customDice, setCustomDice] = React.useState({ count: 1, sides: 6 });
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
 
   // Save history to localStorage whenever it changes
@@ -62,14 +62,38 @@ function Dice() {
     return () => observer.disconnect();
   }, []);
 
-  const rollDice = (count, sides, label) => {
-    const results = rollMultiple(count, sides);
-    const total = results.reduce((sum, roll) => sum + roll, 0);
+  const addDieToTray = (sides) => {
+    const die = commonDice.find(d => d.sides === sides);
+    const newDie = {
+      id: Date.now() + Math.random(), // Unique ID for each die
+      name: die.name,
+      sides: sides,
+      image: die.image
+    };
+    setDiceTray(prev => [...prev, newDie]);
+  };
+
+  const removeDieFromTray = (dieId) => {
+    setDiceTray(prev => prev.filter(die => die.id !== dieId));
+  };
+
+  const clearTray = () => {
+    setDiceTray([]);
+  };
+
+  const rollDiceTray = () => {
+    if (diceTray.length === 0) return;
+    
+    const results = diceTray.map(die => ({
+      die: die.name,
+      result: dX(die.sides)
+    }));
+    
+    const total = results.reduce((sum, roll) => sum + roll.result, 0);
+    const diceDescription = diceTray.map(die => die.name).join(', ');
     
     const rollData = {
-      label,
-      count,
-      sides,
+      dice: diceDescription,
       results,
       total,
       timestamp: new Date().toLocaleTimeString()
@@ -77,16 +101,6 @@ function Dice() {
     
     setLastRoll(rollData);
     setRollHistory(prev => [rollData, ...prev.slice(0, 9)]); // Keep last 10 rolls
-  };
-
-  const rollCommonDice = (sides) => {
-    const diceName = commonDice.find(d => d.sides === sides)?.name || `d${sides}`;
-    rollDice(1, sides, diceName);
-  };
-
-  const rollCustomDice = () => {
-    const label = customDice.count === 1 ? `d${customDice.sides}` : `${customDice.count}d${customDice.sides}`;
-    rollDice(customDice.count, customDice.sides, label);
   };
 
   const clearHistory = () => {
@@ -132,70 +146,87 @@ function Dice() {
       }, commonDice.map(dice => 
         /*#__PURE__*/React.createElement("button", {
           key: dice.name,
-          className: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
-          onClick: () => rollCommonDice(dice.sides)
-        }, dice.name)
+          className: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center justify-center",
+          onClick: () => addDieToTray(dice.sides),
+          title: `Add ${dice.name} to dice tray`
+        }, /*#__PURE__*/React.createElement("img", {
+          src: dice.image,
+          alt: dice.name,
+          style: {
+            width: "32px",
+            height: "32px",
+            filter: "invert(1)" // Makes the dice white on blue background
+          }
+        }))
       ))
     ]),
 
-    // Custom Dice Section
+    // Dice Tray Section
     /*#__PURE__*/React.createElement("div", {
-      key: "custom-dice",
+      key: "dice-tray",
       className: "p-4 border rounded-lg"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "custom-title",
-        className: "text-lg font-semibold mb-4"
-      }, "Custom Dice"),
+      /*#__PURE__*/React.createElement("div", {
+        key: "tray-header",
+        className: "flex justify-between items-center mb-4"
+      }, [
+        /*#__PURE__*/React.createElement("h3", {
+          key: "tray-title",
+          className: "text-lg font-semibold"
+        }, "Dice Tray"),
+        /*#__PURE__*/React.createElement("button", {
+          key: "clear-tray",
+          className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
+          onClick: clearTray
+        }, "Clear Tray")
+      ]),
       
       /*#__PURE__*/React.createElement("div", {
-        key: "custom-controls",
-        className: "flex items-center gap-4 mb-4"
+        key: "tray-content",
+        className: "min-h-[80px] p-4 border-2 border-dashed border-gray-300 rounded-lg mb-4"
       }, [
-        /*#__PURE__*/React.createElement("div", {
-          key: "count-control",
-          className: "flex items-center gap-2"
-        }, [
-          /*#__PURE__*/React.createElement("label", {
-            key: "count-label",
-            className: "text-sm font-medium"
-          }, "Count:"),
-          /*#__PURE__*/React.createElement("input", {
-            key: "count-input",
-            type: "number",
-            min: "1",
-            max: "20",
-            value: customDice.count,
-            onChange: (e) => setCustomDice(prev => ({ ...prev, count: parseInt(e.target.value) || 1 })),
-            className: "w-16 px-2 py-1 border rounded text-center"
-          })
-        ]),
-        
-        /*#__PURE__*/React.createElement("div", {
-          key: "sides-control",
-          className: "flex items-center gap-2"
-        }, [
-          /*#__PURE__*/React.createElement("label", {
-            key: "sides-label",
-            className: "text-sm font-medium"
-          }, "Sides:"),
-          /*#__PURE__*/React.createElement("input", {
-            key: "sides-input",
-            type: "number",
-            min: "2",
-            max: "1000",
-            value: customDice.sides,
-            onChange: (e) => setCustomDice(prev => ({ ...prev, sides: parseInt(e.target.value) || 6 })),
-            className: "w-20 px-2 py-1 border rounded text-center"
-          })
-        ]),
-        
-        /*#__PURE__*/React.createElement("button", {
-          key: "roll-custom",
-          className: "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium",
-          onClick: rollCustomDice
-        }, `Roll ${customDice.count}d${customDice.sides}`)
-      ])
+        diceTray.length === 0 ? 
+          /*#__PURE__*/React.createElement("div", {
+            key: "empty-tray",
+            className: "text-center text-gray-500 py-6"
+          }, "Click dice above to add them to the tray") :
+          /*#__PURE__*/React.createElement("div", {
+            key: "tray-dice",
+            className: "flex flex-wrap gap-2"
+          }, diceTray.map(die => 
+            /*#__PURE__*/React.createElement("div", {
+              key: die.id,
+              className: "relative inline-flex items-center bg-gray-100 rounded-lg p-2 border"
+            }, [
+              /*#__PURE__*/React.createElement("img", {
+                key: "die-image",
+                src: die.image,
+                alt: die.name,
+                style: { width: "24px", height: "24px" }
+              }),
+              /*#__PURE__*/React.createElement("span", {
+                key: "die-name",
+                className: "ml-2 text-sm font-medium"
+              }, die.name),
+              /*#__PURE__*/React.createElement("button", {
+                key: "remove-die",
+                className: "ml-2 w-4 h-4 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center",
+                onClick: () => removeDieFromTray(die.id),
+                title: "Remove die"
+              }, "×")
+            ])
+          ))
+      ]),
+      
+      /*#__PURE__*/React.createElement("div", {
+        key: "tray-actions",
+        className: "flex justify-center"
+      }, /*#__PURE__*/React.createElement("button", {
+        key: "roll-tray",
+        className: `px-6 py-3 rounded-lg font-semibold ${diceTray.length === 0 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`,
+        onClick: rollDiceTray,
+        disabled: diceTray.length === 0
+      }, `Roll ${diceTray.length > 0 ? `(${diceTray.length} dice)` : ''}`))
     ]),
 
     // Last Roll Result
@@ -213,14 +244,19 @@ function Dice() {
         className: darkMode ? "text-blue-300" : "text-blue-700"
       }, [
         /*#__PURE__*/React.createElement("p", {
-          key: "result-label",
+          key: "result-total",
           className: "text-xl font-bold"
-        }, `${lastRoll.label}: ${lastRoll.total}`),
+        }, `Total: ${lastRoll.total}`),
+        
+        /*#__PURE__*/React.createElement("p", {
+          key: "result-dice",
+          className: "text-sm mt-1"
+        }, `Dice: ${lastRoll.dice}`),
         
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
           className: "text-sm mt-1"
-        }, `Individual rolls: [${lastRoll.results.join(', ')}]`)
+        }, `Individual rolls: ${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
       ])
     ]),
 
@@ -255,11 +291,11 @@ function Dice() {
           /*#__PURE__*/React.createElement("div", {
             key: "roll-result",
             className: "font-medium"
-          }, `${roll.label}: ${roll.total}`),
+          }, `Total: ${roll.total}`),
           /*#__PURE__*/React.createElement("div", {
             key: "roll-details",
             className: "text-gray-500 text-xs mt-1"
-          }, `${roll.results.length > 1 ? `[${roll.results.join(', ')}]` : ''} • ${roll.timestamp}`)
+          }, `${roll.dice} • ${roll.timestamp}`)
         ])
       ))
     ])
