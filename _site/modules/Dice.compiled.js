@@ -18,12 +18,12 @@ const rollMultiple = (count, sides) => {
 // Common dice types
 const commonDice = [
   { name: "d4", sides: 4, image: "d4.png" },
-  { name: "d6", sides: 6, image: "d6_3.png" },
+  { name: "d6", sides: 6, image: "d6_2.png" },
   { name: "d8", sides: 8, image: "d8.png" },
-  { name: "d10", sides: 10, image: "d10.png" },
+  { name: "d10", sides: 10, image: "d10_2.png" },
   { name: "d12", sides: 12, image: "d12.png" },
   { name: "d20", sides: 20, image: "d20.png" },
-  { name: "d100", sides: 100, image: "d10.png" } // Using d10 image for d100
+  { name: "d100", sides: 100, image: "d10_3.png" } // Using d10_3 image for d100
 ];
 
 // Main Dice component
