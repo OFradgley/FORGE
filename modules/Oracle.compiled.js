@@ -88,114 +88,189 @@ function Oracle() {
     return () => observer.disconnect();
   }, []);
 
+  // Improved roll animation popup (matching Dice module style)
+  React.useEffect(() => {
+    if (showRollAnimation) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        border: 2px solid white;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      `;
+      popup.innerHTML = `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border: 3px solid #333;
+          border-top: 3px solid #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+        <span style="font-size: 16px; font-weight: bold;">Rolling...</span>
+      `;
+      
+      // Add CSS animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        document.body.removeChild(popup);
+        document.head.removeChild(style);
+      }, 500);
+    }
+  }, [showRollAnimation]);
+
   const triggerRollAnimation = () => {
     setShowRollAnimation(true);
     setTimeout(() => setShowRollAnimation(false), 500);
   };
 
   const askOracle = (likelihood) => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const roll = d6();
-    const modifierRoll = d6();
-    const threshold = oracleLikelihoods[likelihood].threshold;
-    let answer = roll >= threshold ? "Yes" : "No";
     
-    // Apply modifier based on modifier roll
-    if (modifierRoll === 1) {
-      answer += ", but";
-    } else if (modifierRoll === 6) {
-      answer += ", and";
-    }
-    
-    setCurrentAnswer(answer);
-    setCurrentLikelihood(likelihood);
-    setCurrentRoll(roll);
-    setCurrentModifierRoll(modifierRoll);
-    
-    // Check for doubles (same roll on both dice)
-    setShowRandomEvent(roll === modifierRoll);
-    setCurrentRandomEvent(null); // Reset any previous random event
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const roll = d6();
+      const modifierRoll = d6();
+      const threshold = oracleLikelihoods[likelihood].threshold;
+      let answer = roll >= threshold ? "Yes" : "No";
+      
+      // Apply modifier based on modifier roll
+      if (modifierRoll === 1) {
+        answer += ", but";
+      } else if (modifierRoll === 6) {
+        answer += ", and";
+      }
+      
+      setCurrentAnswer(answer);
+      setCurrentLikelihood(likelihood);
+      setCurrentRoll(roll);
+      setCurrentModifierRoll(modifierRoll);
+      
+      // Check for doubles (same roll on both dice)
+      setShowRandomEvent(roll === modifierRoll);
+      setCurrentRandomEvent(null); // Reset any previous random event
 
-    // Add to history
-    const newEntry = {
-      type: "oracle",
-      answer,
-      likelihood,
-      roll,
-      modifierRoll,
-      threshold,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "oracle",
+        answer,
+        likelihood,
+        roll,
+        modifierRoll,
+        threshold,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const getVerbNoun = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const verb = pick(verbs);
-    const noun = pick(nouns);
-    setCurrentVerb(verb);
-    setCurrentNoun(noun);
-    setCurrentVerbNoun(`${verb} ${noun}`);
+    
+    // Delay the actual generation until after the popup disappears
+    setTimeout(() => {
+      const verb = pick(verbs);
+      const noun = pick(nouns);
+      setCurrentVerb(verb);
+      setCurrentNoun(noun);
+      setCurrentVerbNoun(`${verb} ${noun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${verb} ${noun}`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${verb} ${noun}`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rollRandomEvent = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const focusRoll = d6();
-    const effectRoll = d6();
     
-    const focus = eventFocus[focusRoll - 1];
-    const effect = focusEffect[effectRoll - 1];
-    
-    const eventResult = `${focus} with a ${effect}`;
-    setCurrentRandomEvent(eventResult);
-    
-    // Add to history
-    const newEntry = {
-      type: "random-event",
-      result: eventResult,
-      focusRoll,
-      effectRoll,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const focusRoll = d6();
+      const effectRoll = d6();
+      
+      const focus = eventFocus[focusRoll - 1];
+      const effect = focusEffect[effectRoll - 1];
+      
+      const eventResult = `${focus} with a ${effect}`;
+      setCurrentRandomEvent(eventResult);
+      
+      // Add to history
+      const newEntry = {
+        type: "random-event",
+        result: eventResult,
+        focusRoll,
+        effectRoll,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rerollVerb = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const newVerb = pick(verbs);
-    setCurrentVerb(newVerb);
-    setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
+    
+    // Delay the actual reroll until after the popup disappears
+    setTimeout(() => {
+      const newVerb = pick(verbs);
+      setCurrentVerb(newVerb);
+      setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${newVerb} ${currentNoun} (Re-rolled)`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${newVerb} ${currentNoun} (Re-rolled)`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rerollNoun = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const newNoun = pick(nouns);
-    setCurrentNoun(newNoun);
-    setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
+    
+    // Delay the actual reroll until after the popup disappears
+    setTimeout(() => {
+      const newNoun = pick(nouns);
+      setCurrentNoun(newNoun);
+      setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${currentVerb} ${newNoun} (Re-rolled)`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${currentVerb} ${newNoun} (Re-rolled)`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const clearHistory = () => {
@@ -469,23 +544,6 @@ function Oracle() {
       rel: "noopener noreferrer",
       className: "text-blue-500 hover:text-blue-700 underline"
     }, "https://zap-forge.itch.io/forge")
-  ])), showRollAnimation && /*#__PURE__*/React.createElement("div", {
-    key: "roll-overlay",
-    className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
-    style: { zIndex: 9999 }
-  }, /*#__PURE__*/React.createElement("div", {
-    key: "roll-popup",
-    className: "bg-white rounded-lg p-6 flex flex-col items-center shadow-xl",
-    style: { minWidth: "200px" }
-  }, [
-    /*#__PURE__*/React.createElement("div", {
-      key: "spinner",
-      className: "animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"
-    }),
-    /*#__PURE__*/React.createElement("p", {
-      key: "roll-text",
-      className: "text-lg font-semibold text-gray-700"
-    }, "Rolling...")
   ])));
 }
 
