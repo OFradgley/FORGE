@@ -258,7 +258,7 @@ function Oracle() {
           className: "flex justify-center"
         }, /*#__PURE__*/React.createElement("button", {
           key: "Even Odds",
-          className: "w-[248px] px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
+          className: "w-[248px] px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm",
           onClick: () => askOracle("Even Odds")
         }, "Even Odds")),
         
@@ -282,7 +282,7 @@ function Oracle() {
       }, [
         /*#__PURE__*/React.createElement("p", {
           key: "answer-text",
-          className: darkMode ? "text-lg text-blue-300 font-semibold" : "text-lg text-blue-700 font-semibold"
+          className: darkMode ? "text-2xl text-blue-300 font-semibold" : "text-2xl text-blue-700 font-semibold"
         }, currentAnswer),
         /*#__PURE__*/React.createElement("p", {
           key: "roll-details",
