@@ -572,8 +572,10 @@ function NPCGenerator() {
     onClick: saveCharacter,
     className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
   }, "Save NPC")), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-3xl"
+  }, /*#__PURE__*/React.createElement("div", {
     key: "saved-characters",
-    className: "border rounded-lg p-4"
+    className: "w-full border rounded-lg p-4"
   }, [
     /*#__PURE__*/React.createElement("h3", {
       key: "saved-title",
@@ -615,7 +617,7 @@ function NPCGenerator() {
         }, "Delete")
       ])
     ])))
-  ]), /*#__PURE__*/React.createElement("div", {
+  ])), /*#__PURE__*/React.createElement("div", {
     key: "attributions",
     className: "text-center text-xs text-gray-500 mt-4"
   }, /*#__PURE__*/React.createElement("p", {

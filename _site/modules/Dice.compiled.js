@@ -236,7 +236,7 @@ function Dice() {
       }, [
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
-          className: "text-xl font-bold"
+          className: "text-2xl font-bold"
         }, `${lastRoll.total}`),
         
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
