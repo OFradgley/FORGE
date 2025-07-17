@@ -82,6 +82,7 @@ function Dice() {
         color: white;
         padding: 20px 30px;
         border-radius: 12px;
+        border: 2px solid white;
         z-index: 99999;
         display: flex;
         align-items: center;
