@@ -65,6 +65,7 @@ function Oracle() {
     }
   });
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollAnimation, setShowRollAnimation] = React.useState(false);
 
   // Save history to localStorage whenever it changes
   React.useEffect(() => {
@@ -87,7 +88,13 @@ function Oracle() {
     return () => observer.disconnect();
   }, []);
 
+  const triggerRollAnimation = () => {
+    setShowRollAnimation(true);
+    setTimeout(() => setShowRollAnimation(false), 500);
+  };
+
   const askOracle = (likelihood) => {
+    triggerRollAnimation();
     const roll = d6();
     const modifierRoll = d6();
     const threshold = oracleLikelihoods[likelihood].threshold;
@@ -123,6 +130,7 @@ function Oracle() {
   };
 
   const getVerbNoun = () => {
+    triggerRollAnimation();
     const verb = pick(verbs);
     const noun = pick(nouns);
     setCurrentVerb(verb);
@@ -139,6 +147,7 @@ function Oracle() {
   };
 
   const rollRandomEvent = () => {
+    triggerRollAnimation();
     const focusRoll = d6();
     const effectRoll = d6();
     
@@ -160,6 +169,7 @@ function Oracle() {
   };
 
   const rerollVerb = () => {
+    triggerRollAnimation();
     const newVerb = pick(verbs);
     setCurrentVerb(newVerb);
     setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
@@ -174,6 +184,7 @@ function Oracle() {
   };
 
   const rerollNoun = () => {
+    triggerRollAnimation();
     const newNoun = pick(nouns);
     setCurrentNoun(newNoun);
     setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
@@ -207,7 +218,7 @@ function Oracle() {
   };
 
   return /*#__PURE__*/React.createElement("div", {
-    className: "w-full max-w-3xl"
+    className: "w-full max-w-3xl relative"
   }, /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement(CardHeader, null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("img", {
@@ -458,6 +469,23 @@ function Oracle() {
       rel: "noopener noreferrer",
       className: "text-blue-500 hover:text-blue-700 underline"
     }, "https://zap-forge.itch.io/forge")
+  ])), showRollAnimation && /*#__PURE__*/React.createElement("div", {
+    key: "roll-overlay",
+    className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
+    style: { zIndex: 9999 }
+  }, /*#__PURE__*/React.createElement("div", {
+    key: "roll-popup",
+    className: "bg-white rounded-lg p-6 flex flex-col items-center shadow-xl",
+    style: { minWidth: "200px" }
+  }, [
+    /*#__PURE__*/React.createElement("div", {
+      key: "spinner",
+      className: "animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"
+    }),
+    /*#__PURE__*/React.createElement("p", {
+      key: "roll-text",
+      className: "text-lg font-semibold text-gray-700"
+    }, "Rolling...")
   ])));
 }
 
