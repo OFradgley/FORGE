@@ -141,26 +141,29 @@ function Dice() {
   const rollDiceTray = () => {
     if (diceTray.length === 0) return;
     
-    // Trigger roll animation
+    // Trigger roll animation first
     triggerRollAnimation();
     
-    const results = diceTray.map(die => ({
-      die: die.name,
-      result: dX(die.sides)
-    }));
-    
-    const total = results.reduce((sum, roll) => sum + roll.result, 0);
-    const diceDescription = diceTray.map(die => die.name).join(', ');
-    
-    const rollData = {
-      dice: diceDescription,
-      results,
-      total,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    
-    setLastRoll(rollData);
-    setRollHistory(prev => [rollData, ...prev.slice(0, 9)]); // Keep last 10 rolls
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const results = diceTray.map(die => ({
+        die: die.name,
+        result: dX(die.sides)
+      }));
+      
+      const total = results.reduce((sum, roll) => sum + roll.result, 0);
+      const diceDescription = diceTray.map(die => die.name).join(', ');
+      
+      const rollData = {
+        dice: diceDescription,
+        results,
+        total,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setLastRoll(rollData);
+      setRollHistory(prev => [rollData, ...prev.slice(0, 9)]); // Keep last 10 rolls
+    }, 500); // Match the popup duration
   };
 
   const clearHistory = () => {

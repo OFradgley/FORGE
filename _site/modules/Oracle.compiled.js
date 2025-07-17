@@ -144,108 +144,133 @@ function Oracle() {
   };
 
   const askOracle = (likelihood) => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const roll = d6();
-    const modifierRoll = d6();
-    const threshold = oracleLikelihoods[likelihood].threshold;
-    let answer = roll >= threshold ? "Yes" : "No";
     
-    // Apply modifier based on modifier roll
-    if (modifierRoll === 1) {
-      answer += ", but";
-    } else if (modifierRoll === 6) {
-      answer += ", and";
-    }
-    
-    setCurrentAnswer(answer);
-    setCurrentLikelihood(likelihood);
-    setCurrentRoll(roll);
-    setCurrentModifierRoll(modifierRoll);
-    
-    // Check for doubles (same roll on both dice)
-    setShowRandomEvent(roll === modifierRoll);
-    setCurrentRandomEvent(null); // Reset any previous random event
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const roll = d6();
+      const modifierRoll = d6();
+      const threshold = oracleLikelihoods[likelihood].threshold;
+      let answer = roll >= threshold ? "Yes" : "No";
+      
+      // Apply modifier based on modifier roll
+      if (modifierRoll === 1) {
+        answer += ", but";
+      } else if (modifierRoll === 6) {
+        answer += ", and";
+      }
+      
+      setCurrentAnswer(answer);
+      setCurrentLikelihood(likelihood);
+      setCurrentRoll(roll);
+      setCurrentModifierRoll(modifierRoll);
+      
+      // Check for doubles (same roll on both dice)
+      setShowRandomEvent(roll === modifierRoll);
+      setCurrentRandomEvent(null); // Reset any previous random event
 
-    // Add to history
-    const newEntry = {
-      type: "oracle",
-      answer,
-      likelihood,
-      roll,
-      modifierRoll,
-      threshold,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "oracle",
+        answer,
+        likelihood,
+        roll,
+        modifierRoll,
+        threshold,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const getVerbNoun = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const verb = pick(verbs);
-    const noun = pick(nouns);
-    setCurrentVerb(verb);
-    setCurrentNoun(noun);
-    setCurrentVerbNoun(`${verb} ${noun}`);
+    
+    // Delay the actual generation until after the popup disappears
+    setTimeout(() => {
+      const verb = pick(verbs);
+      const noun = pick(nouns);
+      setCurrentVerb(verb);
+      setCurrentNoun(noun);
+      setCurrentVerbNoun(`${verb} ${noun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${verb} ${noun}`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${verb} ${noun}`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rollRandomEvent = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const focusRoll = d6();
-    const effectRoll = d6();
     
-    const focus = eventFocus[focusRoll - 1];
-    const effect = focusEffect[effectRoll - 1];
-    
-    const eventResult = `${focus} with a ${effect}`;
-    setCurrentRandomEvent(eventResult);
-    
-    // Add to history
-    const newEntry = {
-      type: "random-event",
-      result: eventResult,
-      focusRoll,
-      effectRoll,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const focusRoll = d6();
+      const effectRoll = d6();
+      
+      const focus = eventFocus[focusRoll - 1];
+      const effect = focusEffect[effectRoll - 1];
+      
+      const eventResult = `${focus} with a ${effect}`;
+      setCurrentRandomEvent(eventResult);
+      
+      // Add to history
+      const newEntry = {
+        type: "random-event",
+        result: eventResult,
+        focusRoll,
+        effectRoll,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rerollVerb = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const newVerb = pick(verbs);
-    setCurrentVerb(newVerb);
-    setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
+    
+    // Delay the actual reroll until after the popup disappears
+    setTimeout(() => {
+      const newVerb = pick(verbs);
+      setCurrentVerb(newVerb);
+      setCurrentVerbNoun(`${newVerb} ${currentNoun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${newVerb} ${currentNoun} (Re-rolled)`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${newVerb} ${currentNoun} (Re-rolled)`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const rerollNoun = () => {
+    // Trigger roll animation first
     triggerRollAnimation();
-    const newNoun = pick(nouns);
-    setCurrentNoun(newNoun);
-    setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
+    
+    // Delay the actual reroll until after the popup disappears
+    setTimeout(() => {
+      const newNoun = pick(nouns);
+      setCurrentNoun(newNoun);
+      setCurrentVerbNoun(`${currentVerb} ${newNoun}`);
 
-    // Add to history
-    const newEntry = {
-      type: "inspiration",
-      result: `${currentVerb} ${newNoun} (Re-rolled)`,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+      // Add to history
+      const newEntry = {
+        type: "inspiration",
+        result: `${currentVerb} ${newNoun} (Re-rolled)`,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setQuestionHistory(prev => [newEntry, ...prev.slice(0, 4)]); // Keep last 5 entries
+    }, 500); // Match the popup duration
   };
 
   const clearHistory = () => {
