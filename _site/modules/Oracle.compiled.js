@@ -88,6 +88,55 @@ function Oracle() {
     return () => observer.disconnect();
   }, []);
 
+  // Improved roll animation popup (matching Dice module style)
+  React.useEffect(() => {
+    if (showRollAnimation) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      `;
+      popup.innerHTML = `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border: 3px solid #333;
+          border-top: 3px solid #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+        <span style="font-size: 16px; font-weight: bold;">Rolling...</span>
+      `;
+      
+      // Add CSS animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        document.body.removeChild(popup);
+        document.head.removeChild(style);
+      }, 500);
+    }
+  }, [showRollAnimation]);
+
   const triggerRollAnimation = () => {
     setShowRollAnimation(true);
     setTimeout(() => setShowRollAnimation(false), 500);
@@ -469,23 +518,6 @@ function Oracle() {
       rel: "noopener noreferrer",
       className: "text-blue-500 hover:text-blue-700 underline"
     }, "https://zap-forge.itch.io/forge")
-  ])), showRollAnimation && /*#__PURE__*/React.createElement("div", {
-    key: "roll-overlay",
-    className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
-    style: { zIndex: 9999 }
-  }, /*#__PURE__*/React.createElement("div", {
-    key: "roll-popup",
-    className: "bg-white rounded-lg p-6 flex flex-col items-center shadow-xl",
-    style: { minWidth: "200px" }
-  }, [
-    /*#__PURE__*/React.createElement("div", {
-      key: "spinner",
-      className: "animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"
-    }),
-    /*#__PURE__*/React.createElement("p", {
-      key: "roll-text",
-      className: "text-lg font-semibold text-gray-700"
-    }, "Rolling...")
   ])));
 }
 
