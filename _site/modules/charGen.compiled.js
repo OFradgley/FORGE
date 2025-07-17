@@ -204,7 +204,7 @@ function CharacterGenerator() {
       id: Date.now(),
       name: pc.name,
       level: pc.level,
-      occupation: pc.occupation,
+      occupation: pc.occupations ? `${pc.occupations[0]}/${pc.occupations[1]}` : 'Unknown',
       savedAt: new Date().toLocaleDateString(),
       data: pc
     };
