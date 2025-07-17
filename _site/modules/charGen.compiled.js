@@ -43,6 +43,7 @@ function CharacterGenerator() {
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollAnimation, setShowRollAnimation] = React.useState(false);
   const [savedCharacters, setSavedCharacters] = React.useState(() => {
     try {
       const saved = localStorage.getItem('saved-characters');
@@ -73,54 +74,115 @@ function CharacterGenerator() {
     return () => observer.disconnect();
   }, []);
 
+  // Roll animation trigger function
+  const triggerRollAnimation = () => {
+    setShowRollAnimation(true);
+    setTimeout(() => setShowRollAnimation(false), 500);
+  };
+
+  // Roll animation popup
+  React.useEffect(() => {
+    if (showRollAnimation) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        border: 2px solid white;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      `;
+      popup.innerHTML = `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border: 3px solid #333;
+          border-top: 3px solid #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+        <span style="font-size: 16px; font-weight: bold;">Rolling...</span>
+      `;
+      
+      // Add CSS animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        document.body.removeChild(popup);
+        document.head.removeChild(style);
+      }, 500);
+    }
+  }, [showRollAnimation]);
+
   // Auto-roll character on component mount
   React.useEffect(() => {
     rollCharacter();
   }, []);
   function rollCharacter() {
-    setHpOverride(null); // <-- Reset HP override on new character roll
-    // ---- Occupations (distinct) ----
-    let occ1 = pick(occupations),
-      occ2 = pick(occupations);
-    while (occ2 === occ1) occ2 = pick(occupations);
-    // ---- Attributes ----
-    const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    const primariesInit = choosePrimaries(occ1, occ2);
-    setPrimaries(new Set(primariesInit));
-    // Don't set attrs yet, do it below
-    // Calculate attrs based on primaries
-    const attrs = attributeOrder.map(a => {
-      const s = scores[a];
-      const m = mod(s);
-      return {
-        attr: a,
-        score: s,
-        mod: m,
-        primary: primariesInit.has(a),
-        check: m + (primariesInit.has(a) ? 1 : 0)
-      };
-    });
-    // Pre-roll HP for both cases (10 rolls each)
-    const rawHpPrimaryArr = Array.from({
-      length: 10
-    }, d8);
-    const rawHpSecondaryArr = Array.from({
-      length: 10
-    }, d6);
-    const conMod = mod(scores.Constitution);
-    // ---- Gear rolls ----
-    const weapon = pick(weapons);
-    setSelectedWeapon(weapon.name); // Set initial weapon
-    const aRoll = roll2d6();
-    const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
-    const hs = roll2d6();
-    const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
-    const hasShield = hs >= 8 && hs <= 10 || hs >= 11;
-    const dexMod = mod(scores.Dexterity);
-    let dexBonus;
-    if (armour.name === "Chain Armour (AC14)") {
-      dexBonus = Math.min(dexMod, 2);
-    } else if (armour.name === "Plate Armour (AC16)") {
+    // Trigger roll animation first
+    triggerRollAnimation();
+    
+    // Delay the actual character generation until after the popup disappears
+    setTimeout(() => {
+      setHpOverride(null); // <-- Reset HP override on new character roll
+      // ---- Occupations (distinct) ----
+      let occ1 = pick(occupations),
+        occ2 = pick(occupations);
+      while (occ2 === occ1) occ2 = pick(occupations);
+      // ---- Attributes ----
+      const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
+      const primariesInit = choosePrimaries(occ1, occ2);
+      setPrimaries(new Set(primariesInit));
+      // Don't set attrs yet, do it below
+      // Calculate attrs based on primaries
+      const attrs = attributeOrder.map(a => {
+        const s = scores[a];
+        const m = mod(s);
+        return {
+          attr: a,
+          score: s,
+          mod: m,
+          primary: primariesInit.has(a),
+          check: m + (primariesInit.has(a) ? 1 : 0)
+        };
+      });
+      // Pre-roll HP for both cases (10 rolls each)
+      const rawHpPrimaryArr = Array.from({
+        length: 10
+      }, d8);
+      const rawHpSecondaryArr = Array.from({
+        length: 10
+      }, d6);
+      const conMod = mod(scores.Constitution);
+      // ---- Gear rolls ----
+      const weapon = pick(weapons);
+      setSelectedWeapon(weapon.name); // Set initial weapon
+      const aRoll = roll2d6();
+      const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
+      const hs = roll2d6();
+      const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
+      const hasShield = hs >= 8 && hs <= 10 || hs >= 11;
+      const dexMod = mod(scores.Dexterity);
+      let dexBonus;
+      if (armour.name === "Chain Armour (AC14)") {
+        dexBonus = Math.min(dexMod, 2);
+      } else if (armour.name === "Plate Armour (AC16)") {
       dexBonus = Math.min(dexMod, 1);
     } else {
       dexBonus = dexMod;
@@ -195,6 +257,7 @@ function CharacterGenerator() {
       personality: pick(personalities),
       spellPowerType: pick(["Arcane", "Divine"])
     });
+    }, 500); // Match the popup duration
   }
 
   // Character save/load/delete functions
@@ -204,7 +267,7 @@ function CharacterGenerator() {
       id: Date.now(),
       name: pc.name,
       level: pc.level,
-      occupation: pc.occupation,
+      occupation: pc.occupations ? `${pc.occupations[0]}/${pc.occupations[1]}` : 'Unknown',
       savedAt: new Date().toLocaleDateString(),
       data: pc
     };
@@ -282,65 +345,63 @@ function CharacterGenerator() {
     deleteCharacter: deleteCharacter
   }) : /*#__PURE__*/React.createElement("p", {
     className: "text-center italic text-gray-600"
-  }, "Click \u201CNew Character\u201D to begin.")), pc && [
+  }, "Click \u201CNew Character\u201D to begin.")))), pc && /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-3xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    key: "save-button-container",
+    className: "text-center mb-4"
+  }, /*#__PURE__*/React.createElement("button", {
+    key: "save-button",
+    onClick: saveCharacter,
+    className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+  }, "Save Character"))), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-3xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    key: "saved-characters",
+    className: "border rounded-lg p-4"
+  }, [
+    /*#__PURE__*/React.createElement("h3", {
+      key: "saved-title",
+      className: "text-lg font-semibold mb-3"
+    }, "Saved Characters"),
     /*#__PURE__*/React.createElement("div", {
-      key: "save-button-container",
-      className: "text-center mb-4"
-    }, /*#__PURE__*/React.createElement("button", {
-      key: "save-button",
-      onClick: saveCharacter,
-      className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-    }, "Save Character")),
-    
-    savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
-      key: "saved-characters",
-      className: "border rounded-lg p-4"
+      key: "saved-list",
+      className: "space-y-2"
+    }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
+      key: char.id,
+      className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
     }, [
-      /*#__PURE__*/React.createElement("h3", {
-        key: "saved-title",
-        className: "text-lg font-semibold mb-3"
-      }, "Saved Characters"),
       /*#__PURE__*/React.createElement("div", {
-        key: "saved-list",
-        className: "space-y-2"
-      }, savedCharacters.map(char => /*#__PURE__*/React.createElement("div", {
-        key: char.id,
-        className: "flex items-center justify-between p-3 border rounded bg-gray-50 text-sm"
+        key: "char-info",
+        className: "flex-1"
       }, [
         /*#__PURE__*/React.createElement("div", {
-          key: "char-info",
-          className: "flex-1"
-        }, [
-          /*#__PURE__*/React.createElement("div", {
-            key: "char-name",
-            className: "font-semibold"
-          }, char.name),
-          /*#__PURE__*/React.createElement("div", {
-            key: "char-details",
-            className: "text-gray-600"
-          }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
-        ]),
+          key: "char-name",
+          className: "font-semibold"
+        }, char.name),
         /*#__PURE__*/React.createElement("div", {
-          key: "char-actions",
-          className: "flex gap-2"
-        }, [
-          /*#__PURE__*/React.createElement("button", {
-            key: "load-btn",
-            onClick: () => loadCharacter(char),
-            className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-          }, "Load"),
-          /*#__PURE__*/React.createElement("button", {
-            key: "delete-btn",
-            onClick: () => deleteCharacter(char.id),
-            className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-          }, "Delete")
-        ])
-      ])))
-    ])
+          key: "char-details",
+          className: "text-gray-600"
+        }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
+      ]),
+      /*#__PURE__*/React.createElement("div", {
+        key: "char-actions",
+        className: "flex gap-2"
+      }, [
+        /*#__PURE__*/React.createElement("button", {
+          key: "load-btn",
+          onClick: () => loadCharacter(char),
+          className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+        }, "Load"),
+        /*#__PURE__*/React.createElement("button", {
+          key: "delete-btn",
+          onClick: () => deleteCharacter(char.id),
+          className: "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+        }, "Delete")
+      ])
+    ])))
   ])));
 }
-
-// Replace CharacterSheet with the original, pixel-perfect version from app.js
 // (copied from your archived app.js)
 const AttributeBlock = ({
   attr,

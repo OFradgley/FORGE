@@ -40,6 +40,7 @@ function Dice() {
     }
   });
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollAnimation, setShowRollAnimation] = React.useState(false);
 
   // Save history to localStorage whenever it changes
   React.useEffect(() => {
@@ -61,6 +62,62 @@ function Dice() {
     
     return () => observer.disconnect();
   }, []);
+
+  // Roll animation trigger function (working!)
+  const triggerRollAnimation = () => {
+    setShowRollAnimation(true);
+    setTimeout(() => setShowRollAnimation(false), 500);
+  };
+
+  // Roll animation popup
+  React.useEffect(() => {
+    if (showRollAnimation) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        border: 2px solid white;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      `;
+      popup.innerHTML = `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border: 3px solid #333;
+          border-top: 3px solid #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+        <span style="font-size: 16px; font-weight: bold;">Rolling...</span>
+      `;
+      
+      // Add CSS animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        document.body.removeChild(popup);
+        document.head.removeChild(style);
+      }, 500);
+    }
+  }, [showRollAnimation]);
 
   const addDieToTray = (sides) => {
     const die = commonDice.find(d => d.sides === sides);
@@ -84,23 +141,29 @@ function Dice() {
   const rollDiceTray = () => {
     if (diceTray.length === 0) return;
     
-    const results = diceTray.map(die => ({
-      die: die.name,
-      result: dX(die.sides)
-    }));
+    // Trigger roll animation first
+    triggerRollAnimation();
     
-    const total = results.reduce((sum, roll) => sum + roll.result, 0);
-    const diceDescription = diceTray.map(die => die.name).join(', ');
-    
-    const rollData = {
-      dice: diceDescription,
-      results,
-      total,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    
-    setLastRoll(rollData);
-    setRollHistory(prev => [rollData, ...prev.slice(0, 9)]); // Keep last 10 rolls
+    // Delay the actual roll calculation until after the popup disappears
+    setTimeout(() => {
+      const results = diceTray.map(die => ({
+        die: die.name,
+        result: dX(die.sides)
+      }));
+      
+      const total = results.reduce((sum, roll) => sum + roll.result, 0);
+      const diceDescription = diceTray.map(die => die.name).join(', ');
+      
+      const rollData = {
+        dice: diceDescription,
+        results,
+        total,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setLastRoll(rollData);
+      setRollHistory(prev => [rollData, ...prev.slice(0, 9)]); // Keep last 10 rolls
+    }, 500); // Match the popup duration
   };
 
   const clearHistory = () => {
@@ -236,12 +299,12 @@ function Dice() {
       }, [
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
-          className: "text-xl font-bold"
+          className: "text-4xl font-bold"
         }, `${lastRoll.total}`),
         
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
-          className: "text-sm mt-1"
+          className: "text-lg mt-1"
         }, `${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
       ])
     ]),

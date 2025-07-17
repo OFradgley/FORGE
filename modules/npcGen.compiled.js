@@ -42,6 +42,7 @@ function NPCGenerator() {
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+  const [showRollAnimation, setShowRollAnimation] = React.useState(false);
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
   const [currentNpcType, setCurrentNpcType] = React.useState(null);
   const dropdownRef = React.useRef();
@@ -76,6 +77,62 @@ function NPCGenerator() {
     return () => observer.disconnect();
   }, []);
 
+  // Roll animation trigger function
+  const triggerRollAnimation = () => {
+    setShowRollAnimation(true);
+    setTimeout(() => setShowRollAnimation(false), 500);
+  };
+
+  // Roll animation popup
+  React.useEffect(() => {
+    if (showRollAnimation) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        border: 2px solid white;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      `;
+      popup.innerHTML = `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border: 3px solid #333;
+          border-top: 3px solid #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        "></div>
+        <span style="font-size: 16px; font-weight: bold;">Rolling...</span>
+      `;
+      
+      // Add CSS animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        document.body.removeChild(popup);
+        document.head.removeChild(style);
+      }, 500);
+    }
+  }, [showRollAnimation]);
+
   // Auto-roll character on component mount
   React.useEffect(() => {
     rollCharacter();
@@ -92,38 +149,43 @@ function NPCGenerator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   function rollCharacter(npcType = null) {
-    setHpOverride(null);
-    setCurrentNpcType(npcType); // Track the current NPC type
+    // Trigger roll animation first
+    triggerRollAnimation();
     
-    // Define unskilled occupations list
-    const unskilledOccupations = [
-      "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
-      "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
-      "Vagrant", "Villager"
-    ];
-    
-    // Define skilled occupations list
-    const skilledOccupations = [
-      "Acolyte", "Acrobat", "Actor", "Alchemist", "Apothecary", "Architect", "Armorer", "Artificer", "Assassin", "Astrologer", "Barbarian", "Blacksmith", "Bodyguard", "Builder", "Burglar", "Butcher", "Carpenter", "Cartographer", "Chronicler", "Cleric", "Cook", "Courtier", "Dealer", "Driver", "Druid", "Duellist", "Dungeoneer", "Engineer", "Executioner", "Explorer", "Falconer", "Fence", "Fisherman", "Gamekeeper", "Gardener", "Herald", "Herbalist", "Hitman", "Hunter", "Illusionist", "Inventor", "Jailer", "Jester", "Judge", "Locksmith", "Mage", "Magister", "Merchant", "Missionary", "Monk", "Musician", "Navigator", "Occultist", "Paladin", "Pickpocket", "Pit-fighter", "Politician", "Preacher", "Racketeer", "Ranger", "Researcher", "Reverend", "Rogue", "Sailor", "Scientist", "Scrapper", "Scribe", "Shopkeeper", "Slaver", "Smuggler", "Sorcerer", "Spy", "Statesman", "Steward", "Teacher", "Thief", "Tracker", "Trader", "Undertaker", "Warlock", "Warrior", "Witch", "Wizard", "Woodsman"
-    ];
-    
-    // Select occupation based on NPC type
-    const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : 
-                                  npcType === "Skilled" ? skilledOccupations : 
-                                  npcType === "Mercenary" ? ["Mercenary"] :
-                                  occupations;
-    let occ1 = pick(availableOccupations);
-    const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
-    
-    // Special handling for Mercenary NPCs - randomize first primary between Strength and Dexterity
-    let primariesInit;
-    if (npcType === "Mercenary") {
-      const firstPrimary = pick(["Strength", "Dexterity"]);
-      const secondPrimary = pick(attributeOrder.filter(a => a !== firstPrimary));
-      primariesInit = new Set([firstPrimary, secondPrimary]);
-    } else {
-      primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
-    }
+    // Delay the actual character generation until after the popup disappears
+    setTimeout(() => {
+      setHpOverride(null);
+      setCurrentNpcType(npcType); // Track the current NPC type
+      
+      // Define unskilled occupations list
+      const unskilledOccupations = [
+        "Beggar", "Charlatan", "Courier", "Deserter", "Drifter", "Gambler", 
+        "Hermit", "Recluse", "Servant", "Shepherd", "Outcast", "Thug", 
+        "Vagrant", "Villager"
+      ];
+      
+      // Define skilled occupations list
+      const skilledOccupations = [
+        "Acolyte", "Acrobat", "Actor", "Alchemist", "Apothecary", "Architect", "Armorer", "Artificer", "Assassin", "Astrologer", "Barbarian", "Blacksmith", "Bodyguard", "Builder", "Burglar", "Butcher", "Carpenter", "Cartographer", "Chronicler", "Cleric", "Cook", "Courtier", "Dealer", "Driver", "Druid", "Duellist", "Dungeoneer", "Engineer", "Executioner", "Explorer", "Falconer", "Fence", "Fisherman", "Gamekeeper", "Gardener", "Herald", "Herbalist", "Hitman", "Hunter", "Illusionist", "Inventor", "Jailer", "Jester", "Judge", "Locksmith", "Mage", "Magister", "Merchant", "Missionary", "Monk", "Musician", "Navigator", "Occultist", "Paladin", "Pickpocket", "Pit-fighter", "Politician", "Preacher", "Racketeer", "Ranger", "Researcher", "Reverend", "Rogue", "Sailor", "Scientist", "Scrapper", "Scribe", "Shopkeeper", "Slaver", "Smuggler", "Sorcerer", "Spy", "Statesman", "Steward", "Teacher", "Thief", "Tracker", "Trader", "Undertaker", "Warlock", "Warrior", "Witch", "Wizard", "Woodsman"
+      ];
+      
+      // Select occupation based on NPC type
+      const availableOccupations = npcType === "Unskilled" ? unskilledOccupations : 
+                                    npcType === "Skilled" ? skilledOccupations : 
+                                    npcType === "Mercenary" ? ["Mercenary"] :
+                                    occupations;
+      let occ1 = pick(availableOccupations);
+      const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
+      
+      // Special handling for Mercenary NPCs - randomize first primary between Strength and Dexterity
+      let primariesInit;
+      if (npcType === "Mercenary") {
+        const firstPrimary = pick(["Strength", "Dexterity"]);
+        const secondPrimary = pick(attributeOrder.filter(a => a !== firstPrimary));
+        primariesInit = new Set([firstPrimary, secondPrimary]);
+      } else {
+        primariesInit = choosePrimaries(occ1, occ1); // Use same occupation twice for consistency with choosePrimaries function
+      }
     
     setPrimaries(primariesInit);
     const attrs = attributeOrder.map(a => {
@@ -347,6 +409,7 @@ function NPCGenerator() {
       equipment,
       competence
     });
+    }, 500); // Match the popup duration
   }
 
   // NPC save/load/delete functions
@@ -572,8 +635,10 @@ function NPCGenerator() {
     onClick: saveCharacter,
     className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
   }, "Save NPC")), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-3xl"
+  }, /*#__PURE__*/React.createElement("div", {
     key: "saved-characters",
-    className: "border rounded-lg p-4"
+    className: "w-full border rounded-lg p-4"
   }, [
     /*#__PURE__*/React.createElement("h3", {
       key: "saved-title",
@@ -615,7 +680,7 @@ function NPCGenerator() {
         }, "Delete")
       ])
     ])))
-  ]), /*#__PURE__*/React.createElement("div", {
+  ])), /*#__PURE__*/React.createElement("div", {
     key: "attributions",
     className: "text-center text-xs text-gray-500 mt-4"
   }, /*#__PURE__*/React.createElement("p", {
