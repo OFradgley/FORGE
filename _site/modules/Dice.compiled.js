@@ -164,12 +164,25 @@ function Dice() {
       });
       
       const total = results.reduce((sum, roll) => sum + roll.result, 0);
+      // Group results by die type for display
+      const groupedResults = {};
+      results.forEach(r => {
+        if (!groupedResults[r.die]) groupedResults[r.die] = [];
+        groupedResults[r.die].push(r.result);
+      });
       const diceDescription = Object.entries(diceTray)
         .map(([dieName, count]) => count > 1 ? `${count}${dieName}` : dieName)
+        .join(', ');
+      const groupedDisplay = Object.entries(groupedResults)
+        .map(([dieName, vals]) => {
+          const count = vals.length;
+          return `${count > 1 ? count + dieName : dieName}: ${vals.join(',')}`;
+        })
         .join(', ');
       
       const rollData = {
         dice: diceDescription,
+        groupedDisplay,
         results,
         total,
         timestamp: new Date().toLocaleTimeString()
@@ -323,7 +336,7 @@ function Dice() {
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
           className: "text-lg mt-1"
-        }, `${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
+        }, `${lastRoll.groupedDisplay}`)
       ])
     ]),
 
@@ -362,7 +375,7 @@ function Dice() {
           /*#__PURE__*/React.createElement("div", {
             key: "roll-details",
             className: "text-gray-500 text-xs mt-1"
-          }, `${roll.results.map(r => `${r.die}: ${r.result}`).join(', ')} • ${roll.timestamp}`)
+          }, `${roll.groupedDisplay || roll.results.map(r => `${r.die}: ${r.result}`).join(', ')} • ${roll.timestamp}`)
         ])
       ))
     ])
