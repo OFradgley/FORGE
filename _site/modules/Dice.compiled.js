@@ -328,15 +328,15 @@ function Dice() {
         key: "result-content",
         className: `text-center ${darkMode ? "text-blue-300" : "text-blue-700"}`
       }, [
+        lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
+          key: "result-details",
+          className: "text-lg mb-2"
+        }, `${lastRoll.groupedDisplay}`),
+        
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
           className: "text-4xl font-bold"
-        }, `${lastRoll.total}`),
-        
-        lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
-          key: "result-details",
-          className: "text-lg mt-1"
-        }, `${lastRoll.groupedDisplay}`)
+        }, `${lastRoll.total}`)
       ])
     ]),
 
