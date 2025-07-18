@@ -28,7 +28,7 @@ const commonDice = [
 
 // Main Dice component
 function Dice() {
-  const [diceTray, setDiceTray] = React.useState([]);
+  const [diceTray, setDiceTray] = React.useState({}); // Changed to object for grouping
   const [lastRoll, setLastRoll] = React.useState(null);
   const [rollHistory, setRollHistory] = React.useState(() => {
     try {
@@ -121,41 +121,68 @@ function Dice() {
 
   const addDieToTray = (sides) => {
     const die = commonDice.find(d => d.sides === sides);
-    const newDie = {
-      id: Date.now() + Math.random(), // Unique ID for each die
-      name: die.name,
-      sides: sides,
-      image: die.image
-    };
-    setDiceTray(prev => [...prev, newDie]);
+    setDiceTray(prev => ({
+      ...prev,
+      [die.name]: (prev[die.name] || 0) + 1
+    }));
   };
 
-  const removeDieFromTray = (dieId) => {
-    setDiceTray(prev => prev.filter(die => die.id !== dieId));
+  const removeDieFromTray = (dieName) => {
+    setDiceTray(prev => {
+      const newTray = { ...prev };
+      if (newTray[dieName] > 1) {
+        newTray[dieName] -= 1;
+      } else {
+        delete newTray[dieName];
+      }
+      return newTray;
+    });
   };
 
   const clearTray = () => {
-    setDiceTray([]);
+    setDiceTray({});
   };
 
   const rollDiceTray = () => {
-    if (diceTray.length === 0) return;
+    const totalDice = Object.values(diceTray).reduce((sum, count) => sum + count, 0);
+    if (totalDice === 0) return;
     
     // Trigger roll animation first
     triggerRollAnimation();
     
     // Delay the actual roll calculation until after the popup disappears
     setTimeout(() => {
-      const results = diceTray.map(die => ({
-        die: die.name,
-        result: dX(die.sides)
-      }));
+      const results = [];
+      Object.entries(diceTray).forEach(([dieName, count]) => {
+        const die = commonDice.find(d => d.name === dieName);
+        for (let i = 0; i < count; i++) {
+          results.push({
+            die: dieName,
+            result: dX(die.sides)
+          });
+        }
+      });
       
       const total = results.reduce((sum, roll) => sum + roll.result, 0);
-      const diceDescription = diceTray.map(die => die.name).join(', ');
+      // Group results by die type for display
+      const groupedResults = {};
+      results.forEach(r => {
+        if (!groupedResults[r.die]) groupedResults[r.die] = [];
+        groupedResults[r.die].push(r.result);
+      });
+      const diceDescription = Object.entries(diceTray)
+        .map(([dieName, count]) => count > 1 ? `${count}${dieName}` : dieName)
+        .join(', ');
+      const groupedDisplay = Object.entries(groupedResults)
+        .map(([dieName, vals]) => {
+          const count = vals.length;
+          return `${count > 1 ? count + dieName : dieName}: ${vals.join(',')}`;
+        })
+        .join('  ');
       
       const rollData = {
         dice: diceDescription,
+        groupedDisplay,
         results,
         total,
         timestamp: new Date().toLocaleTimeString()
@@ -238,10 +265,13 @@ function Dice() {
         }, [
           /*#__PURE__*/React.createElement("button", {
             key: "roll-tray",
-            className: `px-4 py-2 rounded font-medium text-sm ${diceTray.length === 0 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`,
+            className: `px-4 py-2 rounded font-medium text-sm ${Object.keys(diceTray).length === 0 ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`,
             onClick: rollDiceTray,
-            disabled: diceTray.length === 0
-          }, `Roll ${diceTray.length > 0 ? `(${diceTray.length})` : ''}`),
+            disabled: Object.keys(diceTray).length === 0
+          }, (() => {
+            const totalDice = Object.values(diceTray).reduce((sum, count) => sum + count, 0);
+            return `Roll ${totalDice > 0 ? `(${totalDice})` : ''}`;
+          })()),
           /*#__PURE__*/React.createElement("button", {
             key: "clear-tray",
             className: "px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm",
@@ -252,39 +282,40 @@ function Dice() {
       
       /*#__PURE__*/React.createElement("div", {
         key: "tray-content",
-        className: "min-h-[80px] p-4 border-2 border-dashed border-gray-300 rounded-lg"
+        className: "min-h-[60px] p-4 border-2 border-dashed border-gray-300 rounded-lg"
       }, [
-        diceTray.length === 0 ? 
+        Object.keys(diceTray).length === 0 ? 
           /*#__PURE__*/React.createElement("div", {
             key: "empty-tray",
-            className: "text-center text-gray-500 py-6"
-          }, "Click dice above to add them to the tray") :
+            className: "text-center text-gray-500 py-2"
+          }, "Click dice to add them to the tray") :
           /*#__PURE__*/React.createElement("div", {
             key: "tray-dice",
             className: "flex flex-wrap gap-2"
-          }, diceTray.map(die => 
-            /*#__PURE__*/React.createElement("div", {
-              key: die.id,
+          }, Object.entries(diceTray).map(([dieName, count]) => {
+            const die = commonDice.find(d => d.name === dieName);
+            return /*#__PURE__*/React.createElement("div", {
+              key: dieName,
               className: "relative inline-flex items-center bg-gray-100 rounded-lg p-2 border"
             }, [
               /*#__PURE__*/React.createElement("img", {
                 key: "die-image",
                 src: die.image,
-                alt: die.name,
+                alt: dieName,
                 style: { width: "24px", height: "24px" }
               }),
               /*#__PURE__*/React.createElement("span", {
                 key: "die-name",
                 className: "ml-2 text-sm font-medium"
-              }, die.name),
+              }, count > 1 ? `${count}${dieName}` : dieName),
               /*#__PURE__*/React.createElement("button", {
                 key: "remove-die",
                 className: "ml-2 w-4 h-4 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center",
-                onClick: () => removeDieFromTray(die.id),
-                title: "Remove die"
-              }, "×")
-            ])
-          ))
+                onClick: () => removeDieFromTray(dieName),
+                title: "Remove one die"
+              }, "−")
+            ]);
+          }))
       ])
     ]),
 
@@ -297,15 +328,34 @@ function Dice() {
         key: "result-content",
         className: `text-center ${darkMode ? "text-blue-300" : "text-blue-700"}`
       }, [
+        lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
+          key: "result-details",
+          className: "text-lg mb-2"
+        }, Object.entries((() => {
+          const groupedResults = {};
+          lastRoll.results.forEach(r => {
+            if (!groupedResults[r.die]) groupedResults[r.die] = [];
+            groupedResults[r.die].push(r.result);
+          });
+          return groupedResults;
+        })()).map(([dieName, vals], index, arr) => /*#__PURE__*/React.createElement("span", {
+          key: `${dieName}-group`,
+          style: { marginRight: index < arr.length - 1 ? '1rem' : '0' }
+        }, [
+          /*#__PURE__*/React.createElement("span", {
+            key: `${dieName}-label`,
+            className: darkMode ? "text-gray-300" : "text-black"
+          }, `${vals.length > 1 ? vals.length + dieName : dieName}: `),
+          /*#__PURE__*/React.createElement("span", {
+            key: `${dieName}-values`,
+            className: darkMode ? "text-blue-300" : "text-blue-700"
+          }, vals.join(','))
+        ]))),
+        
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
           className: "text-4xl font-bold"
-        }, `${lastRoll.total}`),
-        
-        lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
-          key: "result-details",
-          className: "text-lg mt-1"
-        }, `${lastRoll.results.map(r => `${r.die}: ${r.result}`).join(', ')}`)
+        }, `${lastRoll.total}`)
       ])
     ]),
 
@@ -344,7 +394,7 @@ function Dice() {
           /*#__PURE__*/React.createElement("div", {
             key: "roll-details",
             className: "text-gray-500 text-xs mt-1"
-          }, `${roll.results.map(r => `${r.die}: ${r.result}`).join(', ')} • ${roll.timestamp}`)
+          }, `${roll.groupedDisplay || roll.results.map(r => `${r.die}: ${r.result}`).join(', ')} • ${roll.timestamp}`)
         ])
       ))
     ])
