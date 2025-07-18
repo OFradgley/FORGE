@@ -372,8 +372,29 @@ function Oracle() {
         }, currentAnswer),
         /*#__PURE__*/React.createElement("p", {
           key: "roll-details",
-          className: darkMode ? "text-xs text-gray-300 mt-1" : "text-xs text-blue-600 mt-1"
-        }, `${currentLikelihood} - Oracle: ${currentRoll}, Modifier: ${currentModifierRoll}`)
+          className: "text-xs mt-1"
+        }, [
+          /*#__PURE__*/React.createElement("span", {
+            key: "likelihood-label",
+            className: darkMode ? "text-gray-400" : "text-gray-700"
+          }, currentLikelihood),
+          /*#__PURE__*/React.createElement("span", {
+            key: "oracle-label",
+            className: darkMode ? "text-gray-400" : "text-gray-700"
+          }, " - Oracle: "),
+          /*#__PURE__*/React.createElement("span", {
+            key: "oracle-roll",
+            className: darkMode ? "text-blue-300" : "text-blue-600"
+          }, currentRoll),
+          /*#__PURE__*/React.createElement("span", {
+            key: "modifier-label",
+            className: darkMode ? "text-gray-400" : "text-gray-700"
+          }, ", Modifier: "),
+          /*#__PURE__*/React.createElement("span", {
+            key: "modifier-roll",
+            className: darkMode ? "text-blue-300" : "text-blue-600"
+          }, currentModifierRoll)
+        ])
       ]),
 
       // Random Event Button (appears when doubles are rolled)

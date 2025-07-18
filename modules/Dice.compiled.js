@@ -331,7 +331,27 @@ function Dice() {
         lastRoll.results.length > 1 && /*#__PURE__*/React.createElement("p", {
           key: "result-details",
           className: "text-lg mb-2"
-        }, `${lastRoll.groupedDisplay}`),
+        }, Object.entries((() => {
+          const groupedResults = {};
+          lastRoll.results.forEach(r => {
+            if (!groupedResults[r.die]) groupedResults[r.die] = [];
+            groupedResults[r.die].push(r.result);
+          });
+          return groupedResults;
+        })()).map(([dieName, vals], index, arr) => [
+          /*#__PURE__*/React.createElement("span", {
+            key: `${dieName}-label`,
+            className: darkMode ? "text-gray-300" : "text-black"
+          }, `${vals.length > 1 ? vals.length + dieName : dieName}: `),
+          /*#__PURE__*/React.createElement("span", {
+            key: `${dieName}-values`,
+            className: darkMode ? "text-blue-300" : "text-blue-700"
+          }, vals.join(',')),
+          index < arr.length - 1 && /*#__PURE__*/React.createElement("span", {
+            key: `${dieName}-comma`,
+            className: darkMode ? "text-gray-300" : "text-black"
+          }, ", ")
+        ]).flat().filter(Boolean)),
         
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
