@@ -178,7 +178,7 @@ function Dice() {
           const count = vals.length;
           return `${count > 1 ? count + dieName : dieName}: ${vals.join(',')}`;
         })
-        .join(', ');
+        .join('  ');
       
       const rollData = {
         dice: diceDescription,
@@ -338,7 +338,10 @@ function Dice() {
             groupedResults[r.die].push(r.result);
           });
           return groupedResults;
-        })()).map(([dieName, vals], index, arr) => [
+        })()).map(([dieName, vals], index, arr) => /*#__PURE__*/React.createElement("span", {
+          key: `${dieName}-group`,
+          style: { marginRight: index < arr.length - 1 ? '1rem' : '0' }
+        }, [
           /*#__PURE__*/React.createElement("span", {
             key: `${dieName}-label`,
             className: darkMode ? "text-gray-300" : "text-black"
@@ -346,12 +349,8 @@ function Dice() {
           /*#__PURE__*/React.createElement("span", {
             key: `${dieName}-values`,
             className: darkMode ? "text-blue-300" : "text-blue-700"
-          }, vals.join(',')),
-          index < arr.length - 1 && /*#__PURE__*/React.createElement("span", {
-            key: `${dieName}-comma`,
-            className: darkMode ? "text-gray-300" : "text-black"
-          }, ", ")
-        ]).flat().filter(Boolean)),
+          }, vals.join(','))
+        ]))),
         
         /*#__PURE__*/React.createElement("p", {
           key: "result-total",
