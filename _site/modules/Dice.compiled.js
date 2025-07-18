@@ -282,13 +282,13 @@ function Dice() {
       
       /*#__PURE__*/React.createElement("div", {
         key: "tray-content",
-        className: "min-h-[80px] p-4 border-2 border-dashed border-gray-300 rounded-lg"
+        className: "min-h-[60px] p-4 border-2 border-dashed border-gray-300 rounded-lg"
       }, [
         Object.keys(diceTray).length === 0 ? 
           /*#__PURE__*/React.createElement("div", {
             key: "empty-tray",
-            className: "text-center text-gray-500 py-6"
-          }, "Click dice above to add them to the tray") :
+            className: "text-center text-gray-500 py-2"
+          }, "Click dice to add them to the tray") :
           /*#__PURE__*/React.createElement("div", {
             key: "tray-dice",
             className: "flex flex-wrap gap-2"
