@@ -288,6 +288,161 @@ function CharacterGenerator() {
     setSavedCharacters(prev => prev.filter(char => char.id !== characterId));
   };
 
+  // PDF Export function using true FDF approach for perfect formatting preservation
+  const exportToPDF = async () => {
+    if (!pc) {
+      alert('No character to export!');
+      return;
+    }
+
+    try {
+      // Check if PDF-lib is available
+      if (typeof PDFLib === 'undefined') {
+        throw new Error('PDF-lib library not loaded. Please refresh the page and try again.');
+      }
+
+      // Step 1: Load the original PDF
+      const response = await fetch('./FORGE - Character Sheet (01-01-25)(Form Fillable).pdf');
+      if (!response.ok) {
+        throw new Error('Could not load PDF template');
+      }
+      
+      const originalPdfBytes = await response.arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+      
+      // Step 2: Set field values using low-level PDF operations to preserve formatting
+      await setFieldValuesPreservingFormat(pdfDoc, pc);
+      
+      // Step 3: Save and download the completed PDF
+      const finalPdfBytes = await pdfDoc.save();
+      
+      const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${pc.name || 'character'}-sheet.pdf`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert(`Error exporting to PDF: ${error.message}`);
+    }
+  };
+
+  // Function to set field values while preserving original formatting completely
+  const setFieldValuesPreservingFormat = async (pdfDoc, character) => {
+    // Get the AcroForm dictionary
+    const catalog = pdfDoc.catalog;
+    const acroForm = catalog.lookup(PDFLib.PDFName.of('AcroForm'));
+    
+    if (!acroForm) {
+      throw new Error('PDF does not contain form fields');
+    }
+
+    // Ensure NeedAppearances is set to true - this is crucial for format preservation
+    acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+
+    // Get all form fields
+    const fieldsArray = acroForm.lookup(PDFLib.PDFName.of('Fields'));
+    if (!fieldsArray) {
+      throw new Error('No form fields found');
+    }
+
+    // Character data mapping
+    const fieldValues = {
+      'Name': character.name || '',
+      'Level': '1',
+      'Occupation1': character.occupation1 || '',
+      'Occupation2': character.occupation2 || '',
+      'Alignment': character.alignment || '',
+      'HP_Max': character.hp?.toString() || '',
+      'HP_Current': character.hp?.toString() || '',
+      'Hit_Die_Type': character.hitDie || '',
+      'Armour': character.armour?.name || '',
+      'Shield': character.hasShield ? 'Shield' : '',
+      'Move_Speed': '30',
+      'Appearance': character.appearance || '',
+      'Detail': character.detail || '',
+      'Clothing': character.clothing || '',
+      'Quirk': character.quirk || '',
+      'Gold': character.gold?.toString() || '0'
+    };
+
+    // Add attributes
+    if (character.attrs) {
+      character.attrs.forEach(attr => {
+        const attrName = attr.attr;
+        fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
+        fieldValues[`${attrName}_Mod`] = attr.mod >= 0 ? `+${attr.mod}` : attr.mod?.toString() || '';
+        // For checkboxes, we'll handle these separately
+      });
+    }
+
+    // Add weapons
+    if (character.inventory) {
+      const weapons = character.inventory.filter(item => 
+        item.name && (item.name.includes('Sword') || item.name.includes('Bow') || 
+                     item.name.includes('Mace') || item.name.includes('Axe') || 
+                     item.name.includes('Spear') || item.name.includes('Dagger') ||
+                     item.name.includes('Sling') || item.name.includes('Staff')));
+      
+      weapons.forEach((weapon, index) => {
+        if (index < 3) {
+          fieldValues[`Weapon${index + 1}`] = weapon.name;
+        }
+      });
+    }
+
+    // Add inventory slots
+    if (character.inventory) {
+      character.inventory.forEach((item, index) => {
+        if (index < 26) {
+          fieldValues[`Slot${index + 1}`] = item.name || '';
+        }
+      });
+    }
+
+    // Process each field in the PDF
+    for (let i = 0; i < fieldsArray.size(); i++) {
+      const fieldRef = fieldsArray.get(i);
+      const field = pdfDoc.context.lookup(fieldRef);
+      
+      if (field && field instanceof PDFLib.PDFDict) {
+        const fieldName = field.lookup(PDFLib.PDFName.of('T'));
+        
+        if (fieldName && fieldName instanceof PDFLib.PDFString) {
+          const fieldNameStr = fieldName.decodeText();
+          
+          // Set text field values
+          if (fieldValues.hasOwnProperty(fieldNameStr)) {
+            const value = fieldValues[fieldNameStr];
+            if (value) {
+              // Set the field value using PDFString - this preserves original formatting
+              field.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(value));
+              
+              // Don't set appearance - let the viewer generate it using original formatting
+              // This is key to preserving Garamond Bold and size 16 with auto-sizing
+            }
+          }
+          
+          // Handle primary attribute checkboxes
+          if (character.attrs && fieldNameStr.endsWith('_P')) {
+            const attrName = fieldNameStr.replace('_P', '');
+            const attr = character.attrs.find(a => a.attr === attrName);
+            if (attr && attr.primary) {
+              // Set checkbox value
+              field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
+              // Also set appearance state if needed
+              field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
+            }
+          }
+        }
+      }
+    }
+  };
+
   // Update attrs and dependent values when primaries change
   React.useEffect(() => {
     if (!pc) return;
@@ -350,11 +505,17 @@ function CharacterGenerator() {
   }, /*#__PURE__*/React.createElement("div", {
     key: "save-button-container",
     className: "text-center mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-3 justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     key: "save-button",
     onClick: saveCharacter,
     className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-  }, "Save Character"))), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Save Character"), /*#__PURE__*/React.createElement("button", {
+    key: "export-pdf-button",
+    onClick: exportToPDF,
+    className: "px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+  }, "Export to PDF")))), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full max-w-3xl"
   }, /*#__PURE__*/React.createElement("div", {
     key: "saved-characters",
