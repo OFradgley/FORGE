@@ -344,43 +344,62 @@ function CharacterGenerator() {
     // Ensure NeedAppearances is set to true - this is crucial for format preservation
     acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
 
-    // Get all form fields
-    const fieldsArray = acroForm.lookup(PDFLib.PDFName.of('Fields'));
-    if (!fieldsArray) {
-      throw new Error('No form fields found');
-    }
+    // Helper function to sanitize text for PDF encoding
+    const sanitizeForPDF = (text) => {
+      if (!text) return '';
+      // Replace problematic characters that can't be encoded in WinAnsi
+      return text.toString()
+        .replace(/[ˇ]/g, '') // Remove caron/háček
+        .replace(/[ăâäàáåāæ]/gi, 'a') // Replace accented a
+        .replace(/[ĕêëèéē]/gi, 'e') // Replace accented e
+        .replace(/[ĭîïìíī]/gi, 'i') // Replace accented i
+        .replace(/[ŏôöòóōø]/gi, 'o') // Replace accented o
+        .replace(/[ŭûüùúū]/gi, 'u') // Replace accented u
+        .replace(/[ćčç]/gi, 'c') // Replace accented c
+        .replace(/[ñń]/gi, 'n') // Replace accented n
+        .replace(/[ß]/g, 'ss') // Replace German eszett
+        .replace(/[ł]/gi, 'l') // Replace Polish l
+        .replace(/[š]/gi, 's') // Replace s with caron
+        .replace(/[ž]/gi, 'z') // Replace z with caron
+        .replace(/[đ]/gi, 'd') // Replace d with stroke
+        .replace(/[–—]/g, '-') // Replace em/en dashes with hyphen
+        .replace(/['']/g, "'") // Replace smart quotes with straight quotes
+        .replace(/[""]/g, '"') // Replace smart double quotes
+        .replace(/[…]/g, '...') // Replace ellipsis
+        // Remove any remaining non-ASCII characters
+        .replace(/[^\x00-\x7F]/g, '');
+    };
 
-    // Character data mapping
+    // Character data mapping with sanitized values
     const fieldValues = {
-      'Name': character.name || '',
+      'Name': sanitizeForPDF(character.name) || '',
       'Level': '1',
-      'Occupation1': character.occupation1 || '',
-      'Occupation2': character.occupation2 || '',
-      'Alignment': character.alignment || '',
+      'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
+      'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
+      'Alignment': sanitizeForPDF(character.alignment) || '',
       'HP_Max': character.hp?.toString() || '',
       'HP_Current': character.hp?.toString() || '',
-      'Hit_Die_Type': character.hitDie || '',
-      'Armour': character.armour?.name || '',
+      'Hit_Die_Type': sanitizeForPDF(character.hitDie) || '',
+      'Armour': sanitizeForPDF(character.armour?.name) || '',
       'Shield': character.hasShield ? 'Shield' : '',
-      'Move_Speed': '30',
-      'Appearance': character.appearance || '',
-      'Detail': character.detail || '',
-      'Clothing': character.clothing || '',
-      'Quirk': character.quirk || '',
+      'Move_Speed': 'N',
+      'Appearance': sanitizeForPDF(character.appearance) || '',
+      'Detail': sanitizeForPDF(character.detail) || '',
+      'Clothing': sanitizeForPDF(character.clothing) || '',
+      'Quirk': sanitizeForPDF(character.quirk) || '',
       'Gold': character.gold?.toString() || '0'
     };
 
-    // Add attributes
+    // Add attributes with sanitized values
     if (character.attrs) {
       character.attrs.forEach(attr => {
         const attrName = attr.attr;
         fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
         fieldValues[`${attrName}_Mod`] = attr.mod >= 0 ? `+${attr.mod}` : attr.mod?.toString() || '';
-        // For checkboxes, we'll handle these separately
       });
     }
 
-    // Add weapons
+    // Add weapons with sanitized values
     if (character.inventory) {
       const weapons = character.inventory.filter(item => 
         item.name && (item.name.includes('Sword') || item.name.includes('Bow') || 
@@ -390,21 +409,55 @@ function CharacterGenerator() {
       
       weapons.forEach((weapon, index) => {
         if (index < 3) {
-          fieldValues[`Weapon${index + 1}`] = weapon.name;
+          fieldValues[`Weapon${index + 1}`] = sanitizeForPDF(weapon.name);
         }
       });
     }
 
-    // Add inventory slots
+    // Add inventory slots with sanitized values
     if (character.inventory) {
       character.inventory.forEach((item, index) => {
         if (index < 26) {
-          fieldValues[`Slot${index + 1}`] = item.name || '';
+          fieldValues[`Slot${index + 1}`] = sanitizeForPDF(item.name) || '';
         }
       });
     }
 
-    // Process each field in the PDF
+    // Create checkbox values mapping for primary attributes
+    const checkboxValues = {};
+    if (character.attrs) {
+      const primaryAttrs = new Set();
+      character.attrs.forEach(attr => {
+        if (attr.primary) {
+          primaryAttrs.add(attr.attr);
+        }
+      });
+      
+      console.log('Primary attributes:', Array.from(primaryAttrs));
+      
+      // Set checkbox values for all attributes (including clearing defaults)
+      const attributeNames = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
+      attributeNames.forEach(attrName => {
+        const checkboxFieldName = `${attrName}_P`;
+        // Use 'Yes' for checked (we know this works), 'Off' for unchecked
+        checkboxValues[checkboxFieldName] = primaryAttrs.has(attrName) ? 'Yes' : 'Off';
+      });
+    }
+
+    // TEST: Add some other checkboxes to see if checkbox mechanism works at all
+    checkboxValues['Arcane'] = 'Yes';  // Always check Arcane for testing
+    checkboxValues['Divine'] = 'Off';  // Always uncheck Divine for testing
+    
+    console.log('All checkbox values to set:', checkboxValues);
+
+    // PURE FDF APPROACH - Handle ALL fields using low-level dictionary manipulation
+    const fieldsArray = acroForm.lookup(PDFLib.PDFName.of('Fields'));
+    if (!fieldsArray) {
+      throw new Error('No form fields found');
+    }
+
+    console.log('=== PURE FDF FIELD HANDLING ===');
+    // Process each field in the PDF using pure FDF approach
     for (let i = 0; i < fieldsArray.size(); i++) {
       const fieldRef = fieldsArray.get(i);
       const field = pdfDoc.context.lookup(fieldRef);
@@ -415,10 +468,11 @@ function CharacterGenerator() {
         if (fieldName && fieldName instanceof PDFLib.PDFString) {
           const fieldNameStr = fieldName.decodeText();
           
-          // Set text field values
+          // Handle text fields
           if (fieldValues.hasOwnProperty(fieldNameStr)) {
             const value = fieldValues[fieldNameStr];
             if (value) {
+              console.log(`Setting text field ${fieldNameStr} = "${value}"`);
               // Set the field value using PDFString - this preserves original formatting
               field.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(value));
               
@@ -427,20 +481,75 @@ function CharacterGenerator() {
             }
           }
           
-          // Handle primary attribute checkboxes
-          if (character.attrs && fieldNameStr.endsWith('_P')) {
-            const attrName = fieldNameStr.replace('_P', '');
-            const attr = character.attrs.find(a => a.attr === attrName);
-            if (attr && attr.primary) {
-              // Set checkbox value
-              field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
-              // Also set appearance state if needed
-              field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
+          // Handle checkbox fields using pure FDF with proper appearance states
+          if (checkboxValues.hasOwnProperty(fieldNameStr)) {
+            const checkboxValue = checkboxValues[fieldNameStr];
+            console.log(`Setting checkbox ${fieldNameStr} = "${checkboxValue}"`);
+            
+            try {
+              // Get the checkbox widget to understand its appearance states
+              const kids = field.lookup(PDFLib.PDFName.of('Kids'));
+              if (kids && kids instanceof PDFLib.PDFArray && kids.size() > 0) {
+                const widgetRef = kids.get(0);
+                const widget = pdfDoc.context.lookup(widgetRef);
+                
+                if (widget && widget instanceof PDFLib.PDFDict) {
+                  // Get the appearance dictionary to find the correct 'On' state name
+                  const ap = widget.lookup(PDFLib.PDFName.of('AP'));
+                  if (ap && ap instanceof PDFLib.PDFDict) {
+                    const n = ap.lookup(PDFLib.PDFName.of('N'));
+                    if (n && n instanceof PDFLib.PDFDict) {
+                      // Find the 'On' state (it might not be 'Yes')
+                      const keys = n.keys();
+                      let onStateName = 'Yes'; // default
+                      
+                      for (const key of keys) {
+                        const keyStr = key.toString();
+                        if (keyStr !== '/Off') {
+                          onStateName = keyStr.substring(1); // remove the '/' prefix
+                          break;
+                        }
+                      }
+                      
+                      if (checkboxValue === 'Yes') {
+                        // Set checkbox to checked state
+                        field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(onStateName));
+                        widget.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of(onStateName));
+                        console.log(`  ✓ Checked ${fieldNameStr} using state '${onStateName}'`);
+                      } else {
+                        // Set checkbox to unchecked state
+                        field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
+                        widget.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
+                        console.log(`  ○ Unchecked ${fieldNameStr}`);
+                      }
+                    }
+                  }
+                }
+              } else {
+                // Fallback for checkboxes without kids (direct field)
+                if (checkboxValue === 'Yes') {
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
+                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method)`);
+                } else {
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
+                  console.log(`  ○ Unchecked ${fieldNameStr} (fallback method)`);
+                }
+              }
+            } catch (checkboxError) {
+              console.warn(`Failed to set checkbox ${fieldNameStr}:`, checkboxError.message);
             }
           }
         }
       }
     }
+    
+    // CRITICAL: Never access pdfDoc.getForm() - this preserves all original formatting
+    // CRITICAL: Never call updateFieldAppearances() - this preserves text formatting
+    // CRITICAL: Never flatten the form - this keeps fields editable with original appearance
+    
+    console.log('=== END PURE FDF HANDLING ===');
   };
 
   // Update attrs and dependent values when primaries change
