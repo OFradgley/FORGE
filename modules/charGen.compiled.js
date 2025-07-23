@@ -523,9 +523,45 @@ function CharacterGenerator() {
         // Check if this item is the selected weapon
         const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
         
+        // Helper function to extract quantity from item name and get quality value
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          // 1. Extract quantity (e.g. "x20" -> "20")
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          // 2. Special durability cases
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)'; // 6. Add AC bonus to shield
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
+        
         if (isSelectedWeapon) {
           // Requirement 1 & 3: Show weapon with damage in brackets for first slot
-          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
+          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
+          if (quality) {
+            fieldValues[`Slot_Quality${slotIndex}`] = quality;
+          }
           slotIndex++;
           
           // Requirement 3: Handle multi-slot weapons with continuation indicators
@@ -536,7 +572,11 @@ function CharacterGenerator() {
           }
         } else {
           // Regular inventory item
-          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(item.name) || '';
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${slotIndex}`] = quality;
+          }
           slotIndex++;
           
           // Handle multi-slot items (if they have slots property)
