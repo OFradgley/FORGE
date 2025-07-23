@@ -419,6 +419,37 @@ function CharacterGenerator() {
     const dexBonus = calculateDexBonus(character);
     const calculatedAC = baseAC + shieldBonus + dexBonus;
     
+    // Calculate HP (same logic as in the UI component)
+    const calculateHP = (character) => {
+      if (!character.rawHpPrimary || !character.rawHpSecondary || !character.attrs) return '';
+      
+      const conAttr = character.attrs.find(a => a.attr === "Constitution");
+      const conMod = conAttr?.mod || 0;
+      const minConMod = Math.max(conMod, -3);
+      const level = character.level || 1;
+      
+      // Determine if Constitution is primary (you might need to pass primaries to this function)
+      // For now, let's derive it from the character data
+      const isConPrimary = conAttr?.primary || false;
+      
+      function calcHp(arr) {
+        let total = 0;
+        for (let i = 0; i < level; i++) {
+          const hp = Math.max(1, arr[i] + minConMod);
+          total += hp;
+        }
+        return total;
+      }
+      
+      const hpPrimary = calcHp(character.rawHpPrimary);
+      const hpSecondary = calcHp(character.rawHpSecondary);
+      const hp = isConPrimary ? Math.max(hpPrimary, hpSecondary) : hpSecondary;
+      
+      return hp.toString();
+    };
+    
+    const calculatedHP = calculateHP(character);
+    
     const fieldValues = {
       'Name': sanitizeForPDF(character.name) || '',
       'Level': characterLevel.toString(),
@@ -427,8 +458,8 @@ function CharacterGenerator() {
       'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
       'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
       'Alignment': sanitizeForPDF(character.alignment) || '',
-      'HP_Max': character.hp?.toString() || '',
-      'HP_Current': character.hp?.toString() || '',
+      'HP_Max': calculatedHP || '',
+      'HP_Current': calculatedHP || '',
       'Hit_Die_Type': sanitizeForPDF(character.hitDie) || '',
       'Armour': character.armour?.ac?.toString() || character.acBreakdown?.base?.toString() || '10',  // Just the armor AC number
       'Shield': (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? '1' : '0',  // 1 or 0 based on whether character has shield
