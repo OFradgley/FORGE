@@ -466,8 +466,20 @@ function CharacterGenerator() {
     
     // Add weapon fields (Requirement 2: Weapon1 and Weapon_Damage1 fields)
     if (selectedWeaponObj) {
-      fieldValues['Weapon1'] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
-      fieldValues['Weapon_Damage1'] = sanitizeForPDF(selectedWeaponObj.dmg);
+      // Get Strength modifier for damage calculation
+      const strengthAttr = character.attrs?.find(attr => attr.attr === 'Strength');
+      const strengthMod = strengthAttr?.mod || 0;
+      
+      // Weapon1 field: just the weapon name (no damage in brackets)
+      fieldValues['Weapon1'] = sanitizeForPDF(selectedWeaponObj.name);
+      
+      // Weapon_Damage1 field: damage + Strength modifier
+      let weaponDamage = selectedWeaponObj.dmg;
+      if (strengthMod !== 0) {
+        const sign = strengthMod > 0 ? '+' : '';
+        weaponDamage = `${selectedWeaponObj.dmg}${sign}${strengthMod}`;
+      }
+      fieldValues['Weapon_Damage1'] = sanitizeForPDF(weaponDamage);
     }
 
     // Add inventory slots with proper weapon slot handling (Requirement 3)
