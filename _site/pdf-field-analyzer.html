@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Field Analyzer</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <h1>PDF Form Field Analyzer</h1>
+    <button onclick="analyzeFields()">Analyze Character Sheet Fields</button>
+    <div id="results"></div>
+
+    <script>
+        async function analyzeFields() {
+            try {
+                const response = await fetch('./FORGE - Character Sheet (01-01-25)(Form Fillable).pdf');
+                const existingPdfBytes = await response.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                const form = pdfDoc.getForm();
+                const fields = form.getFields();
+                
+                const results = document.getElementById('results');
+                results.innerHTML = '<h2>Form Fields Found:</h2>';
+                
+                const fieldList = [];
+                
+                fields.forEach((field, index) => {
+                    const fieldName = field.getName();
+                    const fieldType = field.constructor.name;
+                    fieldList.push({ name: fieldName, type: fieldType });
+                    
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.innerHTML = `<strong>${index + 1}.</strong> Name: "<code>${fieldName}</code>" - Type: ${fieldType}`;
+                    results.appendChild(fieldDiv);
+                });
+                
+                // Also log to console for easy copying
+                console.log('PDF Form Fields:', fieldList);
+                
+                // Create a summary
+                const summary = document.createElement('div');
+                summary.innerHTML = `<br><h3>Summary:</h3><p>Found ${fields.length} form fields total</p>`;
+                results.appendChild(summary);
+                
+            } catch (error) {
+                console.error('Error analyzing PDF:', error);
+                document.getElementById('results').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

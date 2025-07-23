@@ -183,11 +183,20 @@ function CharacterGenerator() {
       if (armour.name === "Chain Armour (AC14)") {
         dexBonus = Math.min(dexMod, 2);
       } else if (armour.name === "Plate Armour (AC16)") {
-      dexBonus = Math.min(dexMod, 1);
-    } else {
-      dexBonus = dexMod;
-    }
-    const acBase = armour.ac;
+        dexBonus = Math.min(dexMod, 1);
+      } else {
+        dexBonus = dexMod;
+      }
+      
+      // Determine armor type for PDF export
+      const getArmorType = (armorName) => {
+        if (armorName === "Chain Armour (AC14)") return "Medium";
+        if (armorName === "Plate Armour (AC16)") return "Heavy";
+        return "Light"; // No Armour and Leather Armour
+      };
+      const armorType = getArmorType(armour.name);
+      
+      const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
     const acDex = dexBonus;
     const ac = acBase + acShield + acDex;
@@ -247,6 +256,9 @@ function CharacterGenerator() {
         shield: acShield,
         dex: acDex
       },
+      armour,  // Store the armor object
+      armorType,  // Store armor type (Light, Medium, Heavy)
+      hasShield,  // Store whether character has a shield
       gold: (d6() + d6()) * 30,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
@@ -255,7 +267,7 @@ function CharacterGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       personality: pick(personalities),
-      spellPowerType: pick(["Arcane", "Divine"])
+      spellPowerType: "None"  // Default to "None" instead of random selection
     });
     }, 500); // Match the popup duration
   }
@@ -279,13 +291,548 @@ function CharacterGenerator() {
     const primariesFromData = new Set(characterData.data.attrs.filter(a => a.primary).map(a => a.attr));
     setPrimaries(primariesFromData);
     setHpOverride(null);
-    setSelectedWeapon(null);
+    
+    // Restore the character's weapon from their inventory
+    // Find the first weapon in the character's inventory
+    const characterWeapon = characterData.data.inventory?.find(item => 
+      weapons.some(w => w.name === item.name)
+    );
+    setSelectedWeapon(characterWeapon ? characterWeapon.name : null);
+    
     setSwapMode(false);
     setSwapSelection([]);
   };
 
   const deleteCharacter = (characterId) => {
     setSavedCharacters(prev => prev.filter(char => char.id !== characterId));
+  };
+
+  // PDF Export function using true FDF approach for perfect formatting preservation
+  const exportToPDF = async () => {
+    if (!pc) {
+      alert('No character to export!');
+      return;
+    }
+
+    try {
+      // Check if PDF-lib is available
+      if (typeof PDFLib === 'undefined') {
+        throw new Error('PDF-lib library not loaded. Please refresh the page and try again.');
+      }
+
+      // Step 1: Load the new non-calculating PDF template
+      const response = await fetch('./Character Sheet Template (01-01-25).pdf');
+      if (!response.ok) {
+        throw new Error('Could not load PDF template');
+      }
+      
+      const originalPdfBytes = await response.arrayBuffer();
+      const pdfDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+      
+      // Step 2: Set field values using low-level PDF operations to preserve formatting
+      await setFieldValuesPreservingFormat(pdfDoc, pc, selectedWeapon);
+      
+      // Step 3: Save and download the completed PDF
+      const finalPdfBytes = await pdfDoc.save();
+      
+      const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${pc.name || 'character'}-sheet.pdf`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert(`Error exporting to PDF: ${error.message}`);
+    }
+  };
+
+  // Function to set field values while preserving original formatting completely
+  const setFieldValuesPreservingFormat = async (pdfDoc, character, selectedWeapon) => {
+    // Get the AcroForm dictionary
+    const catalog = pdfDoc.catalog;
+    const acroForm = catalog.lookup(PDFLib.PDFName.of('AcroForm'));
+    
+    if (!acroForm) {
+      throw new Error('PDF does not contain form fields');
+    }
+
+    // Ensure NeedAppearances is set to true - this is crucial for format preservation
+    acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+
+    // Helper function to sanitize text for PDF encoding
+    const sanitizeForPDF = (text) => {
+      if (!text) return '';
+      // Replace problematic characters that can't be encoded in WinAnsi
+      return text.toString()
+        .replace(/[ˇ]/g, '') // Remove caron/háček
+        .replace(/[ăâäàáåāæ]/gi, 'a') // Replace accented a
+        .replace(/[ĕêëèéē]/gi, 'e') // Replace accented e
+        .replace(/[ĭîïìíī]/gi, 'i') // Replace accented i
+        .replace(/[ŏôöòóōø]/gi, 'o') // Replace accented o
+        .replace(/[ŭûüùúū]/gi, 'u') // Replace accented u
+        .replace(/[ćčç]/gi, 'c') // Replace accented c
+        .replace(/[ñń]/gi, 'n') // Replace accented n
+        .replace(/[ß]/g, 'ss') // Replace German eszett
+        .replace(/[ł]/gi, 'l') // Replace Polish l
+        .replace(/[š]/gi, 's') // Replace s with caron
+        .replace(/[ž]/gi, 'z') // Replace z with caron
+        .replace(/[đ]/gi, 'd') // Replace d with stroke
+        .replace(/[–—]/g, '-') // Replace em/en dashes with hyphen
+        .replace(/['']/g, "'") // Replace smart quotes with straight quotes
+        .replace(/[""]/g, '"') // Replace smart double quotes
+        .replace(/[…]/g, '...') // Replace ellipsis
+        // Remove any remaining non-ASCII characters
+        .replace(/[^\x00-\x7F]/g, '');
+    };
+
+    // Character data mapping with sanitized values
+    const characterLevel = character.level || 1;
+    
+    // Helper function to calculate proper dexterity bonus based on armor type
+    const calculateDexBonus = (character) => {
+      if (!character.attrs) return 0;
+      const dexAttr = character.attrs.find(attr => attr.attr === 'Dexterity');
+      if (!dexAttr) return 0;
+      
+      const dexMod = dexAttr.mod;
+      const armorType = character.armorType || 
+        (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+         character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+      
+      // Apply dexterity limits based on armor type
+      if (armorType === "Medium") {
+        return Math.min(dexMod, 2);  // Chain armor: max +2 dex
+      } else if (armorType === "Heavy") {
+        return Math.min(dexMod, 1);  // Plate armor: max +1 dex
+      } else {
+        return dexMod;  // Light armor (No Armour/Leather): no limit
+      }
+    };
+    
+    // Calculate proper AC for backward compatibility
+    const baseAC = character.armour?.ac || character.acBreakdown?.base || 10;
+    const shieldBonus = (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? 1 : 0;
+    const dexBonus = calculateDexBonus(character);
+    const calculatedAC = baseAC + shieldBonus + dexBonus;
+    
+    // Calculate HP (same logic as in the UI component)
+    const calculateHP = (character) => {
+      if (!character.rawHpPrimary || !character.rawHpSecondary || !character.attrs) return '';
+      
+      const conAttr = character.attrs.find(a => a.attr === "Constitution");
+      const conMod = conAttr?.mod || 0;
+      const minConMod = Math.max(conMod, -3);
+      const level = character.level || 1;
+      
+      // Determine if Constitution is primary (you might need to pass primaries to this function)
+      // For now, let's derive it from the character data
+      const isConPrimary = conAttr?.primary || false;
+      
+      function calcHp(arr) {
+        let total = 0;
+        for (let i = 0; i < level; i++) {
+          const hp = Math.max(1, arr[i] + minConMod);
+          total += hp;
+        }
+        return total;
+      }
+      
+      const hpPrimary = calcHp(character.rawHpPrimary);
+      const hpSecondary = calcHp(character.rawHpSecondary);
+      const hp = isConPrimary ? Math.max(hpPrimary, hpSecondary) : hpSecondary;
+      
+      return hp.toString();
+    };
+    
+    const calculatedHP = calculateHP(character);
+    
+    const fieldValues = {
+      'Name': sanitizeForPDF(character.name) || '',
+      'Level': characterLevel.toString(),
+      'Level_Mod_P': characterLevel.toString(),  // Primary level modifier = full level
+      'Level_Mod_S': Math.floor(characterLevel / 2).toString(),  // Secondary level modifier = half level (rounded down)
+      'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
+      'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
+      'Alignment': sanitizeForPDF(character.alignment) || '',
+      'HP_Max': calculatedHP || '',
+      'HP_Current': calculatedHP || '',
+      'Hit_Die_Type': sanitizeForPDF(character.hitDie) || '',
+      'Armour': character.armour?.ac?.toString() || character.acBreakdown?.base?.toString() || '10',  // Just the armor AC number
+      'Shield': (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? '1' : '0',  // 1 or 0 based on whether character has shield
+      'AC': (character.ac || calculatedAC)?.toString() || '',  // Total AC (Armour + Shield + Dexterity_Mod with proper limits)
+      'Move_Speed': 'N',
+      'Appearance': sanitizeForPDF(character.appearance) || '',
+      'Detail': sanitizeForPDF(character.detail) || '',
+      'Clothing': sanitizeForPDF(character.clothing) || '',
+      'Quirk': sanitizeForPDF(character.quirk) || '',
+      'Gold': character.gold?.toString() || '0'
+    };
+
+    // Add attributes with all calculated values (scores, modifiers, and check bonuses)
+    if (character.attrs) {
+      character.attrs.forEach(attr => {
+        const attrName = attr.attr;
+        
+        // Export attribute score
+        fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
+        
+        // Export attribute modifier (no + for positive values)
+        fieldValues[`${attrName}_Mod`] = attr.mod?.toString() || '';
+        
+        // Calculate and export check bonus (attribute modifier + level modifier)
+        // Level modifier = full level for primary attributes, half level (rounded down) for secondary
+        const characterLevel = character.level || 1;
+        const levelModifier = attr.primary ? characterLevel : Math.floor(characterLevel / 2);
+        const checkBonus = attr.mod + levelModifier;
+        fieldValues[`${attrName}_Check_Bonus`] = checkBonus.toString();
+      });
+    }
+
+    // Get the selected weapon object for proper handling
+    const selectedWeaponObj = weapons.find(w => w.name === selectedWeapon);
+    
+    // Add weapon fields (Requirement 2: Weapon1 and Weapon_Damage1 fields)
+    if (selectedWeaponObj) {
+      // Get Strength modifier for damage calculation
+      const strengthAttr = character.attrs?.find(attr => attr.attr === 'Strength');
+      const strengthMod = strengthAttr?.mod || 0;
+      
+      // Weapon1 field: just the weapon name (no damage in brackets)
+      fieldValues['Weapon1'] = sanitizeForPDF(selectedWeaponObj.name);
+      
+      // Weapon_Damage1 field: damage + Strength modifier
+      let weaponDamage = selectedWeaponObj.dmg;
+      if (strengthMod !== 0) {
+        const sign = strengthMod > 0 ? '+' : '';
+        weaponDamage = `${selectedWeaponObj.dmg}${sign}${strengthMod}`;
+      }
+      fieldValues['Weapon_Damage1'] = sanitizeForPDF(weaponDamage);
+    }
+
+    // Add inventory slots with proper weapon slot handling (Requirement 3)
+    if (character.inventory) {
+      let slotIndex = 1;
+      const zeroSlotItems = []; // Collect 0-slot items to place at the end
+      
+      character.inventory.forEach((item) => {
+        // Check if this is a 0-slot item (unencumbering)
+        const itemSlots = item.slots || 1;
+        if (itemSlots === 0) {
+          zeroSlotItems.push(item);
+          return; // Skip processing now, handle at the end
+        }
+        
+        if (slotIndex > 26) return; // Max 26 slots
+        
+        // Check if this item is the selected weapon
+        const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        // Helper function to extract quantity from item name and get quality value
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          // 1. Extract quantity (e.g. "x20" -> "20")
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          // 2. Special durability cases
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)'; // 6. Add AC bonus to shield
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
+        
+        if (isSelectedWeapon) {
+          // Requirement 1 & 3: Show weapon with damage in brackets for first slot
+          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
+          if (quality) {
+            fieldValues[`Slot_Quality${slotIndex}`] = quality;
+          }
+          slotIndex++;
+          
+          // Requirement 3: Handle multi-slot weapons with continuation indicators
+          const weaponSlots = selectedWeaponObj.slots || 1;
+          for (let i = 1; i < weaponSlots && slotIndex <= 26; i++) {
+            fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
+            slotIndex++;
+          }
+        } else {
+          // Regular inventory item
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${slotIndex}`] = quality;
+          }
+          slotIndex++;
+          
+          // Handle multi-slot items (if they have slots property)
+          for (let i = 1; i < itemSlots && slotIndex <= 26; i++) {
+            fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
+            slotIndex++;
+          }
+        }
+      });
+      
+      // Place 0-slot items at the end (starting from slot 26 and working backwards)
+      let zeroSlotIndex = 26;
+      zeroSlotItems.forEach((item) => {
+        if (zeroSlotIndex < 1) return; // No more slots available
+        
+        // Skip if this slot is already occupied by a regular item
+        if (fieldValues[`Slot${zeroSlotIndex}`]) {
+          // Find the next available slot working backwards
+          while (zeroSlotIndex >= 1 && fieldValues[`Slot${zeroSlotIndex}`]) {
+            zeroSlotIndex--;
+          }
+          if (zeroSlotIndex < 1) return; // No more slots available
+        }
+        
+        // Check if this item is the selected weapon
+        const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        // Helper function (same as above)
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)';
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
+        
+        if (isSelectedWeapon) {
+          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
+          if (quality) {
+            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
+          }
+        } else {
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
+          }
+        }
+        
+        zeroSlotIndex--; // Move to the next slot backwards
+      });
+    }
+
+    // Create checkbox values mapping for primary attributes
+    const checkboxValues = {};
+    if (character.attrs) {
+      const primaryAttrs = new Set();
+      character.attrs.forEach(attr => {
+        if (attr.primary) {
+          primaryAttrs.add(attr.attr);
+        }
+      });
+      
+      console.log('Primary attributes:', Array.from(primaryAttrs));
+      
+      // Set checkbox values for all attributes (including clearing defaults)
+      const attributeNames = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
+      attributeNames.forEach(attrName => {
+        const checkboxFieldName = `${attrName}_P`;
+        // Use 'Yes' for checked (we know this works), 'Off' for unchecked
+        checkboxValues[checkboxFieldName] = primaryAttrs.has(attrName) ? 'Yes' : 'Off';
+      });
+    }
+
+    // Handle spell power checkboxes based on character's spell power type
+    console.log('🔍 Spell Power Debug:', character.spellPowerType);
+    if (character.spellPowerType === "None") {
+      console.log('  Setting both Arcane and Divine to Off (None selected)');
+      checkboxValues['Arcane'] = 'Off';  // Neither checked when None selected
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Arcane") {
+      console.log('  Setting Arcane to Yes, Divine to Off');
+      checkboxValues['Arcane'] = 'Yes';  // Check Arcane, uncheck Divine
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Divine") {
+      console.log('  Setting Arcane to Off, Divine to Yes');
+      checkboxValues['Arcane'] = 'Off';  // Uncheck Arcane, check Divine
+      checkboxValues['Divine'] = 'Yes';  
+    } else {
+      console.log('  Unexpected spellPowerType value, defaulting both to Off:', character.spellPowerType);
+      // Fallback: default to both unchecked if unexpected value
+      checkboxValues['Arcane'] = 'Off';  
+      checkboxValues['Divine'] = 'Off';  
+    }
+
+    // Handle armor type checkboxes
+    const armorType = character.armorType || 
+      (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+       character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+    
+    console.log('🛡️ Armor Type Debug:', armorType);
+    if (armorType === "Medium") {
+      console.log('  Setting Medium to Yes, Heavy to Off');
+      checkboxValues['Medium'] = 'Yes';
+      checkboxValues['Heavy'] = 'Off';
+    } else if (armorType === "Heavy") {
+      console.log('  Setting Medium to Off, Heavy to Yes');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Yes';
+    } else {
+      console.log('  Setting both Medium and Heavy to Off (Light armor)');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Off';
+    }
+    
+    console.log('All checkbox values to set:', checkboxValues);
+
+    // PURE FDF APPROACH - Handle ALL fields using low-level dictionary manipulation
+    const fieldsArray = acroForm.lookup(PDFLib.PDFName.of('Fields'));
+    if (!fieldsArray) {
+      throw new Error('No form fields found');
+    }
+
+    console.log('=== PURE FDF FIELD HANDLING ===');
+    // Process each field in the PDF using pure FDF approach
+    for (let i = 0; i < fieldsArray.size(); i++) {
+      const fieldRef = fieldsArray.get(i);
+      const field = pdfDoc.context.lookup(fieldRef);
+      
+      if (field && field instanceof PDFLib.PDFDict) {
+        const fieldName = field.lookup(PDFLib.PDFName.of('T'));
+        
+        if (fieldName && fieldName instanceof PDFLib.PDFString) {
+          const fieldNameStr = fieldName.decodeText();
+          
+          // Handle text fields
+          if (fieldValues.hasOwnProperty(fieldNameStr)) {
+            const value = fieldValues[fieldNameStr];
+            if (value) {
+              console.log(`Setting text field ${fieldNameStr} = "${value}"`);
+              // Set the field value using PDFString - this preserves original formatting
+              field.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(value));
+              // Don't set appearance - let the viewer generate it using original formatting
+              // This is key to preserving Garamond Bold and size 16 with auto-sizing
+            }
+          }
+          
+          // Handle checkbox fields using pure FDF with proper appearance states
+          if (checkboxValues.hasOwnProperty(fieldNameStr)) {
+            const checkboxValue = checkboxValues[fieldNameStr];
+            console.log(`Setting checkbox ${fieldNameStr} = "${checkboxValue}"`);
+            
+            // SPECIAL DEBUG: Show detailed info for spell power checkboxes
+            if (fieldNameStr === 'Arcane' || fieldNameStr === 'Divine') {
+              console.log(`🔥 SPELL POWER FIELD DEBUG: ${fieldNameStr}`);
+              console.log(`  Value to set: ${checkboxValue}`);
+              console.log(`  Field type: ${field.lookup(PDFLib.PDFName.of('FT'))?.toString()}`);
+              console.log(`  Current V: ${field.lookup(PDFLib.PDFName.of('V'))?.toString()}`);
+              console.log(`  Current AS: ${field.lookup(PDFLib.PDFName.of('AS'))?.toString()}`);
+            }
+            
+            try {
+              // Get the checkbox widget to understand its appearance states
+              const kids = field.lookup(PDFLib.PDFName.of('Kids'));
+              if (kids && kids instanceof PDFLib.PDFArray && kids.size() > 0) {
+                const widgetRef = kids.get(0);
+                const widget = pdfDoc.context.lookup(widgetRef);
+                
+                if (widget && widget instanceof PDFLib.PDFDict) {
+                  // Get the appearance dictionary to find the correct 'On' state name
+                  const ap = widget.lookup(PDFLib.PDFName.of('AP'));
+                  if (ap && ap instanceof PDFLib.PDFDict) {
+                    const n = ap.lookup(PDFLib.PDFName.of('N'));
+                    if (n && n instanceof PDFLib.PDFDict) {
+                      // Find the 'On' state (it might not be 'Yes')
+                      const keys = n.keys();
+                      let onStateName = 'Yes'; // default
+                      
+                      for (const key of keys) {
+                        const keyStr = key.toString();
+                        if (keyStr !== '/Off') {
+                          onStateName = keyStr.substring(1); // remove the '/' prefix
+                          break;
+                        }
+                      }
+                      
+                      if (checkboxValue === 'Yes') {
+                        // Set checkbox to checked state
+                        field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(onStateName));
+                        widget.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of(onStateName));
+                        console.log(`  ✓ Checked ${fieldNameStr} using state '${onStateName}'`);
+                      } else {
+                        // Set checkbox to unchecked state
+                        field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
+                        widget.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
+                        console.log(`  ○ Unchecked ${fieldNameStr}`);
+                      }
+                    }
+                  }
+                }
+              } else {
+                // Fallback for checkboxes without kids (direct field) - use same logic as primary attributes
+                if (checkboxValue === 'Yes') {
+                  // Both Arcane and Divine use '/1' for checked, '/Off' for unchecked
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('1'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('1'));
+                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method using '/1')`);
+                } else {
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
+                  console.log(`  ○ Unchecked ${fieldNameStr} (fallback method)`);
+                }
+              }
+            } catch (checkboxError) {
+              console.warn(`Failed to set checkbox ${fieldNameStr}:`, checkboxError.message);
+            }
+          }
+        }
+      }
+    }
+    
+    // CRITICAL: Never access pdfDoc.getForm() - this preserves all original formatting
+    // CRITICAL: Never call updateFieldAppearances() - this preserves text formatting
+    // CRITICAL: Never flatten the form - this keeps fields editable with original appearance
+    
+    console.log('=== END PURE FDF HANDLING ===');
   };
 
   // Update attrs and dependent values when primaries change
@@ -350,11 +897,17 @@ function CharacterGenerator() {
   }, /*#__PURE__*/React.createElement("div", {
     key: "save-button-container",
     className: "text-center mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-3 justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     key: "save-button",
     onClick: saveCharacter,
     className: "px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-  }, "Save Character"))), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Save Character"), /*#__PURE__*/React.createElement("button", {
+    key: "export-pdf-button",
+    onClick: exportToPDF,
+    className: "px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+  }, "Export to PDF")))), savedCharacters.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full max-w-3xl"
   }, /*#__PURE__*/React.createElement("div", {
     key: "saved-characters",
@@ -954,10 +1507,13 @@ function CharacterSheet({
     label: "Gold",
     value: `${pc.gold} gp`
   }), /*#__PURE__*/React.createElement(Field, {
-    label: "Spell Power",
+    label: "Spell Power (Pick if caster)",
     value: /*#__PURE__*/React.createElement(React.Fragment, null, (() => {
       const intAttr = pc.attrs.find(a => a.attr === "Intelligence");
       const wisAttr = pc.attrs.find(a => a.attr === "Wisdom");
+      if (pc.spellPowerType === "None") {
+        return 0;
+      }
       const spellPower = pc.spellPowerType === "Arcane" ? intAttr.check + 10 : wisAttr.check + 10;
       return spellPower;
     })(), " ", /*#__PURE__*/React.createElement("select", {
@@ -965,6 +1521,8 @@ function CharacterSheet({
       onChange: handleSpellPowerChange,
       className: "ml-1 px-1 rounded text-xs border"
     }, /*#__PURE__*/React.createElement("option", {
+      value: "None"
+    }, "None"), /*#__PURE__*/React.createElement("option", {
       value: "Arcane"
     }, "Arcane"), /*#__PURE__*/React.createElement("option", {
       value: "Divine"
