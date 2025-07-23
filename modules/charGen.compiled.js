@@ -183,11 +183,20 @@ function CharacterGenerator() {
       if (armour.name === "Chain Armour (AC14)") {
         dexBonus = Math.min(dexMod, 2);
       } else if (armour.name === "Plate Armour (AC16)") {
-      dexBonus = Math.min(dexMod, 1);
-    } else {
-      dexBonus = dexMod;
-    }
-    const acBase = armour.ac;
+        dexBonus = Math.min(dexMod, 1);
+      } else {
+        dexBonus = dexMod;
+      }
+      
+      // Determine armor type for PDF export
+      const getArmorType = (armorName) => {
+        if (armorName === "Chain Armour (AC14)") return "Medium";
+        if (armorName === "Plate Armour (AC16)") return "Heavy";
+        return "Light"; // No Armour and Leather Armour
+      };
+      const armorType = getArmorType(armour.name);
+      
+      const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
     const acDex = dexBonus;
     const ac = acBase + acShield + acDex;
@@ -247,6 +256,9 @@ function CharacterGenerator() {
         shield: acShield,
         dex: acDex
       },
+      armour,  // Store the armor object
+      armorType,  // Store armor type (Light, Medium, Heavy)
+      hasShield,  // Store whether character has a shield
       gold: (d6() + d6()) * 30,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
@@ -379,6 +391,34 @@ function CharacterGenerator() {
 
     // Character data mapping with sanitized values
     const characterLevel = character.level || 1;
+    
+    // Helper function to calculate proper dexterity bonus based on armor type
+    const calculateDexBonus = (character) => {
+      if (!character.attrs) return 0;
+      const dexAttr = character.attrs.find(attr => attr.attr === 'Dexterity');
+      if (!dexAttr) return 0;
+      
+      const dexMod = dexAttr.mod;
+      const armorType = character.armorType || 
+        (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+         character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+      
+      // Apply dexterity limits based on armor type
+      if (armorType === "Medium") {
+        return Math.min(dexMod, 2);  // Chain armor: max +2 dex
+      } else if (armorType === "Heavy") {
+        return Math.min(dexMod, 1);  // Plate armor: max +1 dex
+      } else {
+        return dexMod;  // Light armor (No Armour/Leather): no limit
+      }
+    };
+    
+    // Calculate proper AC for backward compatibility
+    const baseAC = character.armour?.ac || character.acBreakdown?.base || 10;
+    const shieldBonus = (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? 1 : 0;
+    const dexBonus = calculateDexBonus(character);
+    const calculatedAC = baseAC + shieldBonus + dexBonus;
+    
     const fieldValues = {
       'Name': sanitizeForPDF(character.name) || '',
       'Level': characterLevel.toString(),
@@ -390,8 +430,9 @@ function CharacterGenerator() {
       'HP_Max': character.hp?.toString() || '',
       'HP_Current': character.hp?.toString() || '',
       'Hit_Die_Type': sanitizeForPDF(character.hitDie) || '',
-      'Armour': sanitizeForPDF(character.armour?.name) || '',
-      'Shield': character.hasShield ? 'Shield' : '',
+      'Armour': character.armour?.ac?.toString() || character.acBreakdown?.base?.toString() || '10',  // Just the armor AC number
+      'Shield': (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? '1' : '0',  // 1 or 0 based on whether character has shield
+      'AC': (character.ac || calculatedAC)?.toString() || '',  // Total AC (Armour + Shield + Dexterity_Mod with proper limits)
       'Move_Speed': 'N',
       'Appearance': sanitizeForPDF(character.appearance) || '',
       'Detail': sanitizeForPDF(character.detail) || '',
@@ -505,6 +546,26 @@ function CharacterGenerator() {
       // Fallback: default to both unchecked if unexpected value
       checkboxValues['Arcane'] = 'Off';  
       checkboxValues['Divine'] = 'Off';  
+    }
+
+    // Handle armor type checkboxes
+    const armorType = character.armorType || 
+      (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+       character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+    
+    console.log('🛡️ Armor Type Debug:', armorType);
+    if (armorType === "Medium") {
+      console.log('  Setting Medium to Yes, Heavy to Off');
+      checkboxValues['Medium'] = 'Yes';
+      checkboxValues['Heavy'] = 'Off';
+    } else if (armorType === "Heavy") {
+      console.log('  Setting Medium to Off, Heavy to Yes');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Yes';
+    } else {
+      console.log('  Setting both Medium and Heavy to Off (Light armor)');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Off';
     }
     
     console.log('All checkbox values to set:', checkboxValues);
