@@ -255,7 +255,7 @@ function CharacterGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       personality: pick(personalities),
-      spellPowerType: pick(["Arcane", "Divine"])
+      spellPowerType: "None"  // Default to "None" instead of random selection
     });
     }, 500); // Match the popup duration
   }
@@ -378,9 +378,12 @@ function CharacterGenerator() {
     };
 
     // Character data mapping with sanitized values
+    const characterLevel = character.level || 1;
     const fieldValues = {
       'Name': sanitizeForPDF(character.name) || '',
-      'Level': '1',
+      'Level': characterLevel.toString(),
+      'Level_Mod_P': characterLevel.toString(),  // Primary level modifier = full level
+      'Level_Mod_S': Math.floor(characterLevel / 2).toString(),  // Secondary level modifier = half level (rounded down)
       'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
       'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
       'Alignment': sanitizeForPDF(character.alignment) || '',
@@ -405,15 +408,15 @@ function CharacterGenerator() {
         // Export attribute score
         fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
         
-        // Export attribute modifier (formatted with + for positive values)
-        fieldValues[`${attrName}_Mod`] = attr.mod >= 0 ? `+${attr.mod}` : attr.mod?.toString() || '';
+        // Export attribute modifier (no + for positive values)
+        fieldValues[`${attrName}_Mod`] = attr.mod?.toString() || '';
         
         // Calculate and export check bonus (attribute modifier + level modifier)
         // Level modifier = full level for primary attributes, half level (rounded down) for secondary
         const characterLevel = character.level || 1;
         const levelModifier = attr.primary ? characterLevel : Math.floor(characterLevel / 2);
         const checkBonus = attr.mod + levelModifier;
-        fieldValues[`${attrName}_Check`] = checkBonus >= 0 ? `+${checkBonus}` : checkBonus.toString();
+        fieldValues[`${attrName}_Check_Bonus`] = checkBonus.toString();
       });
     }
 
@@ -483,9 +486,26 @@ function CharacterGenerator() {
       });
     }
 
-    // TEST: Add some other checkboxes to see if checkbox mechanism works at all
-    checkboxValues['Arcane'] = 'Yes';  // Always check Arcane for testing
-    checkboxValues['Divine'] = 'Off';  // Always uncheck Divine for testing
+    // Handle spell power checkboxes based on character's spell power type
+    console.log('🔍 Spell Power Debug:', character.spellPowerType);
+    if (character.spellPowerType === "None") {
+      console.log('  Setting both Arcane and Divine to Off (None selected)');
+      checkboxValues['Arcane'] = 'Off';  // Neither checked when None selected
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Arcane") {
+      console.log('  Setting Arcane to Yes, Divine to Off');
+      checkboxValues['Arcane'] = 'Yes';  // Check Arcane, uncheck Divine
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Divine") {
+      console.log('  Setting Arcane to Off, Divine to Yes');
+      checkboxValues['Arcane'] = 'Off';  // Uncheck Arcane, check Divine
+      checkboxValues['Divine'] = 'Yes';  
+    } else {
+      console.log('  Unexpected spellPowerType value, defaulting both to Off:', character.spellPowerType);
+      // Fallback: default to both unchecked if unexpected value
+      checkboxValues['Arcane'] = 'Off';  
+      checkboxValues['Divine'] = 'Off';  
+    }
     
     console.log('All checkbox values to set:', checkboxValues);
 
@@ -514,7 +534,6 @@ function CharacterGenerator() {
               console.log(`Setting text field ${fieldNameStr} = "${value}"`);
               // Set the field value using PDFString - this preserves original formatting
               field.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(value));
-              
               // Don't set appearance - let the viewer generate it using original formatting
               // This is key to preserving Garamond Bold and size 16 with auto-sizing
             }
@@ -1263,10 +1282,13 @@ function CharacterSheet({
     label: "Gold",
     value: `${pc.gold} gp`
   }), /*#__PURE__*/React.createElement(Field, {
-    label: "Spell Power",
+    label: "Spell Power (Pick if caster)",
     value: /*#__PURE__*/React.createElement(React.Fragment, null, (() => {
       const intAttr = pc.attrs.find(a => a.attr === "Intelligence");
       const wisAttr = pc.attrs.find(a => a.attr === "Wisdom");
+      if (pc.spellPowerType === "None") {
+        return 0;
+      }
       const spellPower = pc.spellPowerType === "Arcane" ? intAttr.check + 10 : wisAttr.check + 10;
       return spellPower;
     })(), " ", /*#__PURE__*/React.createElement("select", {
@@ -1274,6 +1296,8 @@ function CharacterSheet({
       onChange: handleSpellPowerChange,
       className: "ml-1 px-1 rounded text-xs border"
     }, /*#__PURE__*/React.createElement("option", {
+      value: "None"
+    }, "None"), /*#__PURE__*/React.createElement("option", {
       value: "Arcane"
     }, "Arcane"), /*#__PURE__*/React.createElement("option", {
       value: "Divine"

@@ -1,0 +1,697 @@
+[
+  {
+    "index": 1,
+    "name": "Level",
+    "type": "/Tx"
+  },
+  {
+    "index": 2,
+    "name": "Level_Mod_S",
+    "type": "/Tx"
+  },
+  {
+    "index": 3,
+    "name": "Background",
+    "type": "/Btn"
+  },
+  {
+    "index": 4,
+    "name": "Luck1",
+    "type": "/Btn"
+  },
+  {
+    "index": 5,
+    "name": "Luck2",
+    "type": "/Btn"
+  },
+  {
+    "index": 6,
+    "name": "Luck3",
+    "type": "/Btn"
+  },
+  {
+    "index": 7,
+    "name": "Level_Mod_P",
+    "type": "/Tx"
+  },
+  {
+    "index": 8,
+    "name": "Luck_Day",
+    "type": "/Tx"
+  },
+  {
+    "index": 9,
+    "name": "XP_Current",
+    "type": "/Tx"
+  },
+  {
+    "index": 10,
+    "name": "XP_Next",
+    "type": "/Tx"
+  },
+  {
+    "index": 11,
+    "name": "Gold",
+    "type": "/Tx"
+  },
+  {
+    "index": 12,
+    "name": "Strength_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 13,
+    "name": "Refresh",
+    "type": "/Btn"
+  },
+  {
+    "index": 14,
+    "name": "Strength_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 15,
+    "name": "Strength_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 16,
+    "name": "Strength_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 17,
+    "name": "Dexterity_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 18,
+    "name": "Dexterity_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 19,
+    "name": "Dexterity_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 20,
+    "name": "Dexterity_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 21,
+    "name": "Constitution_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 22,
+    "name": "Constitution_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 23,
+    "name": "Constitution_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 24,
+    "name": "Constitution_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 25,
+    "name": "Intelligence_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 26,
+    "name": "Intelligence_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 27,
+    "name": "Intelligence_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 28,
+    "name": "Intelligence_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 29,
+    "name": "Wisdom_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 30,
+    "name": "Wisdom_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 31,
+    "name": "Wisdom_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 32,
+    "name": "Wisdom_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 33,
+    "name": "Charisma_Score",
+    "type": "/Tx"
+  },
+  {
+    "index": 34,
+    "name": "Charisma_Mod",
+    "type": "/Tx"
+  },
+  {
+    "index": 35,
+    "name": "Charisma_P",
+    "type": "/Btn"
+  },
+  {
+    "index": 36,
+    "name": "Charisma_Check_Bonus",
+    "type": "/Tx"
+  },
+  {
+    "index": 37,
+    "name": "Hit_Die_Type",
+    "type": "/Tx"
+  },
+  {
+    "index": 38,
+    "name": "Name",
+    "type": "/Tx"
+  },
+  {
+    "index": 39,
+    "name": "HP_Max",
+    "type": "/Tx"
+  },
+  {
+    "index": 40,
+    "name": "Condition1",
+    "type": "/Tx"
+  },
+  {
+    "index": 41,
+    "name": "Condition2",
+    "type": "/Tx"
+  },
+  {
+    "index": 42,
+    "name": "Condition3",
+    "type": "/Tx"
+  },
+  {
+    "index": 43,
+    "name": "HP_Current",
+    "type": "/Tx"
+  },
+  {
+    "index": 44,
+    "name": "Heavy_Stealth",
+    "type": "/Tx"
+  },
+  {
+    "index": 45,
+    "name": "Armour",
+    "type": "/Tx"
+  },
+  {
+    "index": 46,
+    "name": "Shield",
+    "type": "/Tx"
+  },
+  {
+    "index": 47,
+    "name": "Heavy",
+    "type": "/Btn"
+  },
+  {
+    "index": 48,
+    "name": "Move_Speed",
+    "type": "/Tx"
+  },
+  {
+    "index": 49,
+    "name": "Weapon1",
+    "type": "/Tx"
+  },
+  {
+    "index": 50,
+    "name": "Weapon2",
+    "type": "/Tx"
+  },
+  {
+    "index": 51,
+    "name": "Weapon3",
+    "type": "/Tx"
+  },
+  {
+    "index": 52,
+    "name": "Weapon_Bonus1",
+    "type": "/Tx"
+  },
+  {
+    "index": 53,
+    "name": "Weapon_Bonus2",
+    "type": "/Tx"
+  },
+  {
+    "index": 54,
+    "name": "Weapon_Bonus3",
+    "type": "/Tx"
+  },
+  {
+    "index": 55,
+    "name": "Weapon_Damage1",
+    "type": "/Tx"
+  },
+  {
+    "index": 56,
+    "name": "Weapon_Damage2",
+    "type": "/Tx"
+  },
+  {
+    "index": 57,
+    "name": "Weapon_Damage3",
+    "type": "/Tx"
+  },
+  {
+    "index": 58,
+    "name": "Medium",
+    "type": "/Btn"
+  },
+  {
+    "index": 59,
+    "name": "Arcane",
+    "type": "/Btn"
+  },
+  {
+    "index": 60,
+    "name": "AC",
+    "type": "/Tx"
+  },
+  {
+    "index": 61,
+    "name": "Divine",
+    "type": "/Btn"
+  },
+  {
+    "index": 62,
+    "name": "Spell_Power",
+    "type": "/Tx"
+  },
+  {
+    "index": 63,
+    "name": "Spells_Per_Day",
+    "type": "/Tx"
+  },
+  {
+    "index": 64,
+    "name": "Spell1",
+    "type": "/Btn"
+  },
+  {
+    "index": 65,
+    "name": "Spell2",
+    "type": "/Btn"
+  },
+  {
+    "index": 66,
+    "name": "Spell3",
+    "type": "/Btn"
+  },
+  {
+    "index": 67,
+    "name": "Spell4",
+    "type": "/Btn"
+  },
+  {
+    "index": 68,
+    "name": "Spell5",
+    "type": "/Btn"
+  },
+  {
+    "index": 69,
+    "name": "Spell6",
+    "type": "/Btn"
+  },
+  {
+    "index": 70,
+    "name": "Spell7",
+    "type": "/Btn"
+  },
+  {
+    "index": 71,
+    "name": "Spell8",
+    "type": "/Btn"
+  },
+  {
+    "index": 72,
+    "name": "Spell9",
+    "type": "/Btn"
+  },
+  {
+    "index": 73,
+    "name": "Spell10",
+    "type": "/Btn"
+  },
+  {
+    "index": 74,
+    "name": "Spell11",
+    "type": "/Btn"
+  },
+  {
+    "index": 75,
+    "name": "Spell12",
+    "type": "/Btn"
+  },
+  {
+    "index": 76,
+    "name": "Spell13",
+    "type": "/Btn"
+  },
+  {
+    "index": 77,
+    "name": "Max_Followers",
+    "type": "/Tx"
+  },
+  {
+    "index": 78,
+    "name": "Reaction",
+    "type": "/Tx"
+  },
+  {
+    "index": 79,
+    "name": "Condition4",
+    "type": "/Tx"
+  },
+  {
+    "index": 80,
+    "name": "Alignment",
+    "type": "/Tx"
+  },
+  {
+    "index": 81,
+    "name": "Occupation1",
+    "type": "/Tx"
+  },
+  {
+    "index": 82,
+    "name": "Occupation2",
+    "type": "/Tx"
+  },
+  {
+    "index": 83,
+    "name": "Appearance",
+    "type": "/Tx"
+  },
+  {
+    "index": 84,
+    "name": "Detail",
+    "type": "/Tx"
+  },
+  {
+    "index": 85,
+    "name": "Clothing",
+    "type": "/Tx"
+  },
+  {
+    "index": 86,
+    "name": "Quirk",
+    "type": "/Tx"
+  },
+  {
+    "index": 87,
+    "name": "Portrait_Symbol_af_image",
+    "type": "/Btn"
+  },
+  {
+    "index": 88,
+    "name": "Slot1",
+    "type": "/Tx"
+  },
+  {
+    "index": 89,
+    "name": "Slot_Quality1",
+    "type": "/Tx"
+  },
+  {
+    "index": 90,
+    "name": "Slot2",
+    "type": "/Tx"
+  },
+  {
+    "index": 91,
+    "name": "Slot3",
+    "type": "/Tx"
+  },
+  {
+    "index": 92,
+    "name": "Slot4",
+    "type": "/Tx"
+  },
+  {
+    "index": 93,
+    "name": "Slot5",
+    "type": "/Tx"
+  },
+  {
+    "index": 94,
+    "name": "Slot6",
+    "type": "/Tx"
+  },
+  {
+    "index": 95,
+    "name": "Slot7",
+    "type": "/Tx"
+  },
+  {
+    "index": 96,
+    "name": "Slot8",
+    "type": "/Tx"
+  },
+  {
+    "index": 97,
+    "name": "Slot9",
+    "type": "/Tx"
+  },
+  {
+    "index": 98,
+    "name": "Slot10",
+    "type": "/Tx"
+  },
+  {
+    "index": 99,
+    "name": "Slot11",
+    "type": "/Tx"
+  },
+  {
+    "index": 100,
+    "name": "Slot12",
+    "type": "/Tx"
+  },
+  {
+    "index": 101,
+    "name": "Slot13",
+    "type": "/Tx"
+  },
+  {
+    "index": 102,
+    "name": "Slot14",
+    "type": "/Tx"
+  },
+  {
+    "index": 103,
+    "name": "Slot15",
+    "type": "/Tx"
+  },
+  {
+    "index": 104,
+    "name": "Slot16",
+    "type": "/Tx"
+  },
+  {
+    "index": 105,
+    "name": "Slot17",
+    "type": "/Tx"
+  },
+  {
+    "index": 106,
+    "name": "Slot18",
+    "type": "/Tx"
+  },
+  {
+    "index": 107,
+    "name": "Slot19",
+    "type": "/Tx"
+  },
+  {
+    "index": 108,
+    "name": "Slot20",
+    "type": "/Tx"
+  },
+  {
+    "index": 109,
+    "name": "Slot21",
+    "type": "/Tx"
+  },
+  {
+    "index": 110,
+    "name": "Slot22",
+    "type": "/Tx"
+  },
+  {
+    "index": 111,
+    "name": "Slot23",
+    "type": "/Tx"
+  },
+  {
+    "index": 112,
+    "name": "Slot24",
+    "type": "/Tx"
+  },
+  {
+    "index": 113,
+    "name": "Slot25",
+    "type": "/Tx"
+  },
+  {
+    "index": 114,
+    "name": "Slot26",
+    "type": "/Tx"
+  },
+  {
+    "index": 115,
+    "name": "Slot_Quality2",
+    "type": "/Tx"
+  },
+  {
+    "index": 116,
+    "name": "Slot_Quality3",
+    "type": "/Tx"
+  },
+  {
+    "index": 117,
+    "name": "Slot_Quality4",
+    "type": "/Tx"
+  },
+  {
+    "index": 118,
+    "name": "Slot_Quality5",
+    "type": "/Tx"
+  },
+  {
+    "index": 119,
+    "name": "Slot_Quality6",
+    "type": "/Tx"
+  },
+  {
+    "index": 120,
+    "name": "Slot_Quality7",
+    "type": "/Tx"
+  },
+  {
+    "index": 121,
+    "name": "Slot_Quality8",
+    "type": "/Tx"
+  },
+  {
+    "index": 122,
+    "name": "Slot_Quality9",
+    "type": "/Tx"
+  },
+  {
+    "index": 123,
+    "name": "Slot_Quality10",
+    "type": "/Tx"
+  },
+  {
+    "index": 124,
+    "name": "Slot_Quality11",
+    "type": "/Tx"
+  },
+  {
+    "index": 125,
+    "name": "Slot_Quality12",
+    "type": "/Tx"
+  },
+  {
+    "index": 126,
+    "name": "Slot_Quality13",
+    "type": "/Tx"
+  },
+  {
+    "index": 127,
+    "name": "Slot_Quality14",
+    "type": "/Tx"
+  },
+  {
+    "index": 128,
+    "name": "Slot_Quality15",
+    "type": "/Tx"
+  },
+  {
+    "index": 129,
+    "name": "Slot_Quality16",
+    "type": "/Tx"
+  },
+  {
+    "index": 130,
+    "name": "Slot_Quality17",
+    "type": "/Tx"
+  },
+  {
+    "index": 131,
+    "name": "Slot_Quality18",
+    "type": "/Tx"
+  },
+  {
+    "index": 132,
+    "name": "Slot_Quality19",
+    "type": "/Tx"
+  },
+  {
+    "index": 133,
+    "name": "Slot_Quality20",
+    "type": "/Tx"
+  },
+  {
+    "index": 134,
+    "name": "Slot_Quality21",
+    "type": "/Tx"
+  },
+  {
+    "index": 135,
+    "name": "Slot_Quality22",
+    "type": "/Tx"
+  },
+  {
+    "index": 136,
+    "name": "Slot_Quality23",
+    "type": "/Tx"
+  },
+  {
+    "index": 137,
+    "name": "Slot_Quality24",
+    "type": "/Tx"
+  },
+  {
+    "index": 138,
+    "name": "Slot_Quality25",
+    "type": "/Tx"
+  },
+  {
+    "index": 139,
+    "name": "Slot_Quality26",
+    "type": "/Tx"
+  }
+]

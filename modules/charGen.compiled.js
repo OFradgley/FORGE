@@ -255,7 +255,7 @@ function CharacterGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       personality: pick(personalities),
-      spellPowerType: pick(["Arcane", "Divine"])
+      spellPowerType: "None"  // Default to "None" instead of random selection
     });
     }, 500); // Match the popup duration
   }
@@ -486,9 +486,26 @@ function CharacterGenerator() {
       });
     }
 
-    // TEST: Add some other checkboxes to see if checkbox mechanism works at all
-    checkboxValues['Arcane'] = 'Yes';  // Always check Arcane for testing
-    checkboxValues['Divine'] = 'Off';  // Always uncheck Divine for testing
+    // Handle spell power checkboxes based on character's spell power type
+    console.log('🔍 Spell Power Debug:', character.spellPowerType);
+    if (character.spellPowerType === "None") {
+      console.log('  Setting both Arcane and Divine to Off (None selected)');
+      checkboxValues['Arcane'] = 'Off';  // Neither checked when None selected
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Arcane") {
+      console.log('  Setting Arcane to Yes, Divine to Off');
+      checkboxValues['Arcane'] = 'Yes';  // Check Arcane, uncheck Divine
+      checkboxValues['Divine'] = 'Off';  
+    } else if (character.spellPowerType === "Divine") {
+      console.log('  Setting Arcane to Off, Divine to Yes');
+      checkboxValues['Arcane'] = 'Off';  // Uncheck Arcane, check Divine
+      checkboxValues['Divine'] = 'Yes';  
+    } else {
+      console.log('  Unexpected spellPowerType value, defaulting both to Off:', character.spellPowerType);
+      // Fallback: default to both unchecked if unexpected value
+      checkboxValues['Arcane'] = 'Off';  
+      checkboxValues['Divine'] = 'Off';  
+    }
     
     console.log('All checkbox values to set:', checkboxValues);
 
@@ -526,6 +543,15 @@ function CharacterGenerator() {
           if (checkboxValues.hasOwnProperty(fieldNameStr)) {
             const checkboxValue = checkboxValues[fieldNameStr];
             console.log(`Setting checkbox ${fieldNameStr} = "${checkboxValue}"`);
+            
+            // SPECIAL DEBUG: Show detailed info for spell power checkboxes
+            if (fieldNameStr === 'Arcane' || fieldNameStr === 'Divine') {
+              console.log(`🔥 SPELL POWER FIELD DEBUG: ${fieldNameStr}`);
+              console.log(`  Value to set: ${checkboxValue}`);
+              console.log(`  Field type: ${field.lookup(PDFLib.PDFName.of('FT'))?.toString()}`);
+              console.log(`  Current V: ${field.lookup(PDFLib.PDFName.of('V'))?.toString()}`);
+              console.log(`  Current AS: ${field.lookup(PDFLib.PDFName.of('AS'))?.toString()}`);
+            }
             
             try {
               // Get the checkbox widget to understand its appearance states
@@ -567,11 +593,12 @@ function CharacterGenerator() {
                   }
                 }
               } else {
-                // Fallback for checkboxes without kids (direct field)
+                // Fallback for checkboxes without kids (direct field) - use same logic as primary attributes
                 if (checkboxValue === 'Yes') {
-                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
-                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
-                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method)`);
+                  // Both Arcane and Divine use '/1' for checked, '/Off' for unchecked
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('1'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('1'));
+                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method using '/1')`);
                 } else {
                   field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
                   field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
@@ -1265,10 +1292,13 @@ function CharacterSheet({
     label: "Gold",
     value: `${pc.gold} gp`
   }), /*#__PURE__*/React.createElement(Field, {
-    label: "Spell Power",
+    label: "Spell Power (Pick if caster)",
     value: /*#__PURE__*/React.createElement(React.Fragment, null, (() => {
       const intAttr = pc.attrs.find(a => a.attr === "Intelligence");
       const wisAttr = pc.attrs.find(a => a.attr === "Wisdom");
+      if (pc.spellPowerType === "None") {
+        return 0;
+      }
       const spellPower = pc.spellPowerType === "Arcane" ? intAttr.check + 10 : wisAttr.check + 10;
       return spellPower;
     })(), " ", /*#__PURE__*/React.createElement("select", {
@@ -1276,6 +1306,8 @@ function CharacterSheet({
       onChange: handleSpellPowerChange,
       className: "ml-1 px-1 rounded text-xs border"
     }, /*#__PURE__*/React.createElement("option", {
+      value: "None"
+    }, "None"), /*#__PURE__*/React.createElement("option", {
       value: "Arcane"
     }, "Arcane"), /*#__PURE__*/React.createElement("option", {
       value: "Divine"
