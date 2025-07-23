@@ -279,7 +279,14 @@ function CharacterGenerator() {
     const primariesFromData = new Set(characterData.data.attrs.filter(a => a.primary).map(a => a.attr));
     setPrimaries(primariesFromData);
     setHpOverride(null);
-    setSelectedWeapon(null);
+    
+    // Restore the character's weapon from their inventory
+    // Find the first weapon in the character's inventory
+    const characterWeapon = characterData.data.inventory?.find(item => 
+      weapons.some(w => w.name === item.name)
+    );
+    setSelectedWeapon(characterWeapon ? characterWeapon.name : null);
+    
     setSwapMode(false);
     setSwapSelection([]);
   };
