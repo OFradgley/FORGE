@@ -51,5 +51,5 @@ def extract_pdf_fields(pdf_path):
         return None
 
 if __name__ == "__main__":
-    pdf_path = "FORGE - Character Sheet (01-01-25)(Form Fillable).pdf"
+    pdf_path = "Character Sheet Template (01-01-25).pdf"
     extract_pdf_fields(pdf_path)

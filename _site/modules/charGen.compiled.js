@@ -308,8 +308,8 @@ function CharacterGenerator() {
         throw new Error('PDF-lib library not loaded. Please refresh the page and try again.');
       }
 
-      // Step 1: Load the original PDF
-      const response = await fetch('./FORGE - Character Sheet (01-01-25)(Form Fillable).pdf');
+      // Step 1: Load the new non-calculating PDF template
+      const response = await fetch('./Character Sheet Template (01-01-25).pdf');
       if (!response.ok) {
         throw new Error('Could not load PDF template');
       }
@@ -397,12 +397,23 @@ function CharacterGenerator() {
       'Gold': character.gold?.toString() || '0'
     };
 
-    // Add attributes with sanitized values (only scores, let PDF calculate modifiers)
+    // Add attributes with all calculated values (scores, modifiers, and check bonuses)
     if (character.attrs) {
       character.attrs.forEach(attr => {
         const attrName = attr.attr;
+        
+        // Export attribute score
         fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
-        // Don't set modifiers - let the PDF character sheet calculate them automatically
+        
+        // Export attribute modifier (formatted with + for positive values)
+        fieldValues[`${attrName}_Mod`] = attr.mod >= 0 ? `+${attr.mod}` : attr.mod?.toString() || '';
+        
+        // Calculate and export check bonus (attribute modifier + level modifier)
+        // Level modifier = full level for primary attributes, half level (rounded down) for secondary
+        const characterLevel = character.level || 1;
+        const levelModifier = attr.primary ? characterLevel : Math.floor(characterLevel / 2);
+        const checkBonus = attr.mod + levelModifier;
+        fieldValues[`${attrName}_Check`] = checkBonus >= 0 ? `+${checkBonus}` : checkBonus.toString();
       });
     }
 

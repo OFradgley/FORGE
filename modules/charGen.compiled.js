@@ -308,8 +308,8 @@ function CharacterGenerator() {
         throw new Error('PDF-lib library not loaded. Please refresh the page and try again.');
       }
 
-      // Step 1: Load the original PDF
-      const response = await fetch('./FORGE - Character Sheet (01-01-25)(Form Fillable).pdf');
+      // Step 1: Load the new non-calculating PDF template
+      const response = await fetch('./Character Sheet Template (01-01-25).pdf');
       if (!response.ok) {
         throw new Error('Could not load PDF template');
       }
@@ -378,9 +378,12 @@ function CharacterGenerator() {
     };
 
     // Character data mapping with sanitized values
+    const characterLevel = character.level || 1;
     const fieldValues = {
       'Name': sanitizeForPDF(character.name) || '',
-      'Level': '1',
+      'Level': characterLevel.toString(),
+      'Level_Mod_P': characterLevel.toString(),  // Primary level modifier = full level
+      'Level_Mod_S': Math.floor(characterLevel / 2).toString(),  // Secondary level modifier = half level (rounded down)
       'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
       'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
       'Alignment': sanitizeForPDF(character.alignment) || '',
@@ -397,12 +400,23 @@ function CharacterGenerator() {
       'Gold': character.gold?.toString() || '0'
     };
 
-    // Add attributes with sanitized values (only scores, let PDF calculate modifiers)
+    // Add attributes with all calculated values (scores, modifiers, and check bonuses)
     if (character.attrs) {
       character.attrs.forEach(attr => {
         const attrName = attr.attr;
+        
+        // Export attribute score
         fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
-        // Don't set modifiers - let the PDF character sheet calculate them automatically
+        
+        // Export attribute modifier (no + for positive values)
+        fieldValues[`${attrName}_Mod`] = attr.mod?.toString() || '';
+        
+        // Calculate and export check bonus (attribute modifier + level modifier)
+        // Level modifier = full level for primary attributes, half level (rounded down) for secondary
+        const characterLevel = character.level || 1;
+        const levelModifier = attr.primary ? characterLevel : Math.floor(characterLevel / 2);
+        const checkBonus = attr.mod + levelModifier;
+        fieldValues[`${attrName}_Check_Bonus`] = checkBonus.toString();
       });
     }
 
@@ -503,7 +517,6 @@ function CharacterGenerator() {
               console.log(`Setting text field ${fieldNameStr} = "${value}"`);
               // Set the field value using PDFString - this preserves original formatting
               field.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(value));
-              
               // Don't set appearance - let the viewer generate it using original formatting
               // This is key to preserving Garamond Bold and size 16 with auto-sizing
             }
