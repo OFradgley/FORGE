@@ -318,7 +318,7 @@ function CharacterGenerator() {
       const pdfDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
       
       // Step 2: Set field values using low-level PDF operations to preserve formatting
-      await setFieldValuesPreservingFormat(pdfDoc, pc);
+      await setFieldValuesPreservingFormat(pdfDoc, pc, selectedWeapon);
       
       // Step 3: Save and download the completed PDF
       const finalPdfBytes = await pdfDoc.save();
@@ -339,7 +339,7 @@ function CharacterGenerator() {
   };
 
   // Function to set field values while preserving original formatting completely
-  const setFieldValuesPreservingFormat = async (pdfDoc, character) => {
+  const setFieldValuesPreservingFormat = async (pdfDoc, character, selectedWeapon) => {
     // Get the AcroForm dictionary
     const catalog = pdfDoc.catalog;
     const acroForm = catalog.lookup(PDFLib.PDFName.of('AcroForm'));
@@ -397,35 +397,56 @@ function CharacterGenerator() {
       'Gold': character.gold?.toString() || '0'
     };
 
-    // Add attributes with sanitized values
+    // Add attributes with sanitized values (only scores, let PDF calculate modifiers)
     if (character.attrs) {
       character.attrs.forEach(attr => {
         const attrName = attr.attr;
         fieldValues[`${attrName}_Score`] = attr.score?.toString() || '';
-        fieldValues[`${attrName}_Mod`] = attr.mod >= 0 ? `+${attr.mod}` : attr.mod?.toString() || '';
+        // Don't set modifiers - let the PDF character sheet calculate them automatically
       });
     }
 
-    // Add weapons with sanitized values
+    // Get the selected weapon object for proper handling
+    const selectedWeaponObj = weapons.find(w => w.name === selectedWeapon);
+    
+    // Add weapon fields (Requirement 2: Weapon1 and Weapon_Damage1 fields)
+    if (selectedWeaponObj) {
+      fieldValues['Weapon1'] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
+      fieldValues['Weapon_Damage1'] = sanitizeForPDF(selectedWeaponObj.dmg);
+    }
+
+    // Add inventory slots with proper weapon slot handling (Requirement 3)
     if (character.inventory) {
-      const weapons = character.inventory.filter(item => 
-        item.name && (item.name.includes('Sword') || item.name.includes('Bow') || 
-                     item.name.includes('Mace') || item.name.includes('Axe') || 
-                     item.name.includes('Spear') || item.name.includes('Dagger') ||
-                     item.name.includes('Sling') || item.name.includes('Staff')));
+      let slotIndex = 1;
       
-      weapons.forEach((weapon, index) => {
-        if (index < 3) {
-          fieldValues[`Weapon${index + 1}`] = sanitizeForPDF(weapon.name);
-        }
-      });
-    }
-
-    // Add inventory slots with sanitized values
-    if (character.inventory) {
-      character.inventory.forEach((item, index) => {
-        if (index < 26) {
-          fieldValues[`Slot${index + 1}`] = sanitizeForPDF(item.name) || '';
+      character.inventory.forEach((item) => {
+        if (slotIndex > 26) return; // Max 26 slots
+        
+        // Check if this item is the selected weapon
+        const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        if (isSelectedWeapon) {
+          // Requirement 1 & 3: Show weapon with damage in brackets for first slot
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
+          slotIndex++;
+          
+          // Requirement 3: Handle multi-slot weapons with continuation indicators
+          const weaponSlots = selectedWeaponObj.slots || 1;
+          for (let i = 1; i < weaponSlots && slotIndex <= 26; i++) {
+            fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
+            slotIndex++;
+          }
+        } else {
+          // Regular inventory item
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(item.name) || '';
+          slotIndex++;
+          
+          // Handle multi-slot items (if they have slots property)
+          const itemSlots = item.slots || 1;
+          for (let i = 1; i < itemSlots && slotIndex <= 26; i++) {
+            fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
+            slotIndex++;
+          }
         }
       });
     }
