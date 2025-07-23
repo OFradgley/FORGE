@@ -516,8 +516,16 @@ function CharacterGenerator() {
     // Add inventory slots with proper weapon slot handling (Requirement 3)
     if (character.inventory) {
       let slotIndex = 1;
+      const zeroSlotItems = []; // Collect 0-slot items to place at the end
       
       character.inventory.forEach((item) => {
+        // Check if this is a 0-slot item (unencumbering)
+        const itemSlots = item.slots || 1;
+        if (itemSlots === 0) {
+          zeroSlotItems.push(item);
+          return; // Skip processing now, handle at the end
+        }
+        
         if (slotIndex > 26) return; // Max 26 slots
         
         // Check if this item is the selected weapon
@@ -580,12 +588,75 @@ function CharacterGenerator() {
           slotIndex++;
           
           // Handle multi-slot items (if they have slots property)
-          const itemSlots = item.slots || 1;
           for (let i = 1; i < itemSlots && slotIndex <= 26; i++) {
             fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
             slotIndex++;
           }
         }
+      });
+      
+      // Place 0-slot items at the end (starting from slot 26 and working backwards)
+      let zeroSlotIndex = 26;
+      zeroSlotItems.forEach((item) => {
+        if (zeroSlotIndex < 1) return; // No more slots available
+        
+        // Skip if this slot is already occupied by a regular item
+        if (fieldValues[`Slot${zeroSlotIndex}`]) {
+          // Find the next available slot working backwards
+          while (zeroSlotIndex >= 1 && fieldValues[`Slot${zeroSlotIndex}`]) {
+            zeroSlotIndex--;
+          }
+          if (zeroSlotIndex < 1) return; // No more slots available
+        }
+        
+        // Check if this item is the selected weapon
+        const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        // Helper function (same as above)
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)';
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
+        
+        if (isSelectedWeapon) {
+          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
+          if (quality) {
+            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
+          }
+        } else {
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
+          }
+        }
+        
+        zeroSlotIndex--; // Move to the next slot backwards
       });
     }
 
