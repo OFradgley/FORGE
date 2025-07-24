@@ -35,10 +35,29 @@ const choosePrimaries = (o1, o2) => {
 
 // ------------------------------ Main Component ------------------------------
 function NPCGenerator() {
-  const [pc, setPc] = React.useState(null);
-  const [primaries, setPrimaries] = React.useState(new Set());
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingNPCState;
+  
+  const [pc, setPc] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.pc ? pendingState.pc : null;
+  });
+  const [primaries, setPrimaries] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.primaries) {
+      return new Set(pendingState.primaries);
+    }
+    return new Set();
+  });
   const [hpOverride, setHpOverride] = React.useState(null);
-  const [selectedWeapon, setSelectedWeapon] = React.useState(null);
+  const [selectedWeapon, setSelectedWeapon] = React.useState(() => {
+    const restoredWeapon = pendingState ? pendingState.selectedWeapon : null;
+    // Clear pending state after using it for all initializations
+    if (pendingState) {
+      window._pendingNPCState = null;
+    }
+    return restoredWeapon;
+  });
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
@@ -75,6 +94,26 @@ function NPCGenerator() {
     setDarkMode(document.body.classList.contains("dark"));
     // No need for injected CSS - using inline styles instead
     return () => observer.disconnect();
+  }, []);
+  
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentNPCState = {
+      pc,
+      primaries: Array.from(primaries),
+      selectedWeapon,
+      currentNpcType
+    };
+  }, [pc, primaries, selectedWeapon, currentNpcType]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentNPCState) {
+        window._preservedNPCState = { ...window._currentNPCState };
+      }
+    };
   }, []);
 
   // Roll animation trigger function
@@ -2003,15 +2042,64 @@ function CharacterSheet({
 // Only one export for mount is needed. Remove duplicate export.
 export function mount(root) {
   if (!root) return;
-  // Use window.ReactDOM for compatibility with browser global ReactDOM
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      root._reactRoot.unmount();
+    } catch (e) {
+      // Ignore unmount errors - expected after HTML restoration
+      console.log("React unmount error (expected after HTML restoration):", e.message);
+    }
     root._reactRoot = null;
   }
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(NPCGenerator));
+  
+  // Set up state persistence after component renders
+  setTimeout(() => {
+    window.saveState = () => {
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentNPCState || window._preservedNPCState;
+      if (!currentState || !currentState.pc) {
+        console.log("No current NPC state available");
+        return null;
+      }
+      
+      console.log("NPC state to save:", currentState);
+      
+      // Only save if there's actual character data
+      if (currentState.pc) {
+        return {
+          npcData: currentState,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      if (state && (state.hasNPC || state.npcData)) {
+        console.log("NPC Generator restoring state");
+        
+        // Store the state temporarily and remount
+        if (state.npcData) {
+          window._pendingNPCState = state.npcData;
+        }
+        
+        // Remount the component
+        setTimeout(() => {
+          root._reactRoot.render(window.React.createElement(NPCGenerator));
+        }, 50);
+      }
+    };
+  }, 200);
 }

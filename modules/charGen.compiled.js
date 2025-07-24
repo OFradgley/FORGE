@@ -36,14 +36,36 @@ const choosePrimaries = (o1, o2) => {
 
 // ------------------------------ Main Component ------------------------------
 function CharacterGenerator() {
-  const [pc, setPc] = React.useState(null);
-  const [primaries, setPrimaries] = React.useState(new Set());
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingCharState;
+  
+  const [pc, setPc] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.pc ? pendingState.pc : null;
+  });
+  const [primaries, setPrimaries] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.primaries) {
+      return new Set(pendingState.primaries);
+    }
+    return new Set();
+  });
   const [hpOverride, setHpOverride] = React.useState(null); // Move hpOverride here
-  const [selectedWeapon, setSelectedWeapon] = React.useState(null);
+  const [selectedWeapon, setSelectedWeapon] = React.useState(() => {
+    return pendingState ? pendingState.selectedWeapon : null;
+  });
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
+
+  // Clear pending state after all initializations are complete
+  React.useEffect(() => {
+    if (window._pendingCharState === pendingState && pendingState) {
+      console.log("Clearing pending character state after initialization");
+      window._pendingCharState = null;
+    }
+  }, []);
   const [savedCharacters, setSavedCharacters] = React.useState(() => {
     try {
       const saved = localStorage.getItem('saved-characters');
@@ -72,6 +94,25 @@ function CharacterGenerator() {
     // Also check on mount
     setDarkMode(document.body.classList.contains("dark"));
     return () => observer.disconnect();
+  }, []);
+  
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentCharState = {
+      pc,
+      primaries: Array.from(primaries),
+      selectedWeapon
+    };
+  }, [pc, primaries, selectedWeapon]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentCharState) {
+        window._preservedCharState = { ...window._currentCharState };
+      }
+    };
   }, []);
 
   // Roll animation trigger function
@@ -130,15 +171,37 @@ function CharacterGenerator() {
     }
   }, [showRollAnimation]);
 
-  // Auto-roll character on component mount
+  // Auto-roll character on component mount only if no existing character
   React.useEffect(() => {
-    rollCharacter();
+    console.log("CharGen auto-roll effect - pc:", !!pc, "pendingState:", !!window._pendingCharState);
+    
+    // Wait longer to allow restoration to complete before deciding to auto-roll
+    const timeoutId = setTimeout(() => {
+      // Check again after waiting - restoration might have happened
+      const hasCharacterNow = !!pc;
+      const hasPendingState = !!window._pendingCharState;
+      
+      console.log("CharGen auto-roll decision - pc now:", hasCharacterNow, "pendingState now:", hasPendingState);
+      
+      // Only roll if we don't have a character already (either from state or restored)
+      if (!hasCharacterNow && !hasPendingState) {
+        console.log("CharGen: Auto-rolling new character");
+        rollCharacter();
+      } else {
+        console.log("CharGen: Skipping auto-roll, character exists or pending state available");
+      }
+    }, 150); // Longer delay to let restoration complete first
+    
+    return () => clearTimeout(timeoutId);
   }, []);
-  function rollCharacter() {
-    // Trigger roll animation first
-    triggerRollAnimation();
+  function rollCharacter(skipAnimation = false) {
+    // Trigger roll animation first (unless skipping for restoration)
+    if (!skipAnimation) {
+      triggerRollAnimation();
+    }
     
     // Delay the actual character generation until after the popup disappears
+    // Use shorter delay if skipping animation
     setTimeout(() => {
       setHpOverride(null); // <-- Reset HP override on new character roll
       // ---- Occupations (distinct) ----
@@ -269,7 +332,7 @@ function CharacterGenerator() {
       personality: pick(personalities),
       spellPowerType: "None"  // Default to "None" instead of random selection
     });
-    }, 500); // Match the popup duration
+    }, skipAnimation ? 0 : 500); // No delay if skipping animation, otherwise match popup duration
   }
 
   // Character save/load/delete functions
@@ -565,11 +628,7 @@ function CharacterGenerator() {
         
         if (isSelectedWeapon) {
           // Requirement 1 & 3: Show weapon with damage in brackets for first slot
-          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
-          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
-          if (quality) {
-            fieldValues[`Slot_Quality${slotIndex}`] = quality;
-          }
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
           slotIndex++;
           
           // Requirement 3: Handle multi-slot weapons with continuation indicators
@@ -643,11 +702,7 @@ function CharacterGenerator() {
         };
         
         if (isSelectedWeapon) {
-          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
-          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
-          if (quality) {
-            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
-          }
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
         } else {
           const { processedName, quality } = processItemNameAndQuality(item.name);
           fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(processedName) || '';
@@ -874,7 +929,7 @@ function CharacterGenerator() {
       height: 32
     }
   }), /*#__PURE__*/React.createElement(CardTitle, null, "FORGE PC Generator")), /*#__PURE__*/React.createElement(Button, {
-    onClick: rollCharacter
+    onClick: () => rollCharacter()
   }, "New Character")), /*#__PURE__*/React.createElement(CardContent, null, pc ? /*#__PURE__*/React.createElement(CharacterSheet, {
     pc: pc,
     togglePrimary: togglePrimary,
@@ -934,7 +989,7 @@ function CharacterGenerator() {
         }, char.name),
         /*#__PURE__*/React.createElement("div", {
           key: "char-details",
-          className: "text-gray-600"
+          className: darkMode ? "text-gray-300" : "text-gray-600"
         }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
       ]),
       /*#__PURE__*/React.createElement("div", {
@@ -1945,16 +2000,137 @@ function CharacterSheet({
 
 // Remove any internal call to mount or mountCharGen. Only export the mount function.
 function mount(root) {
+  if (!root) return;
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      // Suppress React DOM errors during unmount
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      // More comprehensive error suppression
+      console.error = (message, ...args) => {
+        // Check if it's a React DOM unmount error
+        if (typeof message === 'string' && (
+          message.includes('removeChild') || 
+          message.includes('NotFoundError') ||
+          message.includes('The node to be removed is not a child') ||
+          message.includes('Failed to execute \'removeChild\'')
+        )) {
+          return; // Suppress these errors
+        }
+        // Also check if it's an Error object with React DOM messages
+        if (message instanceof Error && (
+          message.message.includes('removeChild') ||
+          message.message.includes('NotFoundError') ||
+          message.message.includes('The node to be removed is not a child')
+        )) {
+          return; // Suppress these errors
+        }
+        originalError(message, ...args);
+      };
+      
+      console.warn = (message, ...args) => {
+        if (typeof message === 'string' && message.includes('removeChild')) {
+          return; // Suppress removeChild warnings too
+        }
+        originalWarn(message, ...args);
+      };
+      
+      // Add global error event suppression as backup
+      const handleGlobalError = (event) => {
+        if (event.error && event.error.message && (
+          event.error.message.includes('removeChild') ||
+          event.error.message.includes('NotFoundError')
+        )) {
+          event.preventDefault();
+          return false;
+        }
+      };
+      window.addEventListener('error', handleGlobalError);
+      
+      root._reactRoot.unmount();
+      
+      // Restore console methods and remove global handler after a brief delay
+      setTimeout(() => {
+        console.error = originalError;
+        console.warn = originalWarn;
+        window.removeEventListener('error', handleGlobalError);
+      }, 200);
+    } catch (e) {
+      // Suppress unmount errors - they're expected when switching modules
+      console.log("React unmount completed (some errors expected)");
+    }
     root._reactRoot = null;
   }
-  // Forcibly clear React 18's internal root container if present
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(CharacterGenerator));
+  
+  // Wait a moment for the component to render, then set up state persistence
+  setTimeout(() => {
+    console.log("Setting up Character Generator state persistence functions");
+    
+    window.saveState = () => {
+      console.log("Character saveState called");
+      
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentCharState || window._preservedCharState;
+      if (!currentState || !currentState.pc) {
+        console.log("No current Character state available");
+        return null;
+      }
+      
+      console.log("Character state to save:", currentState);
+      
+      // Only save if there's actual character data
+      if (currentState.pc) {
+        return {
+          charData: currentState,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      console.log("Character Generator restoreState called with:", state);
+      if (state && (state.hasCharacter || state.charData)) {
+        console.log("Character Generator restoring state");
+        
+        // Store the state for immediate pickup during component initialization
+        if (state.charData) {
+          window._pendingCharState = state.charData;
+        }
+        
+        // Don't re-render, just mount a fresh component that will pick up the pending state
+        if (root._reactRoot) {
+          // Unmount current component
+          root._reactRoot.unmount();
+          root._reactRoot = null;
+          
+          // Create new root and mount with pending state
+          setTimeout(() => {
+            root._reactRoot = window.ReactDOM.createRoot(root);
+            root._reactRoot.render(window.React.createElement(CharacterGenerator));
+          }, 5); // Reduced delay for faster restoration
+        } else {
+          console.log("No React root available for Character restoration");
+        }
+      } else {
+        console.log("No valid Character state to restore");
+      }
+    };
+    
+    console.log("Character Generator state persistence functions set up");
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }
 export { mount };

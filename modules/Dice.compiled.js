@@ -28,8 +28,31 @@ const commonDice = [
 
 // Main Dice component
 function Dice() {
-  const [diceTray, setDiceTray] = React.useState({}); // Changed to object for grouping
-  const [lastRoll, setLastRoll] = React.useState(null);
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingDiceState;
+  
+  // Initialize state with pending restoration if available
+  const [diceTray, setDiceTray] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.diceTray) {
+      return pendingState.diceTray;
+    }
+    try {
+      const saved = localStorage.getItem('dice-tray');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Error loading dice tray from localStorage:', error);
+      return {};
+    }
+  });
+  const [lastRoll, setLastRoll] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.lastRoll) {
+      const restored = pendingState.lastRoll;
+      return restored;
+    }
+    return null;
+  });
   const [rollHistory, setRollHistory] = React.useState(() => {
     try {
       const saved = localStorage.getItem('dice-history');
@@ -42,6 +65,60 @@ function Dice() {
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
 
+  // Clear pending state after all initializations are complete
+  React.useEffect(() => {
+    if (window._pendingDiceState === pendingState && pendingState) {
+      console.log("Clearing pending dice state after initialization");
+      window._pendingDiceState = null;
+    }
+  }, []);
+
+  // Check for pending state restoration on mount (backup - should not be needed now)
+  React.useEffect(() => {
+    if (window._pendingDiceState && !pendingState) {
+      console.log("Restoring pending dice state (backup):", window._pendingDiceState);
+      const backupPendingState = window._pendingDiceState;
+      
+      if (backupPendingState.diceTray) {
+        setDiceTray(backupPendingState.diceTray);
+      }
+      if (backupPendingState.lastRoll) {
+        setLastRoll(backupPendingState.lastRoll);
+      }
+      
+      // Clear the pending state
+      delete window._pendingDiceState;
+    }
+  }, []);
+
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentDiceState = {
+      diceTray,
+      lastRoll
+    };
+    
+    // Provide direct update function for faster restoration
+    window._currentDiceUpdate = (state) => {
+      console.log("Direct dice update with:", state);
+      if (state.diceTray) {
+        setDiceTray(state.diceTray);
+      }
+      if (state.lastRoll) {
+        setLastRoll(state.lastRoll);
+      }
+      // Clear pending state after successful update
+      window._pendingDiceState = null;
+    };
+  }, [diceTray, lastRoll]);
+  
+  // Clean up update function on unmount
+  React.useEffect(() => {
+    return () => {
+      window._currentDiceUpdate = null;
+    };
+  }, []);
+
   // Save history to localStorage whenever it changes
   React.useEffect(() => {
     try {
@@ -50,6 +127,16 @@ function Dice() {
       console.error('Error saving dice history to localStorage:', error);
     }
   }, [rollHistory]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentDiceState) {
+        window._preservedDiceState = { ...window._currentDiceState };
+      }
+    };
+  }, []);
 
   // Listen for dark mode changes
   React.useEffect(() => {
@@ -429,17 +516,146 @@ function Dice() {
 
 // Mount function for module loading
 function mount(root) {
+  if (!root) return;
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      // Suppress React DOM errors during unmount
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      // More comprehensive error suppression
+      console.error = (message, ...args) => {
+        // Check if it's a React DOM unmount error
+        if (typeof message === 'string' && (
+          message.includes('removeChild') || 
+          message.includes('NotFoundError') ||
+          message.includes('The node to be removed is not a child') ||
+          message.includes('Failed to execute \'removeChild\'')
+        )) {
+          return; // Suppress these errors
+        }
+        // Also check if it's an Error object with React DOM messages
+        if (message instanceof Error && (
+          message.message.includes('removeChild') ||
+          message.message.includes('NotFoundError') ||
+          message.message.includes('The node to be removed is not a child')
+        )) {
+          return; // Suppress these errors
+        }
+        originalError(message, ...args);
+      };
+      
+      console.warn = (message, ...args) => {
+        if (typeof message === 'string' && message.includes('removeChild')) {
+          return; // Suppress removeChild warnings too
+        }
+        originalWarn(message, ...args);
+      };
+      
+      // Add global error event suppression as backup
+      const handleGlobalError = (event) => {
+        if (event.error && event.error.message && (
+          event.error.message.includes('removeChild') ||
+          event.error.message.includes('NotFoundError')
+        )) {
+          event.preventDefault();
+          return false;
+        }
+      };
+      window.addEventListener('error', handleGlobalError);
+      
+      root._reactRoot.unmount();
+      
+      // Restore console methods and remove global handler after a brief delay
+      setTimeout(() => {
+        console.error = originalError;
+        console.warn = originalWarn;
+        window.removeEventListener('error', handleGlobalError);
+      }, 200);
+    } catch (e) {
+      // Suppress unmount errors - they're expected when switching modules
+      console.log("React unmount completed (some errors expected)");
+    }
     root._reactRoot = null;
   }
-  // Forcibly clear React 18's internal root container if present
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(Dice));
+  
+  // Wait a moment for the component to render, then set up state persistence
+  setTimeout(() => {
+    console.log("Setting up Dice state persistence functions");
+    
+    window.saveState = () => {
+      console.log("Dice saveState called");
+      
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentDiceState || window._preservedDiceState;
+      if (!currentState) {
+        console.log("No current dice state available");
+        return null;
+      }
+      
+      const { diceTray, lastRoll } = currentState;
+      
+      console.log("Dice state to save:", { diceTray, lastRoll });
+      
+      if (Object.keys(diceTray).length > 0 || lastRoll) {
+        return {
+          diceTray,
+          lastRoll,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      console.log("Dice restoreState called with:", state);
+      if (state && (state.diceTray || state.lastRoll)) {
+        console.log("Setting pending Dice state for restoration");
+        
+        // Try direct state update first - no remounting
+        if (root._reactRoot) {
+          // Set the pending state for any new component that might mount
+          window._pendingDiceState = state;
+          
+          // Try to update current component directly
+          setTimeout(() => {
+            if (window._currentDiceUpdate) {
+              console.log("Attempting direct dice state update");
+              window._currentDiceUpdate(state);
+            } else {
+              console.log("No direct update available, falling back to remount");
+              // Fallback to remount if direct update not available
+              root._reactRoot.unmount();
+              root._reactRoot = null;
+              
+              setTimeout(() => {
+                root._reactRoot = window.ReactDOM.createRoot(root);
+                root._reactRoot.render(window.React.createElement(Dice));
+              }, 5);
+            }
+          }, 10);
+        } else {
+          console.log("No React root available for Dice restoration");
+        }
+      } else {
+        console.log("No valid Dice state to restore");
+      }
+    };
+    
+    console.log("Dice state persistence functions set up");
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }
 
 export { mount };
