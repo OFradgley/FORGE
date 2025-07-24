@@ -4,11 +4,15 @@ const nav = document.getElementById("nav"); // Always use the existing #nav insi
 
 const modules = [
   { label: "Dice", file: "./modules/Dice.compiled.js" },
-  { label: "Oracle", file: "./modules/Oracle.compiled.js" },
-  { label: "PC", file: "./modules/charGen.compiled.js" },
-  { label: "NPC", file: "./modules/npcGen.compiled.js" }
-  // Add more generators here as you create them
+  { label: "Oracle", file: "./modules/Oracle.compiled.js" }
+  // Add more modules here as you create them
   // { label: "Dungeon", file: "./modules/dungeonGen.js" },
+];
+
+const generators = [
+  { label: "PC Generator", file: "./modules/charGen.compiled.js" },
+  { label: "NPC Generator", file: "./modules/npcGen.compiled.js" }
+  // Add future generators here
 ];
 
 // Style the nav bar as a black box (not cobalt blue)
@@ -47,10 +51,12 @@ modules.forEach(({ label, file }, i) => {
     if (btn.classList.contains("selected")) return; // Prevent reselecting the active app
     // Remove selected from all buttons and set inactive style
     Array.from(nav.children).forEach((b, idx) => {
-      b.classList.remove("selected");
-      b.removeAttribute("aria-current");
-      b.style.background = "#222";
-      b.style.color = "#fff";
+      if (b.tagName === 'BUTTON') { // Only process buttons, not container divs
+        b.classList.remove("selected");
+        b.removeAttribute("aria-current");
+        b.style.background = "#222";
+        b.style.color = "#fff";
+      }
     });
     btn.classList.add("selected");
     btn.setAttribute("aria-current", "page");
@@ -67,6 +73,94 @@ modules.forEach(({ label, file }, i) => {
   }
   nav.appendChild(btn);
 });
+
+// Add the Generators dropdown button
+const generatorsContainer = document.createElement("div");
+generatorsContainer.style.position = "relative";
+generatorsContainer.style.display = "inline-block";
+
+const generatorsBtn = document.createElement("button");
+generatorsBtn.textContent = "Generators ▼";
+generatorsBtn.className = "px-4 py-2 rounded font-bold shadow-lg";
+generatorsBtn.style.background = "#222"; // dark grey like inactive buttons
+generatorsBtn.style.color = "#fff";
+generatorsBtn.style.border = "none";
+generatorsBtn.style.margin = "0 8px";
+generatorsBtn.style.fontSize = "1.1rem";
+generatorsBtn.style.cursor = "pointer";
+
+// Create generators dropdown
+const generatorsDropdown = document.createElement("div");
+generatorsDropdown.style.display = "none";
+generatorsDropdown.style.position = "absolute";
+generatorsDropdown.style.top = "calc(100% + 8px)";
+generatorsDropdown.style.left = "0";
+generatorsDropdown.style.background = "#fff";
+generatorsDropdown.style.border = "1px solid #e5e7eb";
+generatorsDropdown.style.borderRadius = "8px";
+generatorsDropdown.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+generatorsDropdown.style.minWidth = "150px";
+generatorsDropdown.style.zIndex = "9999";
+generatorsDropdown.style.overflow = "visible";
+
+// Add generator options to dropdown
+generators.forEach(({ label, file }) => {
+  const option = document.createElement("button");
+  option.textContent = label;
+  option.style.width = "100%";
+  option.style.padding = "12px 16px";
+  option.style.background = "none";
+  option.style.border = "none";
+  option.style.textAlign = "left";
+  option.style.cursor = "pointer";
+  option.style.fontSize = "14px";
+  option.style.color = "#374151";
+  option.style.borderRadius = "0";
+  
+  option.onmouseover = () => option.style.background = "#f3f4f6";
+  option.onmouseout = () => option.style.background = "none";
+  
+  option.onclick = (e) => {
+    e.stopPropagation();
+    // Remove selected from all main nav buttons
+    Array.from(nav.children).forEach((b) => {
+      if (b.tagName === 'BUTTON') {
+        b.classList.remove("selected");
+        b.removeAttribute("aria-current");
+        b.style.background = "#222";
+        b.style.color = "#fff";
+      }
+    });
+    
+    // Mark generators button as selected
+    generatorsBtn.classList.add("selected");
+    generatorsBtn.setAttribute("aria-current", "page");
+    generatorsBtn.style.background = "#0047ab";
+    generatorsBtn.style.color = "#fff";
+    
+    loadModule(file);
+    generatorsDropdown.style.display = "none";
+  };
+  
+  generatorsDropdown.appendChild(option);
+});
+
+generatorsBtn.onmouseover = () => {
+  if (!generatorsBtn.classList.contains("selected")) generatorsBtn.style.background = "#333";
+};
+generatorsBtn.onmouseout = () => {
+  if (!generatorsBtn.classList.contains("selected")) generatorsBtn.style.background = "#222";
+};
+
+// Toggle generators dropdown
+generatorsBtn.onclick = (e) => {
+  e.stopPropagation();
+  generatorsDropdown.style.display = generatorsDropdown.style.display === "block" ? "none" : "block";
+};
+
+generatorsContainer.appendChild(generatorsBtn);
+generatorsContainer.appendChild(generatorsDropdown);
+nav.appendChild(generatorsContainer);
 
 // Add the "..." menu button on the right side of the nav bar
 const menuContainer = document.createElement("div");
@@ -152,8 +246,15 @@ menuBtn.onclick = (e) => {
 };
 
 // Close dropdown when clicking outside
-document.addEventListener("click", () => {
-  dropdown.style.display = "none";
+document.addEventListener("click", (e) => {
+  // Close main menu dropdown
+  if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.style.display = "none";
+  }
+  // Close generators dropdown  
+  if (!generatorsContainer.contains(e.target)) {
+    generatorsDropdown.style.display = "none";
+  }
 });
 
 dropdown.appendChild(darkModeOption);
@@ -161,6 +262,7 @@ menuContainer.appendChild(menuBtn);
 menuContainer.appendChild(dropdown);
 nav.appendChild(menuContainer);
 
+// Load default first module (Dice)
 loadModule(modules[0].file);
 
 async function loadModule(path) {
