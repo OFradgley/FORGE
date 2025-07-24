@@ -10,8 +10,8 @@ const modules = [
 ];
 
 const generators = [
-  { label: "PC Generator", file: "./modules/charGen.compiled.js" },
-  { label: "NPC Generator", file: "./modules/npcGen.compiled.js" }
+  { label: "PC", file: "./modules/charGen.compiled.js" },
+  { label: "NPC", file: "./modules/npcGen.compiled.js" }
   // Add future generators here
 ];
 
@@ -35,7 +35,7 @@ modules.forEach(({ label, file }, i) => {
   const btn = document.createElement("button");
   btn.textContent = label;
   btn.className = "px-4 py-2 rounded font-bold shadow-lg";
-  btn.style.background = i === 0 ? "#0047ab" : "#222"; // cobalt blue for selected, dark grey for inactive
+  btn.style.background = i === 0 ? "#2563eb" : "#222"; // blue-600 for selected, dark grey for inactive
   btn.style.color = "#fff"; // white text for all
   btn.style.border = "none";
   btn.style.margin = "0 8px";
@@ -66,7 +66,7 @@ modules.forEach(({ label, file }, i) => {
     
     btn.classList.add("selected");
     btn.setAttribute("aria-current", "page");
-    btn.style.background = "#0047ab"; // cobalt blue for active
+    btn.style.background = "#2563eb"; // blue-600 for active
     btn.style.color = "#fff";
     loadModule(file);
   };
@@ -74,7 +74,7 @@ modules.forEach(({ label, file }, i) => {
   if (i === 0) {
     btn.classList.add("selected");
     btn.setAttribute("aria-current", "page");
-    btn.style.background = "#0047ab";
+    btn.style.background = "#2563eb";
     btn.style.color = "#fff";
   }
   nav.appendChild(btn);
@@ -86,7 +86,7 @@ generatorsContainer.style.position = "relative";
 generatorsContainer.style.display = "inline-block";
 
 const generatorsBtn = document.createElement("button");
-generatorsBtn.textContent = "Generators ▼";
+generatorsBtn.textContent = "Generator ▼";
 generatorsBtn.className = "px-4 py-2 rounded font-bold shadow-lg";
 generatorsBtn.style.background = "#222"; // dark grey like inactive buttons
 generatorsBtn.style.color = "#fff";
@@ -133,7 +133,7 @@ generators.forEach(({ label, file }) => {
   option.style.borderRadius = "0";
   
   option.onmouseover = () => {
-    option.style.background = "#0047ab"; // Blue highlight in both light and dark mode
+    option.style.background = "#2563eb"; // Blue-600 highlight in both light and dark mode
     option.style.color = "#fff";
   };
   option.onmouseout = () => {
@@ -157,7 +157,7 @@ generators.forEach(({ label, file }) => {
     // Mark generators button as selected
     generatorsBtn.classList.add("selected");
     generatorsBtn.setAttribute("aria-current", "page");
-    generatorsBtn.style.background = "#0047ab";
+    generatorsBtn.style.background = "#2563eb";
     generatorsBtn.style.color = "#fff";
     
     loadModule(file);
