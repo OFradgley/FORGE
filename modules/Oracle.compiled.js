@@ -46,15 +46,36 @@ const nouns = [
 
 // Main Oracle component
 function Oracle() {
-  const [currentAnswer, setCurrentAnswer] = React.useState(null);
-  const [currentLikelihood, setCurrentLikelihood] = React.useState(null);
-  const [currentRoll, setCurrentRoll] = React.useState(null);
-  const [currentModifierRoll, setCurrentModifierRoll] = React.useState(null);
-  const [currentVerbNoun, setCurrentVerbNoun] = React.useState(null);
-  const [currentVerb, setCurrentVerb] = React.useState(null);
-  const [currentNoun, setCurrentNoun] = React.useState(null);
-  const [showRandomEvent, setShowRandomEvent] = React.useState(false);
-  const [currentRandomEvent, setCurrentRandomEvent] = React.useState(null);
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingOracleState;
+  
+  const [currentAnswer, setCurrentAnswer] = React.useState(() => {
+    return pendingState ? pendingState.answer : null;
+  });
+  const [currentLikelihood, setCurrentLikelihood] = React.useState(() => {
+    return pendingState ? pendingState.likelihood : null;
+  });
+  const [currentRoll, setCurrentRoll] = React.useState(() => {
+    return pendingState ? pendingState.roll : null;
+  });
+  const [currentModifierRoll, setCurrentModifierRoll] = React.useState(() => {
+    return pendingState ? pendingState.modifierRoll : null;
+  });
+  const [currentVerbNoun, setCurrentVerbNoun] = React.useState(() => {
+    return pendingState ? pendingState.verbNoun : null;
+  });
+  const [currentVerb, setCurrentVerb] = React.useState(() => {
+    return pendingState ? pendingState.verb : null;
+  });
+  const [currentNoun, setCurrentNoun] = React.useState(() => {
+    return pendingState ? pendingState.noun : null;
+  });
+  const [showRandomEvent, setShowRandomEvent] = React.useState(() => {
+    return pendingState ? pendingState.showRandomEvent : false;
+  });
+  const [currentRandomEvent, setCurrentRandomEvent] = React.useState(() => {
+    return pendingState ? pendingState.randomEvent : null;
+  });
   const [questionHistory, setQuestionHistory] = React.useState(() => {
     try {
       const saved = localStorage.getItem('oracle-history');
@@ -65,7 +86,53 @@ function Oracle() {
     }
   });
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
+
+  // Clear pending state after all initializations are complete
+  React.useEffect(() => {
+    if (window._pendingOracleState === pendingState && pendingState) {
+      console.log("Clearing pending Oracle state after initialization");
+      window._pendingOracleState = null;
+    }
+  }, []);
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
+
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentOracleState = {
+      currentAnswer,
+      currentLikelihood,
+      currentRoll,
+      currentModifierRoll,
+      currentVerbNoun,
+      currentVerb,
+      currentNoun,
+      showRandomEvent,
+      currentRandomEvent
+    };
+    
+    // Provide direct update function for faster restoration
+    window._currentOracleUpdate = (state) => {
+      console.log("Direct Oracle update with:", state);
+      if (state.answer !== undefined) setCurrentAnswer(state.answer);
+      if (state.likelihood !== undefined) setCurrentLikelihood(state.likelihood);
+      if (state.roll !== undefined) setCurrentRoll(state.roll);
+      if (state.modifierRoll !== undefined) setCurrentModifierRoll(state.modifierRoll);
+      if (state.verbNoun !== undefined) setCurrentVerbNoun(state.verbNoun);
+      if (state.verb !== undefined) setCurrentVerb(state.verb);
+      if (state.noun !== undefined) setCurrentNoun(state.noun);
+      if (state.showRandomEvent !== undefined) setShowRandomEvent(state.showRandomEvent);
+      if (state.randomEvent !== undefined) setCurrentRandomEvent(state.randomEvent);
+      // Clear pending state after successful update
+      window._pendingOracleState = null;
+    };
+  }, [currentAnswer, currentLikelihood, currentRoll, currentModifierRoll, currentVerbNoun, currentVerb, currentNoun, showRandomEvent, currentRandomEvent]);
+  
+  // Clean up update function on unmount
+  React.useEffect(() => {
+    return () => {
+      window._currentOracleUpdate = null;
+    };
+  }, []);
 
   // Save history to localStorage whenever it changes
   React.useEffect(() => {
@@ -75,6 +142,16 @@ function Oracle() {
       console.error('Error saving history to localStorage:', error);
     }
   }, [questionHistory]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentOracleState) {
+        window._preservedOracleState = { ...window._currentOracleState };
+      }
+    };
+  }, []);
 
   // Listen for dark mode changes
   React.useEffect(() => {
@@ -570,17 +647,101 @@ function Oracle() {
 
 // Mount function for module loading
 function mount(root) {
+  if (!root) return;
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      root._reactRoot.unmount();
+    } catch (e) {
+      // Suppress unmount errors - they're expected when switching modules
+      console.log("React unmount completed (some errors expected)");
+    }
     root._reactRoot = null;
   }
-  // Forcibly clear React 18's internal root container if present
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(Oracle));
+  
+  // Wait a moment for the component to render, then set up state persistence
+  setTimeout(() => {
+    console.log("Setting up Oracle state persistence functions");
+    
+    window.saveState = () => {
+      console.log("Oracle saveState called");
+      
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentOracleState || window._preservedOracleState;
+      if (!currentState) {
+        console.log("No current Oracle state available");
+        return null;
+      }
+      
+      const { currentAnswer, currentLikelihood, currentRoll, currentModifierRoll, currentVerbNoun, currentVerb, currentNoun, showRandomEvent, currentRandomEvent } = currentState;
+      
+      console.log("Oracle state to save:", { currentAnswer, currentLikelihood, currentRoll });
+      
+      if (currentAnswer || currentVerbNoun || currentRandomEvent) {
+        return {
+          answer: currentAnswer,
+          likelihood: currentLikelihood,
+          roll: currentRoll,
+          modifierRoll: currentModifierRoll,
+          verbNoun: currentVerbNoun,
+          verb: currentVerb,
+          noun: currentNoun,
+          showRandomEvent,
+          randomEvent: currentRandomEvent,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      console.log("Oracle restoreState called with:", state);
+      if (state && (state.answer || state.verbNoun || state.randomEvent)) {
+        console.log("Setting pending Oracle state for restoration");
+        
+        // Try direct state update first - no remounting
+        if (root._reactRoot) {
+          // Set the pending state for any new component that might mount
+          window._pendingOracleState = state;
+          
+          // Try to update current component directly
+          setTimeout(() => {
+            if (window._currentOracleUpdate) {
+              console.log("Attempting direct Oracle state update");
+              window._currentOracleUpdate(state);
+            } else {
+              console.log("No direct update available, falling back to remount");
+              // Fallback to remount if direct update not available
+              root._reactRoot.unmount();
+              root._reactRoot = null;
+              
+              setTimeout(() => {
+                root._reactRoot = window.ReactDOM.createRoot(root);
+                root._reactRoot.render(window.React.createElement(Oracle));
+              }, 5);
+            }
+          }, 10);
+        } else {
+          console.log("No React root available for Oracle restoration");
+        }
+      } else {
+        console.log("No valid Oracle state to restore");
+      }
+    };
+    
+    console.log("Oracle state persistence functions set up");
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }
 
 export { mount };

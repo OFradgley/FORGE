@@ -2,6 +2,10 @@
 const root = document.getElementById("root");
 const nav = document.getElementById("nav"); // Always use the existing #nav inside #root
 
+// Simple state persistence system
+const moduleStates = new Map();
+let currentModulePath = null;
+
 const modules = [
   { label: "Dice", file: "./modules/Dice.compiled.js" },
   { label: "Oracle", file: "./modules/Oracle.compiled.js" }
@@ -298,12 +302,60 @@ loadModule(modules[0].file);
 
 async function loadModule(path) {
   try {
+    console.log("Loading module:", path, "Current module:", currentModulePath);
+    
+    // Save current module state before switching
+    if (currentModulePath && window.saveState) {
+      console.log("Saving state for:", currentModulePath);
+      const state = window.saveState();
+      console.log("Saved state:", state);
+      if (state) {
+        moduleStates.set(currentModulePath, state);
+        console.log("State stored for:", currentModulePath);
+      }
+    }
+    
+    // Clear previous state functions
+    window.saveState = null;
+    window.restoreState = null;
+    
+    // Check if we're returning to a module with saved state
+    const hasState = moduleStates.has(path);
+    console.log("Module has saved state:", hasState);
+    if (hasState) {
+      console.log("Saved state for", path, ":", moduleStates.get(path));
+    }
+    
+    // Import and mount the module
     const mod = await import(path);
     console.log("Imported module for", path, ":", mod, "mount:", mod.mount);
     if (typeof mod.mount !== "function") {
       throw new Error(`Module at ${path} does not export a 'mount' function.`);
     }
+    
+    // Mount the new module
     mod.mount(root);
+    
+    // Update current module path
+    currentModulePath = path;
+    
+    // Restore state if available and restore function exists
+    if (hasState) {
+      const state = moduleStates.get(path);
+      if (state) {
+        console.log("Waiting to restore state...");
+        setTimeout(() => {
+          console.log("Attempting to restore state, restoreState function exists:", !!window.restoreState);
+          if (window.restoreState) {
+            console.log("Restoring state:", state);
+            window.restoreState(state);
+          } else {
+            console.log("No restoreState function available");
+          }
+        }, 20); // Faster restoration - after persistence functions are set up at 10ms
+      }
+    }
+    
   } catch (e) {
     console.error("Failed to load module:", path, e);
     root.innerHTML = `<div style=\"color:red\">Failed to load module: ${path}<br>${e.message}</div>`;

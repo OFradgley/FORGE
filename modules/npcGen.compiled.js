@@ -35,10 +35,24 @@ const choosePrimaries = (o1, o2) => {
 
 // ------------------------------ Main Component ------------------------------
 function NPCGenerator() {
-  const [pc, setPc] = React.useState(null);
-  const [primaries, setPrimaries] = React.useState(new Set());
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingNPCState;
+  
+  const [pc, setPc] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.pc ? pendingState.pc : null;
+  });
+  const [primaries, setPrimaries] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.primaries) {
+      return new Set(pendingState.primaries);
+    }
+    return new Set();
+  });
   const [hpOverride, setHpOverride] = React.useState(null);
-  const [selectedWeapon, setSelectedWeapon] = React.useState(null);
+  const [selectedWeapon, setSelectedWeapon] = React.useState(() => {
+    return pendingState ? pendingState.selectedWeapon : null;
+  });
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
@@ -46,6 +60,14 @@ function NPCGenerator() {
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
   const [currentNpcType, setCurrentNpcType] = React.useState(null);
   const dropdownRef = React.useRef();
+
+  // Clear pending state after all initializations are complete
+  React.useEffect(() => {
+    if (window._pendingNPCState === pendingState && pendingState) {
+      console.log("Clearing pending NPC state after initialization");
+      window._pendingNPCState = null;
+    }
+  }, []);
   const [savedCharacters, setSavedCharacters] = React.useState(() => {
     try {
       const saved = localStorage.getItem('saved-npcs');
@@ -75,6 +97,26 @@ function NPCGenerator() {
     setDarkMode(document.body.classList.contains("dark"));
     // No need for injected CSS - using inline styles instead
     return () => observer.disconnect();
+  }, []);
+  
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentNPCState = {
+      pc,
+      primaries: Array.from(primaries),
+      selectedWeapon,
+      currentNpcType
+    };
+  }, [pc, primaries, selectedWeapon, currentNpcType]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentNPCState) {
+        window._preservedNPCState = { ...window._currentNPCState };
+      }
+    };
   }, []);
 
   // Roll animation trigger function
@@ -133,9 +175,28 @@ function NPCGenerator() {
     }
   }, [showRollAnimation]);
 
-  // Auto-roll character on component mount
+  // Auto-roll character on component mount only if no existing character
   React.useEffect(() => {
-    rollCharacter();
+    console.log("NPCGen auto-roll effect - pc:", !!pc, "pendingState:", !!window._pendingNPCState);
+    
+    // Wait longer to allow restoration to complete before deciding to auto-roll
+    const timeoutId = setTimeout(() => {
+      // Check again after waiting - restoration might have happened
+      const hasCharacterNow = !!pc;
+      const hasPendingState = !!window._pendingNPCState;
+      
+      console.log("NPCGen auto-roll decision - pc now:", hasCharacterNow, "pendingState now:", hasPendingState);
+      
+      // Only roll if we don't have a character already (either from state or restored)
+      if (!hasCharacterNow && !hasPendingState) {
+        console.log("NPCGen: Auto-rolling new character");
+        rollCharacter();
+      } else {
+        console.log("NPCGen: Skipping auto-roll, character exists or pending state available");
+      }
+    }, 150); // Longer delay to let restoration complete first
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Handle click outside dropdown
@@ -148,11 +209,14 @@ function NPCGenerator() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  function rollCharacter(npcType = null) {
-    // Trigger roll animation first
-    triggerRollAnimation();
+  function rollCharacter(npcType = null, skipAnimation = false) {
+    // Trigger roll animation first (unless skipping for restoration)
+    if (!skipAnimation) {
+      triggerRollAnimation();
+    }
     
     // Delay the actual character generation until after the popup disappears
+    // Use shorter delay if skipping animation
     setTimeout(() => {
       setHpOverride(null);
       setCurrentNpcType(npcType); // Track the current NPC type
@@ -409,7 +473,7 @@ function NPCGenerator() {
       equipment,
       competence
     });
-    }, 500); // Match the popup duration
+    }, skipAnimation ? 0 : 500); // No delay if skipping animation, otherwise match popup duration
   }
 
   // NPC save/load/delete functions
@@ -2003,15 +2067,83 @@ function CharacterSheet({
 // Only one export for mount is needed. Remove duplicate export.
 export function mount(root) {
   if (!root) return;
-  // Use window.ReactDOM for compatibility with browser global ReactDOM
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      root._reactRoot.unmount();
+    } catch (e) {
+      // Suppress unmount errors - they're expected when switching modules
+      console.log("React unmount completed (some errors expected)");
+    }
     root._reactRoot = null;
   }
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(NPCGenerator));
+  
+  // Wait a moment for the component to render, then set up state persistence
+  setTimeout(() => {
+    console.log("Setting up NPC Generator state persistence functions");
+    
+    window.saveState = () => {
+      console.log("NPC saveState called");
+      
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentNPCState || window._preservedNPCState;
+      if (!currentState || !currentState.pc) {
+        console.log("No current NPC state available");
+        return null;
+      }
+      
+      console.log("NPC state to save:", currentState);
+      
+      // Only save if there's actual character data
+      if (currentState.pc) {
+        return {
+          npcData: currentState,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      console.log("NPC Generator restoreState called with:", state);
+      if (state && (state.hasNPC || state.npcData)) {
+        console.log("NPC Generator restoring state");
+        
+        // Store the state for immediate pickup during component initialization
+        if (state.npcData) {
+          window._pendingNPCState = state.npcData;
+        }
+        
+        // Don't re-render, just mount a fresh component that will pick up the pending state
+        if (root._reactRoot) {
+          // Unmount current component
+          root._reactRoot.unmount();
+          root._reactRoot = null;
+          
+          // Create new root and mount with pending state
+          setTimeout(() => {
+            root._reactRoot = window.ReactDOM.createRoot(root);
+            root._reactRoot.render(window.React.createElement(NPCGenerator));
+          }, 5); // Reduced delay for faster restoration
+        } else {
+          console.log("No React root available for NPC restoration");
+        }
+      } else {
+        console.log("No valid NPC state to restore");
+      }
+    };
+    
+    console.log("NPC Generator state persistence functions set up");
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }

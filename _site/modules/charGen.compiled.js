@@ -36,10 +36,29 @@ const choosePrimaries = (o1, o2) => {
 
 // ------------------------------ Main Component ------------------------------
 function CharacterGenerator() {
-  const [pc, setPc] = React.useState(null);
-  const [primaries, setPrimaries] = React.useState(new Set());
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingCharState;
+  
+  const [pc, setPc] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.pc ? pendingState.pc : null;
+  });
+  const [primaries, setPrimaries] = React.useState(() => {
+    // Check for pending state on initialization
+    if (pendingState && pendingState.primaries) {
+      return new Set(pendingState.primaries);
+    }
+    return new Set();
+  });
   const [hpOverride, setHpOverride] = React.useState(null); // Move hpOverride here
-  const [selectedWeapon, setSelectedWeapon] = React.useState(null);
+  const [selectedWeapon, setSelectedWeapon] = React.useState(() => {
+    const restoredWeapon = pendingState ? pendingState.selectedWeapon : null;
+    // Clear pending state after using it for all initializations
+    if (pendingState) {
+      window._pendingCharState = null;
+    }
+    return restoredWeapon;
+  });
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
@@ -72,6 +91,25 @@ function CharacterGenerator() {
     // Also check on mount
     setDarkMode(document.body.classList.contains("dark"));
     return () => observer.disconnect();
+  }, []);
+  
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentCharState = {
+      pc,
+      primaries: Array.from(primaries),
+      selectedWeapon
+    };
+  }, [pc, primaries, selectedWeapon]);
+  
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentCharState) {
+        window._preservedCharState = { ...window._currentCharState };
+      }
+    };
   }, []);
 
   // Roll animation trigger function
@@ -183,11 +221,20 @@ function CharacterGenerator() {
       if (armour.name === "Chain Armour (AC14)") {
         dexBonus = Math.min(dexMod, 2);
       } else if (armour.name === "Plate Armour (AC16)") {
-      dexBonus = Math.min(dexMod, 1);
-    } else {
-      dexBonus = dexMod;
-    }
-    const acBase = armour.ac;
+        dexBonus = Math.min(dexMod, 1);
+      } else {
+        dexBonus = dexMod;
+      }
+      
+      // Determine armor type for PDF export
+      const getArmorType = (armorName) => {
+        if (armorName === "Chain Armour (AC14)") return "Medium";
+        if (armorName === "Plate Armour (AC16)") return "Heavy";
+        return "Light"; // No Armour and Leather Armour
+      };
+      const armorType = getArmorType(armour.name);
+      
+      const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
     const acDex = dexBonus;
     const ac = acBase + acShield + acDex;
@@ -247,6 +294,9 @@ function CharacterGenerator() {
         shield: acShield,
         dex: acDex
       },
+      armour,  // Store the armor object
+      armorType,  // Store armor type (Light, Medium, Heavy)
+      hasShield,  // Store whether character has a shield
       gold: (d6() + d6()) * 30,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
@@ -379,6 +429,65 @@ function CharacterGenerator() {
 
     // Character data mapping with sanitized values
     const characterLevel = character.level || 1;
+    
+    // Helper function to calculate proper dexterity bonus based on armor type
+    const calculateDexBonus = (character) => {
+      if (!character.attrs) return 0;
+      const dexAttr = character.attrs.find(attr => attr.attr === 'Dexterity');
+      if (!dexAttr) return 0;
+      
+      const dexMod = dexAttr.mod;
+      const armorType = character.armorType || 
+        (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+         character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+      
+      // Apply dexterity limits based on armor type
+      if (armorType === "Medium") {
+        return Math.min(dexMod, 2);  // Chain armor: max +2 dex
+      } else if (armorType === "Heavy") {
+        return Math.min(dexMod, 1);  // Plate armor: max +1 dex
+      } else {
+        return dexMod;  // Light armor (No Armour/Leather): no limit
+      }
+    };
+    
+    // Calculate proper AC for backward compatibility
+    const baseAC = character.armour?.ac || character.acBreakdown?.base || 10;
+    const shieldBonus = (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? 1 : 0;
+    const dexBonus = calculateDexBonus(character);
+    const calculatedAC = baseAC + shieldBonus + dexBonus;
+    
+    // Calculate HP (same logic as in the UI component)
+    const calculateHP = (character) => {
+      if (!character.rawHpPrimary || !character.rawHpSecondary || !character.attrs) return '';
+      
+      const conAttr = character.attrs.find(a => a.attr === "Constitution");
+      const conMod = conAttr?.mod || 0;
+      const minConMod = Math.max(conMod, -3);
+      const level = character.level || 1;
+      
+      // Determine if Constitution is primary (you might need to pass primaries to this function)
+      // For now, let's derive it from the character data
+      const isConPrimary = conAttr?.primary || false;
+      
+      function calcHp(arr) {
+        let total = 0;
+        for (let i = 0; i < level; i++) {
+          const hp = Math.max(1, arr[i] + minConMod);
+          total += hp;
+        }
+        return total;
+      }
+      
+      const hpPrimary = calcHp(character.rawHpPrimary);
+      const hpSecondary = calcHp(character.rawHpSecondary);
+      const hp = isConPrimary ? Math.max(hpPrimary, hpSecondary) : hpSecondary;
+      
+      return hp.toString();
+    };
+    
+    const calculatedHP = calculateHP(character);
+    
     const fieldValues = {
       'Name': sanitizeForPDF(character.name) || '',
       'Level': characterLevel.toString(),
@@ -387,11 +496,12 @@ function CharacterGenerator() {
       'Occupation1': sanitizeForPDF(character.occupations ? character.occupations[0] : '') || '',
       'Occupation2': sanitizeForPDF(character.occupations ? character.occupations[1] : '') || '',
       'Alignment': sanitizeForPDF(character.alignment) || '',
-      'HP_Max': character.hp?.toString() || '',
-      'HP_Current': character.hp?.toString() || '',
+      'HP_Max': calculatedHP || '',
+      'HP_Current': calculatedHP || '',
       'Hit_Die_Type': sanitizeForPDF(character.hitDie) || '',
-      'Armour': sanitizeForPDF(character.armour?.name) || '',
-      'Shield': character.hasShield ? 'Shield' : '',
+      'Armour': character.armour?.ac?.toString() || character.acBreakdown?.base?.toString() || '10',  // Just the armor AC number
+      'Shield': (character.hasShield !== undefined ? character.hasShield : character.acBreakdown?.shield > 0) ? '1' : '0',  // 1 or 0 based on whether character has shield
+      'AC': (character.ac || calculatedAC)?.toString() || '',  // Total AC (Armour + Shield + Dexterity_Mod with proper limits)
       'Move_Speed': 'N',
       'Appearance': sanitizeForPDF(character.appearance) || '',
       'Detail': sanitizeForPDF(character.detail) || '',
@@ -425,19 +535,71 @@ function CharacterGenerator() {
     
     // Add weapon fields (Requirement 2: Weapon1 and Weapon_Damage1 fields)
     if (selectedWeaponObj) {
-      fieldValues['Weapon1'] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
-      fieldValues['Weapon_Damage1'] = sanitizeForPDF(selectedWeaponObj.dmg);
+      // Get Strength modifier for damage calculation
+      const strengthAttr = character.attrs?.find(attr => attr.attr === 'Strength');
+      const strengthMod = strengthAttr?.mod || 0;
+      
+      // Weapon1 field: just the weapon name (no damage in brackets)
+      fieldValues['Weapon1'] = sanitizeForPDF(selectedWeaponObj.name);
+      
+      // Weapon_Damage1 field: damage + Strength modifier
+      let weaponDamage = selectedWeaponObj.dmg;
+      if (strengthMod !== 0) {
+        const sign = strengthMod > 0 ? '+' : '';
+        weaponDamage = `${selectedWeaponObj.dmg}${sign}${strengthMod}`;
+      }
+      fieldValues['Weapon_Damage1'] = sanitizeForPDF(weaponDamage);
     }
 
     // Add inventory slots with proper weapon slot handling (Requirement 3)
     if (character.inventory) {
       let slotIndex = 1;
+      const zeroSlotItems = []; // Collect 0-slot items to place at the end
       
       character.inventory.forEach((item) => {
+        // Check if this is a 0-slot item (unencumbering)
+        const itemSlots = item.slots || 1;
+        if (itemSlots === 0) {
+          zeroSlotItems.push(item);
+          return; // Skip processing now, handle at the end
+        }
+        
         if (slotIndex > 26) return; // Max 26 slots
         
         // Check if this item is the selected weapon
         const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        // Helper function to extract quantity from item name and get quality value
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          // 1. Extract quantity (e.g. "x20" -> "20")
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          // 2. Special durability cases
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)'; // 6. Add AC bonus to shield
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
         
         if (isSelectedWeapon) {
           // Requirement 1 & 3: Show weapon with damage in brackets for first slot
@@ -452,16 +614,79 @@ function CharacterGenerator() {
           }
         } else {
           // Regular inventory item
-          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(item.name) || '';
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${slotIndex}`] = quality;
+          }
           slotIndex++;
           
           // Handle multi-slot items (if they have slots property)
-          const itemSlots = item.slots || 1;
           for (let i = 1; i < itemSlots && slotIndex <= 26; i++) {
             fieldValues[`Slot${slotIndex}`] = '" "'; // Continuation indicator
             slotIndex++;
           }
         }
+      });
+      
+      // Place 0-slot items at the end (starting from slot 26 and working backwards)
+      let zeroSlotIndex = 26;
+      zeroSlotItems.forEach((item) => {
+        if (zeroSlotIndex < 1) return; // No more slots available
+        
+        // Skip if this slot is already occupied by a regular item
+        if (fieldValues[`Slot${zeroSlotIndex}`]) {
+          // Find the next available slot working backwards
+          while (zeroSlotIndex >= 1 && fieldValues[`Slot${zeroSlotIndex}`]) {
+            zeroSlotIndex--;
+          }
+          if (zeroSlotIndex < 1) return; // No more slots available
+        }
+        
+        // Check if this item is the selected weapon
+        const isSelectedWeapon = selectedWeaponObj && item.name === selectedWeaponObj.name;
+        
+        // Helper function (same as above)
+        const processItemNameAndQuality = (itemName) => {
+          let processedName = itemName;
+          let quality = '';
+          
+          const quantityMatch = itemName.match(/\s+x(\d+)$/);
+          if (quantityMatch) {
+            quality = quantityMatch[1];
+            processedName = itemName.replace(/\s+x\d+$/, '');
+          }
+          else if (itemName.toLowerCase().includes('helmet')) {
+            quality = '1/1';
+          }
+          else if (itemName.toLowerCase().includes('shield')) {
+            quality = '1/1';
+            processedName = processedName + ' (+1 AC)';
+          }
+          else if (itemName.includes('Leather Armour')) {
+            quality = '3/3';
+          }
+          else if (itemName.includes('Chain Armour')) {
+            quality = '4/4';
+          }
+          else if (itemName.includes('Plate Armour')) {
+            quality = '5/5';
+          }
+          
+          return { processedName, quality };
+        };
+        
+        if (isSelectedWeapon) {
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
+        } else {
+          const { processedName, quality } = processItemNameAndQuality(item.name);
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(processedName) || '';
+          if (quality) {
+            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
+          }
+        }
+        
+        zeroSlotIndex--; // Move to the next slot backwards
       });
     }
 
@@ -506,6 +731,26 @@ function CharacterGenerator() {
       checkboxValues['Arcane'] = 'Off';  
       checkboxValues['Divine'] = 'Off';  
     }
+
+    // Handle armor type checkboxes
+    const armorType = character.armorType || 
+      (character.armour?.name === "Chain Armour (AC14)" ? "Medium" : 
+       character.armour?.name === "Plate Armour (AC16)" ? "Heavy" : "Light");
+    
+    console.log('🛡️ Armor Type Debug:', armorType);
+    if (armorType === "Medium") {
+      console.log('  Setting Medium to Yes, Heavy to Off');
+      checkboxValues['Medium'] = 'Yes';
+      checkboxValues['Heavy'] = 'Off';
+    } else if (armorType === "Heavy") {
+      console.log('  Setting Medium to Off, Heavy to Yes');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Yes';
+    } else {
+      console.log('  Setting both Medium and Heavy to Off (Light armor)');
+      checkboxValues['Medium'] = 'Off';
+      checkboxValues['Heavy'] = 'Off';
+    }
     
     console.log('All checkbox values to set:', checkboxValues);
 
@@ -543,6 +788,15 @@ function CharacterGenerator() {
           if (checkboxValues.hasOwnProperty(fieldNameStr)) {
             const checkboxValue = checkboxValues[fieldNameStr];
             console.log(`Setting checkbox ${fieldNameStr} = "${checkboxValue}"`);
+            
+            // SPECIAL DEBUG: Show detailed info for spell power checkboxes
+            if (fieldNameStr === 'Arcane' || fieldNameStr === 'Divine') {
+              console.log(`🔥 SPELL POWER FIELD DEBUG: ${fieldNameStr}`);
+              console.log(`  Value to set: ${checkboxValue}`);
+              console.log(`  Field type: ${field.lookup(PDFLib.PDFName.of('FT'))?.toString()}`);
+              console.log(`  Current V: ${field.lookup(PDFLib.PDFName.of('V'))?.toString()}`);
+              console.log(`  Current AS: ${field.lookup(PDFLib.PDFName.of('AS'))?.toString()}`);
+            }
             
             try {
               // Get the checkbox widget to understand its appearance states
@@ -584,11 +838,12 @@ function CharacterGenerator() {
                   }
                 }
               } else {
-                // Fallback for checkboxes without kids (direct field)
+                // Fallback for checkboxes without kids (direct field) - use same logic as primary attributes
                 if (checkboxValue === 'Yes') {
-                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
-                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
-                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method)`);
+                  // Both Arcane and Divine use '/1' for checked, '/Off' for unchecked
+                  field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('1'));
+                  field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('1'));
+                  console.log(`  ✓ Checked ${fieldNameStr} (fallback method using '/1')`);
                 } else {
                   field.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
                   field.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
@@ -1720,16 +1975,66 @@ function CharacterSheet({
 
 // Remove any internal call to mount or mountCharGen. Only export the mount function.
 function mount(root) {
+  if (!root) return;
+  
+  // Clear content first to avoid React DOM conflicts
+  root.innerHTML = "";
+  
+  // Clean up previous React root properly
   if (root._reactRoot) {
-    root._reactRoot.unmount();
+    try {
+      root._reactRoot.unmount();
+    } catch (e) {
+      // Ignore unmount errors - expected after HTML restoration
+      console.log("React unmount error (expected after HTML restoration):", e.message);
+    }
     root._reactRoot = null;
   }
-  // Forcibly clear React 18's internal root container if present
   if (root._reactRootContainer) {
     root._reactRootContainer = null;
   }
-  root.innerHTML = "";
+  
+  // Create fresh React root
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(CharacterGenerator));
+  
+  // Set up state persistence after component renders
+  setTimeout(() => {
+    window.saveState = () => {
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentCharState || window._preservedCharState;
+      if (!currentState || !currentState.pc) {
+        console.log("No current Character state available");
+        return null;
+      }
+      
+      console.log("Character state to save:", currentState);
+      
+      // Only save if there's actual character data
+      if (currentState.pc) {
+        return {
+          charData: currentState,
+          timestamp: Date.now()
+        };
+      }
+      return null;
+    };
+    
+    window.restoreState = (state) => {
+      if (state && (state.hasCharacter || state.charData)) {
+        console.log("Character Generator restoring state");
+        
+        // Store the state temporarily and remount
+        if (state.charData) {
+          window._pendingCharState = state.charData;
+        }
+        
+        // Remount the component
+        setTimeout(() => {
+          root._reactRoot.render(window.React.createElement(CharacterGenerator));
+        }, 50);
+      }
+    };
+  }, 200);
 }
 export { mount };
