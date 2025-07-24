@@ -58,6 +58,12 @@ modules.forEach(({ label, file }, i) => {
         b.style.color = "#fff";
       }
     });
+    // Also reset generators button
+    generatorsBtn.classList.remove("selected");
+    generatorsBtn.removeAttribute("aria-current");
+    generatorsBtn.style.background = "#222";
+    generatorsBtn.style.color = "#fff";
+    
     btn.classList.add("selected");
     btn.setAttribute("aria-current", "page");
     btn.style.background = "#0047ab"; // cobalt blue for active
@@ -95,13 +101,23 @@ generatorsDropdown.style.display = "none";
 generatorsDropdown.style.position = "absolute";
 generatorsDropdown.style.top = "calc(100% + 8px)";
 generatorsDropdown.style.left = "0";
-generatorsDropdown.style.background = "#fff";
-generatorsDropdown.style.border = "1px solid #e5e7eb";
 generatorsDropdown.style.borderRadius = "8px";
 generatorsDropdown.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
 generatorsDropdown.style.minWidth = "150px";
 generatorsDropdown.style.zIndex = "9999";
 generatorsDropdown.style.overflow = "visible";
+
+// Function to update dropdown styling based on dark mode
+function updateGeneratorsDropdownTheme() {
+  const isDark = document.body.classList.contains("dark");
+  generatorsDropdown.style.background = isDark ? "#374151" : "#fff";
+  generatorsDropdown.style.border = isDark ? "1px solid #4b5563" : "1px solid #e5e7eb";
+  
+  // Update all option colors
+  Array.from(generatorsDropdown.children).forEach(option => {
+    option.style.color = isDark ? "#f9fafb" : "#374151";
+  });
+}
 
 // Add generator options to dropdown
 generators.forEach(({ label, file }) => {
@@ -114,11 +130,17 @@ generators.forEach(({ label, file }) => {
   option.style.textAlign = "left";
   option.style.cursor = "pointer";
   option.style.fontSize = "14px";
-  option.style.color = "#374151";
   option.style.borderRadius = "0";
   
-  option.onmouseover = () => option.style.background = "#f3f4f6";
-  option.onmouseout = () => option.style.background = "none";
+  option.onmouseover = () => {
+    option.style.background = "#0047ab"; // Blue highlight in both light and dark mode
+    option.style.color = "#fff";
+  };
+  option.onmouseout = () => {
+    const isDark = document.body.classList.contains("dark");
+    option.style.background = "none";
+    option.style.color = isDark ? "#f9fafb" : "#374151";
+  };
   
   option.onclick = (e) => {
     e.stopPropagation();
@@ -145,6 +167,9 @@ generators.forEach(({ label, file }) => {
   generatorsDropdown.appendChild(option);
 });
 
+// Initial theme setup
+updateGeneratorsDropdownTheme();
+
 generatorsBtn.onmouseover = () => {
   if (!generatorsBtn.classList.contains("selected")) generatorsBtn.style.background = "#333";
 };
@@ -155,7 +180,11 @@ generatorsBtn.onmouseout = () => {
 // Toggle generators dropdown
 generatorsBtn.onclick = (e) => {
   e.stopPropagation();
-  generatorsDropdown.style.display = generatorsDropdown.style.display === "block" ? "none" : "block";
+  const isOpen = generatorsDropdown.style.display === "block";
+  generatorsDropdown.style.display = isOpen ? "none" : "block";
+  
+  // Don't change the button state when just opening/closing dropdown
+  // Only change state when an option is actually selected
 };
 
 generatorsContainer.appendChild(generatorsBtn);
@@ -226,6 +255,7 @@ function setDarkMode(enabled) {
     localStorage.setItem("darkMode", "false");
   }
   updateDarkModeText();
+  updateGeneratorsDropdownTheme();
 }
 
 // Apply initial dark mode state
@@ -233,6 +263,7 @@ if (isDarkMode()) {
   document.body.classList.add("dark");
 }
 updateDarkModeText();
+updateGeneratorsDropdownTheme(); // Apply initial theme to generators dropdown
 
 darkModeOption.onclick = () => {
   setDarkMode(!isDarkMode());
