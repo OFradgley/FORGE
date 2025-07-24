@@ -38,7 +38,7 @@ modules.forEach(({ label, file }, i) => {
   btn.style.background = i === 0 ? "#2563eb" : "#222"; // blue-600 for selected, dark grey for inactive
   btn.style.color = "#fff"; // white text for all
   btn.style.border = "none";
-  btn.style.margin = "0 8px";
+  btn.style.margin = "0 7px";
   btn.style.fontSize = "1.1rem";
   btn.style.cursor = "pointer";
   btn.onmouseover = () => {
