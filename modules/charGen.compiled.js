@@ -565,11 +565,7 @@ function CharacterGenerator() {
         
         if (isSelectedWeapon) {
           // Requirement 1 & 3: Show weapon with damage in brackets for first slot
-          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
-          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
-          if (quality) {
-            fieldValues[`Slot_Quality${slotIndex}`] = quality;
-          }
+          fieldValues[`Slot${slotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
           slotIndex++;
           
           // Requirement 3: Handle multi-slot weapons with continuation indicators
@@ -643,11 +639,7 @@ function CharacterGenerator() {
         };
         
         if (isSelectedWeapon) {
-          const { processedName, quality } = processItemNameAndQuality(selectedWeaponObj.name);
-          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${processedName} (${selectedWeaponObj.dmg})`);
-          if (quality) {
-            fieldValues[`Slot_Quality${zeroSlotIndex}`] = quality;
-          }
+          fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(`${selectedWeaponObj.name} (${selectedWeaponObj.dmg})`);
         } else {
           const { processedName, quality } = processItemNameAndQuality(item.name);
           fieldValues[`Slot${zeroSlotIndex}`] = sanitizeForPDF(processedName) || '';
