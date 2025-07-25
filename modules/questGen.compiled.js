@@ -359,12 +359,9 @@ function QuestGenerator() {
           className: darkMode ? "text-center text-white" : "text-center text-gray-600"
         }, !quest ? "Click \"New Quest\" to begin." : ""),
 
-        // Quest Display
+        // Quest Fields (directly in CardContent like NPC generator)
         quest && /*#__PURE__*/React.createElement("div", {
-          key: "quest-display",
-          className: "p-6 border rounded-lg bg-blue-50"
-        }, /*#__PURE__*/React.createElement("div", {
-          key: "quest-content",
+          key: "quest-fields",
           className: "space-y-4"
         }, [
           // Quest Type Field
@@ -516,7 +513,7 @@ function QuestGenerator() {
               className: "font-semibold"
             }, quest.reward)
           ])
-        ]))
+        ])
       ]))
     ]),
 
