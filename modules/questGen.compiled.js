@@ -513,6 +513,7 @@ function QuestGenerator() {
     
     const questToSave = {
       ...quest,
+      locationDirectionDistance, // Include location direction and distance
       id: Date.now() + Math.random(), // Unique ID for each saved quest
       savedAt: new Date().toLocaleDateString()
     };
@@ -540,6 +541,13 @@ function QuestGenerator() {
     }
     
     setQuest(questToLoad);
+    
+    // Also restore location direction and distance if it exists
+    if (savedQuest.locationDirectionDistance) {
+      setLocationDirectionDistance(savedQuest.locationDirectionDistance);
+    } else {
+      setLocationDirectionDistance(null);
+    }
   };
 
   const deleteQuest = (questId) => {
@@ -1053,7 +1061,7 @@ function QuestGenerator() {
           /*#__PURE__*/React.createElement("div", {
             key: "quest-summary",
             className: "font-semibold"
-          }, `${savedQuest.questType} Quest`),
+          }, savedQuest.questAction && savedQuest.questSubject ? `${savedQuest.questAction} ${savedQuest.questSubject}` : `${savedQuest.questType} Quest`),
           /*#__PURE__*/React.createElement("div", {
             key: "quest-details",
             className: darkMode ? "text-gray-300" : "text-gray-600"
