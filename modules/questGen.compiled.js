@@ -50,6 +50,8 @@ function QuestGenerator() {
   
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
+  const [showQuestTypeDropdown, setShowQuestTypeDropdown] = React.useState(false);
+  const [showRewardDropdown, setShowRewardDropdown] = React.useState(false);
 
   // Clear pending state after all initializations are complete
   React.useEffect(() => {
@@ -253,6 +255,39 @@ function QuestGenerator() {
     }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
   }
 
+  const rerollQuestType = () => {
+    if (!quest) return;
+    const questTypeRoll = d6();
+    const questType = questTypes[questTypeRoll];
+    setQuest(prev => ({
+      ...prev,
+      questType,
+      questTypeRoll
+    }));
+  };
+
+  const rerollReward = () => {
+    if (!quest) return;
+    const rewardRoll = d6();
+    let reward = rewards[rewardRoll];
+    
+    // Handle special case for XP in the form of gold/gems
+    if (rewardRoll === 3 || rewardRoll === 4) {
+      const currencyRoll = d6();
+      if (currencyRoll <= 2) {
+        reward = "XP in the form of gold";
+      } else {
+        reward = "XP in the form of gems";
+      }
+    }
+    
+    setQuest(prev => ({
+      ...prev,
+      reward,
+      rewardRoll
+    }));
+  };
+
   const saveQuest = () => {
     if (!quest) return;
     
@@ -298,7 +333,7 @@ function QuestGenerator() {
     /*#__PURE__*/React.createElement("p", {
       key: "description",
       className: darkMode ? "text-center text-white" : "text-center text-gray-600"
-    }, !quest ? "Click \"New Quest\" to begin." : "Your generated quest details:"),
+    }, !quest ? "Click \"New Quest\" to begin." : ""),
 
     // Quest Display
     quest && /*#__PURE__*/React.createElement("div", {
@@ -309,40 +344,154 @@ function QuestGenerator() {
         key: "quest-content",
         className: "space-y-4"
       }, [
+        // Quest Type Field
         /*#__PURE__*/React.createElement("div", {
-          key: "quest-type",
-          className: "text-center"
+          key: "quest-type-field"
         }, [
-          /*#__PURE__*/React.createElement("h3", {
-            key: "quest-type-label",
-            className: "text-lg font-semibold text-gray-700 mb-2"
-          }, "Quest Type"),
-          /*#__PURE__*/React.createElement("p", {
+          /*#__PURE__*/React.createElement("div", {
+            key: "quest-type-header",
+            className: "flex items-center gap-2 mb-1"
+          }, [
+            /*#__PURE__*/React.createElement("span", {
+              key: "quest-type-label",
+              className: "text-xs text-gray-500"
+            }, "Quest Type"),
+            /*#__PURE__*/React.createElement("button", {
+              key: "quest-type-dropdown-btn",
+              className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+              onClick: () => setShowQuestTypeDropdown(v => !v),
+              style: { fontSize: "0.75rem" }
+            }, "..."),
+            showQuestTypeDropdown && /*#__PURE__*/React.createElement("button", {
+              key: "quest-type-reroll-btn",
+              className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+              style: {
+                fontSize: "0.75rem",
+                height: "25px",
+                width: "25px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                marginLeft: "4px"
+              },
+              type: "button",
+              onMouseDown: e => e.preventDefault(),
+              onClick: rerollQuestType,
+              tabIndex: -1
+            }, /*#__PURE__*/React.createElement("img", {
+              src: "./d6.png",
+              alt: "Reroll",
+              style: {
+                width: "25px",
+                height: "25px",
+                filter: darkMode ? "invert(1)" : "none"
+              }
+            }))
+          ]),
+          showQuestTypeDropdown ? /*#__PURE__*/React.createElement("div", {
+            key: "quest-type-dropdown",
+            className: "flex items-center gap-2"
+          }, /*#__PURE__*/React.createElement("select", {
+            value: quest.questType,
+            onChange: (e) => {
+              const selectedType = e.target.value;
+              // Find the roll number for this type
+              const rollNum = Object.keys(questTypes).find(key => questTypes[key] === selectedType);
+              setQuest(prev => ({
+                ...prev,
+                questType: selectedType,
+                questTypeRoll: parseInt(rollNum)
+              }));
+            },
+            className: "border rounded px-1 py-0.5 text-sm",
+            autoFocus: true,
+            onBlur: () => setShowQuestTypeDropdown(false)
+          }, [
+            /*#__PURE__*/React.createElement("option", { key: "character", value: "Character Based" }, "Character Based"),
+            /*#__PURE__*/React.createElement("option", { key: "item", value: "Item Based" }, "Item Based"),
+            /*#__PURE__*/React.createElement("option", { key: "location", value: "Location Based" }, "Location Based")
+          ])) : /*#__PURE__*/React.createElement("div", {
             key: "quest-type-value",
-            className: "text-2xl font-bold text-blue-700"
-          }, quest.questType),
-          /*#__PURE__*/React.createElement("p", {
-            key: "quest-type-roll",
-            className: "text-sm text-gray-500 mt-1"
-          }, `(Rolled: ${quest.questTypeRoll})`)
+            className: "font-semibold"
+          }, quest.questType)
         ]),
         
+        // Reward Field
         /*#__PURE__*/React.createElement("div", {
-          key: "quest-reward",
-          className: "text-center"
+          key: "reward-field"
         }, [
-          /*#__PURE__*/React.createElement("h3", {
-            key: "reward-label",
-            className: "text-lg font-semibold text-gray-700 mb-2"
-          }, "Reward"),
-          /*#__PURE__*/React.createElement("p", {
+          /*#__PURE__*/React.createElement("div", {
+            key: "reward-header",
+            className: "flex items-center gap-2 mb-1"
+          }, [
+            /*#__PURE__*/React.createElement("span", {
+              key: "reward-label",
+              className: "text-xs text-gray-500"
+            }, "Reward"),
+            /*#__PURE__*/React.createElement("button", {
+              key: "reward-dropdown-btn",
+              className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+              onClick: () => setShowRewardDropdown(v => !v),
+              style: { fontSize: "0.75rem" }
+            }, "..."),
+            showRewardDropdown && /*#__PURE__*/React.createElement("button", {
+              key: "reward-reroll-btn",
+              className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+              style: {
+                fontSize: "0.75rem",
+                height: "25px",
+                width: "25px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                marginLeft: "4px"
+              },
+              type: "button",
+              onMouseDown: e => e.preventDefault(),
+              onClick: rerollReward,
+              tabIndex: -1
+            }, /*#__PURE__*/React.createElement("img", {
+              src: "./d6.png",
+              alt: "Reroll",
+              style: {
+                width: "25px",
+                height: "25px",
+                filter: darkMode ? "invert(1)" : "none"
+              }
+            }))
+          ]),
+          showRewardDropdown ? /*#__PURE__*/React.createElement("div", {
+            key: "reward-dropdown",
+            className: "flex items-center gap-2"
+          }, /*#__PURE__*/React.createElement("select", {
+            value: quest.reward,
+            onChange: (e) => {
+              const selectedReward = e.target.value;
+              // Find the roll number for this reward
+              let rollNum = Object.keys(rewards).find(key => rewards[key] === selectedReward);
+              // Handle special cases for gold/gems
+              if (selectedReward === "XP in the form of gold") rollNum = "3";
+              if (selectedReward === "XP in the form of gems") rollNum = "4";
+              setQuest(prev => ({
+                ...prev,
+                reward: selectedReward,
+                rewardRoll: parseInt(rollNum)
+              }));
+            },
+            className: "border rounded px-1 py-0.5 text-sm",
+            autoFocus: true,
+            onBlur: () => setShowRewardDropdown(false)
+          }, [
+            /*#__PURE__*/React.createElement("option", { key: "no-reward", value: "No monetary reward, just XP" }, "No monetary reward, just XP"),
+            /*#__PURE__*/React.createElement("option", { key: "gold", value: "XP in the form of gold" }, "XP in the form of gold"),
+            /*#__PURE__*/React.createElement("option", { key: "gems", value: "XP in the form of gems" }, "XP in the form of gems"),
+            /*#__PURE__*/React.createElement("option", { key: "item", value: "XP plus an Item" }, "XP plus an Item")
+          ])) : /*#__PURE__*/React.createElement("div", {
             key: "reward-value",
-            className: "text-xl font-semibold text-green-700"
-          }, quest.reward),
-          /*#__PURE__*/React.createElement("p", {
-            key: "reward-roll",
-            className: "text-sm text-gray-500 mt-1"
-          }, `(Rolled: ${quest.rewardRoll})`)
+            className: "font-semibold"
+          }, quest.reward)
         ])
       ]),
       
