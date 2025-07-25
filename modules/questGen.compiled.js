@@ -1,5 +1,6 @@
 // modules/questGen.compiled.js - FORGE Quest Generator Module
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -148,6 +149,14 @@ function QuestGenerator() {
     // Check for pending state on initialization
     return pendingState && pendingState.locationDirectionDistance ? pendingState.locationDirectionDistance : null;
   });
+  const [generatedCharacter, setGeneratedCharacter] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.generatedCharacter ? pendingState.generatedCharacter : null;
+  });
+  const [preGeneratedNPC, setPreGeneratedNPC] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.preGeneratedNPC ? pendingState.preGeneratedNPC : null;
+  });
 
   // Clear pending state after all initializations are complete
   React.useEffect(() => {
@@ -172,6 +181,12 @@ function QuestGenerator() {
       if (backupPendingState.locationDirectionDistance !== undefined) {
         setLocationDirectionDistance(backupPendingState.locationDirectionDistance);
       }
+      if (backupPendingState.generatedCharacter !== undefined) {
+        setGeneratedCharacter(backupPendingState.generatedCharacter);
+      }
+      if (backupPendingState.preGeneratedNPC !== undefined) {
+        setPreGeneratedNPC(backupPendingState.preGeneratedNPC);
+      }
       
       // Clear the pending state
       delete window._pendingQuestState;
@@ -183,7 +198,9 @@ function QuestGenerator() {
     window._currentQuestState = {
       quest,
       savedQuests,
-      locationDirectionDistance
+      locationDirectionDistance,
+      generatedCharacter,
+      preGeneratedNPC
     };
     
     // Provide direct update function for faster restoration
@@ -198,10 +215,16 @@ function QuestGenerator() {
       if (state.locationDirectionDistance !== undefined) {
         setLocationDirectionDistance(state.locationDirectionDistance);
       }
+      if (state.generatedCharacter !== undefined) {
+        setGeneratedCharacter(state.generatedCharacter);
+      }
+      if (state.preGeneratedNPC !== undefined) {
+        setPreGeneratedNPC(state.preGeneratedNPC);
+      }
       // Clear pending state after successful update
       window._pendingQuestState = null;
     };
-  }, [quest, savedQuests, locationDirectionDistance]);
+  }, [quest, savedQuests, locationDirectionDistance, generatedCharacter, preGeneratedNPC]);
   
   // Clean up update function on unmount
   React.useEffect(() => {
@@ -386,6 +409,9 @@ function QuestGenerator() {
       setQuest(newQuest);
       // Reset location direction and distance for new quest
       setLocationDirectionDistance(null);
+      // Reset generated character for new quest
+      setGeneratedCharacter(null);
+      setPreGeneratedNPC(null);
     }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
   }
 
@@ -429,6 +455,9 @@ function QuestGenerator() {
     }
     
     setQuest(newQuest);
+    // Reset generated character when quest type changes
+    setGeneratedCharacter(null);
+    setPreGeneratedNPC(null);
   };
 
   const rerollReward = () => {
@@ -484,6 +513,9 @@ function QuestGenerator() {
         questSubject,
         questSubjectRoll
       }));
+      // Reset generated character when subject changes
+      setGeneratedCharacter(null);
+      setPreGeneratedNPC(null);
     } else if (quest.questType === "Item Based") {
       const questSubject = pick(itemSubjects);
       setQuest(prev => ({
@@ -534,6 +566,9 @@ function QuestGenerator() {
       "Slaver", "Smuggler", "Tracker", "Trader", "Warlock", "Witch", "Woodsman"
     ];
 
+    // Import required arrays from tables.js for full NPC generation
+    // (Now imported at top of file)
+
     // Select appropriate occupation array based on quest subject
     let occupationArray;
     if (questSubject === "Urban Character") {
@@ -547,8 +582,170 @@ function QuestGenerator() {
       return;
     }
 
-    // Pick a random occupation from the appropriate array
-    const selectedOccupation = pick(occupationArray);
+    // Helper functions (copied from NPC generator)
+    const mod = v => {
+      if (v === 1) return -4;
+      if (v <= 3) return -3;
+      if (v <= 5) return -2;
+      if (v <= 8) return -1;
+      if (v <= 12) return 0;
+      if (v <= 15) return 1;
+      if (v <= 17) return 2;
+      return 3;
+    };
+
+    const choosePrimaries = (o1, o2) => {
+      const set = new Set();
+      const lower = [o1.toLowerCase(), o2.toLowerCase()];
+      for (const { attr, keys } of OCC_ATTR_MAP) {
+        if (lower.some(o => keys.some(k => o.includes(k)))) set.add(attr);
+        if (set.size === 2) break;
+      }
+      while (set.size < 2) set.add(pick(attributeOrder));
+      return set;
+    };
+
+    const roll3d6 = () => d6() + d6() + d6();
+    const roll2d6 = () => d6() + d6();
+    const d8 = () => Math.floor(Math.random() * 8) + 1;
+
+    // Generate full NPC character in background
+    console.log("Generating full NPC character in background for quest...");
+
+    // Generate character name and occupation
+    const characterName = pick(names);
+    const characterOccupation = pick(occupationArray);
+    
+    // Get second occupation from full list for diversity
+    let occ2 = pick(occupations);
+    while (occ2 === characterOccupation) occ2 = pick(occupations);
+
+    // Generate attributes
+    const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
+    const primariesInit = choosePrimaries(characterOccupation, occ2);
+    
+    const attrs = attributeOrder.map(a => {
+      const s = scores[a];
+      const m = mod(s);
+      return {
+        attr: a,
+        score: s,
+        mod: m,
+        primary: primariesInit.has(a),
+        check: m + (primariesInit.has(a) ? 1 : 0) // Level 1 for NPCs
+      };
+    });
+
+    // Generate HP arrays
+    const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
+    const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
+
+    // Generate gear
+    const weapon = pick(weapons);
+    const aRoll = roll2d6();
+    const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
+    
+    const hs = roll2d6();
+    const hasHelmet = (hs >= 6 && hs <= 7) || (hs >= 11);
+    const hasShield = (hs >= 8 && hs <= 10) || (hs >= 11);
+
+    // Calculate AC
+    const dexMod = mod(scores.Dexterity);
+    let dexBonus;
+    if (armour.name === "Chain Armour (AC14)") {
+      dexBonus = Math.min(dexMod, 2);
+    } else if (armour.name === "Plate Armour (AC16)") {
+      dexBonus = Math.min(dexMod, 1);
+    } else {
+      dexBonus = dexMod;
+    }
+
+    const armorType = armour.name === "Chain Armour (AC14)" ? "Medium" : 
+                      armour.name === "Plate Armour (AC16)" ? "Heavy" : "Light";
+
+    const acBase = armour.ac;
+    const acShield = hasShield ? 1 : 0;
+    const acDex = dexBonus;
+    const ac = acBase + acShield + acDex;
+
+    // Build inventory
+    let inventory = [{ name: weapon.name, slots: weapon.slots }];
+
+    // Add ammo
+    if (weapon.name === "Sling") {
+      inventory.push({ name: "Pouch of Bullets x20", slots: 1 });
+    } else if (weapon.name === "Hand Crossbow" || weapon.name === "Crossbow") {
+      inventory.push({ name: "Case of Bolts x20", slots: 1 });
+    } else if (weapon.name === "Shortbow" || weapon.name === "Longbow" || weapon.name === "Warbow") {
+      inventory.push({ name: "Quiver of Arrows x20", slots: 1 });
+    }
+
+    inventory.push(
+      armour.name !== "No Armour" ? { name: armour.name, slots: armour.slots } : null,
+      hasHelmet ? helmetItem : null,
+      hasShield ? shieldItem : null,
+      pick(dungeonGear),
+      (() => {
+        let g1 = pick(generalGear), g2 = pick(generalGear);
+        while (g2.name === g1.name) g2 = pick(generalGear);
+        return [g1, g2];
+      })(),
+      rationItem,
+      { ...rationItem }
+    );
+
+    inventory = inventory.flat().filter(Boolean);
+
+    const strengthAttr = attrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check;
+
+    // Create complete NPC character object
+    const fullNPCCharacter = {
+      name: characterName,
+      level: 1,
+      alignment: pick(["Lawful", "Neutral", "Chaotic"]),
+      occupations: [characterOccupation, occ2],
+      attrs,
+      maxSlots,
+      rawHpPrimary: rawHpPrimaryArr,
+      rawHpSecondary: rawHpSecondaryArr,
+      ac,
+      acBreakdown: {
+        base: acBase,
+        shield: acShield,
+        dex: acDex
+      },
+      armour,
+      armorType,
+      hasShield,
+      gold: (d6() + d6()) * 30,
+      inventory,
+      totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
+      appearance: pick(appearances),
+      detail: pick(details),
+      clothing: pick(clothes),
+      quirk: pick(quirks),
+      personality: pick(personalities),
+      spellPowerType: "None"
+    };
+
+    // Store both the simple character summary and full NPC data
+    const characterSummary = {
+      name: characterName,
+      occupation: characterOccupation
+    };
+
+    setGeneratedCharacter(characterSummary);
+    
+    // Store the complete NPC character for loading later
+    setPreGeneratedNPC(fullNPCCharacter);
+    
+    console.log("Generated character summary:", characterSummary);
+    console.log("Pre-generated full NPC:", fullNPCCharacter);
+  };
+
+  const viewCharacterDetails = () => {
+    if (!generatedCharacter || !preGeneratedNPC) return;
 
     // Save current quest generator state
     if (window.saveState) {
@@ -558,8 +755,9 @@ function QuestGenerator() {
       }
     }
 
-    // Store the selected occupation for the NPC generator
-    sessionStorage.setItem('generateNPCWithOccupation', selectedOccupation);
+    // Store the complete pre-generated NPC character for direct loading
+    sessionStorage.setItem('preGeneratedNPCData', JSON.stringify(preGeneratedNPC));
+    sessionStorage.setItem('returnToQuestGenerator', 'true');
 
     // Navigate to NPC generator
     if (window.loadModule) {
@@ -984,6 +1182,9 @@ function QuestGenerator() {
                     questSubject: selectedSubject,
                     questSubjectRoll: parseInt(rollNum)
                   }));
+                  // Reset generated character when subject changes via dropdown
+                  setGeneratedCharacter(null);
+                  setPreGeneratedNPC(null);
                 } else {
                   // For item subjects, no roll number needed
                   setQuest(prev => ({
@@ -1005,19 +1206,36 @@ function QuestGenerator() {
             }, subject)))) : /*#__PURE__*/React.createElement("div", {
               key: "quest-subject-value",
               className: "font-semibold"
-            }, quest.questSubject)
+            }, quest.questSubject),
+            
+            // Generate Character Button or Character Summary (directly below Quest Subject for Character Based quests only)
+            quest.questType === "Character Based" && quest.questSubject && /*#__PURE__*/React.createElement("div", {
+              key: "generate-character-section",
+              className: "mt-3"
+            }, generatedCharacter ? 
+              // Show character summary with Full Details button if character has been generated
+              /*#__PURE__*/React.createElement("div", {
+                key: "character-summary",
+                className: "p-3 rounded border-l-4 border-blue-600"
+              }, [
+                /*#__PURE__*/React.createElement("div", {
+                  key: "character-name",
+                  className: darkMode ? "font-semibold text-lg text-blue-300 mb-2" : "font-semibold text-lg text-blue-700 mb-2"
+                }, `${generatedCharacter.name} the ${generatedCharacter.occupation}`),
+                /*#__PURE__*/React.createElement("button", {
+                  key: "full-details-btn",
+                  className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold",
+                  onClick: viewCharacterDetails
+                }, "Full Details")
+              ]) :
+              // Show generate button if no character has been generated
+              /*#__PURE__*/React.createElement("button", {
+                key: "generate-character-btn",
+                className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-semibold w-full",
+                onClick: () => generateCharacterForQuest(quest.questSubject)
+              }, "Generate Character"))
           ])
           ]),
-
-          // Generate Character Button (for Character Based quests only)
-          quest.questType === "Character Based" && quest.questSubject && /*#__PURE__*/React.createElement("div", {
-            key: "generate-character-button",
-            className: "text-center mt-2"
-          }, /*#__PURE__*/React.createElement("button", {
-            key: "generate-character-btn",
-            className: "px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm font-semibold",
-            onClick: () => generateCharacterForQuest(quest.questSubject)
-          }, "Generate Character")),
 
           // Location Direction and Distance Field (independent of quest type)
           /*#__PURE__*/React.createElement("div", {

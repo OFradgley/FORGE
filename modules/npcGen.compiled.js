@@ -59,6 +59,7 @@ function NPCGenerator() {
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
   const [currentNpcType, setCurrentNpcType] = React.useState(null);
+  const [preGeneratedLoaded, setPreGeneratedLoaded] = React.useState(false);
   const dropdownRef = React.useRef();
 
   // Clear pending state after all initializations are complete
@@ -67,6 +68,8 @@ function NPCGenerator() {
       console.log("Clearing pending NPC state after initialization");
       window._pendingNPCState = null;
     }
+    // Reset pre-generated loaded flag on component mount
+    setPreGeneratedLoaded(false);
   }, []);
   const [savedCharacters, setSavedCharacters] = React.useState(() => {
     try {
@@ -189,9 +192,75 @@ function NPCGenerator() {
     }
   }, [showRollAnimation]);
 
+  // Dedicated effect to handle pre-generated NPC data (highest priority)
+  React.useEffect(() => {
+    const preGeneratedData = sessionStorage.getItem('preGeneratedNPCData');
+    if (preGeneratedData) {
+      console.log("NPCGen: Loading pre-generated NPC from Quest Generator (overriding existing)");
+      try {
+        const npcData = JSON.parse(preGeneratedData);
+        sessionStorage.removeItem('preGeneratedNPCData'); // Clean up immediately
+        
+        // Set a flag to prevent state restoration from overriding this
+        sessionStorage.setItem('preGeneratedNPCLoaded', 'true');
+        
+        // Prevent state restoration by clearing any saved state
+        sessionStorage.removeItem('returnToQuestGenerator');
+        
+        // Reset the preGeneratedLoaded flag first to ensure fresh state
+        setPreGeneratedLoaded(false);
+        
+        // Load the pre-generated character directly (this will override any existing character)
+        setPc(npcData);
+        setHpOverride(null); // Reset any HP override
+        
+        // Set primaries based on the character data
+        const primariesFromData = new Set(npcData.attrs.filter(a => a.primary).map(a => a.attr));
+        setPrimaries(primariesFromData);
+        
+        // Set the selected weapon from the character's inventory
+        const characterWeapon = npcData.inventory?.find(item => 
+          weapons.some(w => w.name === item.name)
+        );
+        setSelectedWeapon(characterWeapon ? characterWeapon.name : null);
+        
+        // Reset other UI states
+        setSwapMode(false);
+        setSwapSelection([]);
+        setShowRollDropdown(false);
+        
+        // Mark that we've loaded a pre-generated character (after all state updates)
+        setTimeout(() => setPreGeneratedLoaded(true), 0);
+        
+        // Clear any pending NPC state to prevent restoration from overriding
+        window._pendingNPCState = null;
+        
+        console.log("Loaded pre-generated NPC (overriding existing):", npcData);
+      } catch (error) {
+        console.error("Failed to load pre-generated NPC data:", error);
+        sessionStorage.removeItem('preGeneratedNPCData'); // Clean up on error
+      }
+    }
+  }); // No dependency array - runs on every render to catch pre-generated data
+
   // Auto-roll character on component mount only if no existing character
   React.useEffect(() => {
-    console.log("NPCGen auto-roll effect - pc:", !!pc, "pendingState:", !!window._pendingNPCState);
+    console.log("NPCGen auto-roll effect - pc:", !!pc, "pendingState:", !!window._pendingNPCState, "preGeneratedLoaded:", preGeneratedLoaded);
+    
+    // Don't auto-roll if we've loaded a pre-generated character
+    if (preGeneratedLoaded) {
+      console.log("NPCGen: Skipping auto-roll, pre-generated character was loaded");
+      return;
+    }
+    
+    // Check if we should force a new roll (from Quest Generator) - this takes priority
+    const forceNewRoll = sessionStorage.getItem('forceNewNPCRoll') === 'true';
+    if (forceNewRoll) {
+      console.log("NPCGen: Forcing new character roll from Quest Generator");
+      sessionStorage.removeItem('forceNewNPCRoll'); // Clean up flag
+      rollCharacter(true); // Skip animation for forced roll
+      return;
+    }
     
     // Wait longer to allow restoration to complete before deciding to auto-roll
     const timeoutId = setTimeout(() => {
@@ -199,7 +268,13 @@ function NPCGenerator() {
       const hasCharacterNow = !!pc;
       const hasPendingState = !!window._pendingNPCState;
       
-      console.log("NPCGen auto-roll decision - pc now:", hasCharacterNow, "pendingState now:", hasPendingState);
+      console.log("NPCGen auto-roll decision - pc now:", hasCharacterNow, "pendingState now:", hasPendingState, "preGeneratedLoaded:", preGeneratedLoaded);
+      
+      // Don't auto-roll if we've loaded a pre-generated character (check again after timeout)
+      if (preGeneratedLoaded) {
+        console.log("NPCGen: Skipping delayed auto-roll, pre-generated character was loaded");
+        return;
+      }
       
       // Only roll if we don't have a character already (either from state or restored)
       if (!hasCharacterNow && !hasPendingState) {
@@ -211,7 +286,23 @@ function NPCGenerator() {
     }, 150); // Longer delay to let restoration complete first
     
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [preGeneratedLoaded]); // Add preGeneratedLoaded as dependency
+
+  // Separate effect to handle force roll flag after component is mounted and state is restored
+  React.useEffect(() => {
+    // Don't force roll if we've loaded a pre-generated character
+    if (preGeneratedLoaded) {
+      return;
+    }
+    
+    // Check for force roll flag on every render (in case it gets set after mount)
+    const forceNewRoll = sessionStorage.getItem('forceNewNPCRoll') === 'true';
+    if (forceNewRoll) {
+      console.log("NPCGen: Force roll detected during render, forcing new character");
+      sessionStorage.removeItem('forceNewNPCRoll'); // Clean up flag
+      rollCharacter(true); // Skip animation for forced roll
+    }
+  }, [preGeneratedLoaded]); // Add preGeneratedLoaded as dependency
 
   // Handle click outside dropdown
   React.useEffect(() => {
@@ -255,13 +346,29 @@ function NPCGenerator() {
       
       // Check if we have a specific occupation from Quest Generator
       const questOccupation = sessionStorage.getItem('generateNPCWithOccupation');
+      // Check if we have predetermined character data from Quest Generator
+      const predeterminedCharacterData = sessionStorage.getItem('predeterminedCharacter');
+      
       let occ1;
-      if (questOccupation) {
+      let characterName;
+      
+      if (predeterminedCharacterData) {
+        // Use predetermined character data
+        const predeterminedCharacter = JSON.parse(predeterminedCharacterData);
+        occ1 = predeterminedCharacter.occupation;
+        characterName = predeterminedCharacter.name;
+        // Clear the stored data after using it
+        sessionStorage.removeItem('predeterminedCharacter');
+      } else if (questOccupation) {
+        // Use quest-specified occupation but generate random name
         occ1 = questOccupation;
+        characterName = pick(names);
         // Clear the stored occupation after using it
         sessionStorage.removeItem('generateNPCWithOccupation');
       } else {
+        // Fully random character
         occ1 = pick(availableOccupations);
+        characterName = pick(names);
       }
       const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
       
@@ -474,7 +581,7 @@ function NPCGenerator() {
     }
     
     setPc({
-      name: pick(names),
+      name: characterName,
       level: level,
       alignment: alignment,
       occupations: [occ1],
@@ -2193,6 +2300,15 @@ export function mount(root) {
     
     window.restoreState = (state) => {
       console.log("NPC Generator restoreState called with:", state);
+      
+      // Check if we have pre-generated NPC data - if so, skip restoration
+      const preGeneratedLoaded = sessionStorage.getItem('preGeneratedNPCLoaded') === 'true';
+      if (preGeneratedLoaded) {
+        console.log("NPC Generator: Skipping state restoration, pre-generated NPC was loaded");
+        sessionStorage.removeItem('preGeneratedNPCLoaded'); // Clean up the flag
+        return;
+      }
+      
       if (state && (state.hasNPC || state.npcData)) {
         console.log("NPC Generator restoring state");
         
