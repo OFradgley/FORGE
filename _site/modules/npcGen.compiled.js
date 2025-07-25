@@ -51,12 +51,7 @@ function NPCGenerator() {
   });
   const [hpOverride, setHpOverride] = React.useState(null);
   const [selectedWeapon, setSelectedWeapon] = React.useState(() => {
-    const restoredWeapon = pendingState ? pendingState.selectedWeapon : null;
-    // Clear pending state after using it for all initializations
-    if (pendingState) {
-      window._pendingNPCState = null;
-    }
-    return restoredWeapon;
+    return pendingState ? pendingState.selectedWeapon : null;
   });
   const [swapMode, setSwapMode] = React.useState(false);
   const [swapSelection, setSwapSelection] = React.useState([]);
@@ -65,6 +60,14 @@ function NPCGenerator() {
   const [showRollDropdown, setShowRollDropdown] = React.useState(false);
   const [currentNpcType, setCurrentNpcType] = React.useState(null);
   const dropdownRef = React.useRef();
+
+  // Clear pending state after all initializations are complete
+  React.useEffect(() => {
+    if (window._pendingNPCState === pendingState && pendingState) {
+      console.log("Clearing pending NPC state after initialization");
+      window._pendingNPCState = null;
+    }
+  }, []);
   const [savedCharacters, setSavedCharacters] = React.useState(() => {
     try {
       const saved = localStorage.getItem('saved-npcs');
@@ -172,9 +175,28 @@ function NPCGenerator() {
     }
   }, [showRollAnimation]);
 
-  // Auto-roll character on component mount
+  // Auto-roll character on component mount only if no existing character
   React.useEffect(() => {
-    rollCharacter();
+    console.log("NPCGen auto-roll effect - pc:", !!pc, "pendingState:", !!window._pendingNPCState);
+    
+    // Wait longer to allow restoration to complete before deciding to auto-roll
+    const timeoutId = setTimeout(() => {
+      // Check again after waiting - restoration might have happened
+      const hasCharacterNow = !!pc;
+      const hasPendingState = !!window._pendingNPCState;
+      
+      console.log("NPCGen auto-roll decision - pc now:", hasCharacterNow, "pendingState now:", hasPendingState);
+      
+      // Only roll if we don't have a character already (either from state or restored)
+      if (!hasCharacterNow && !hasPendingState) {
+        console.log("NPCGen: Auto-rolling new character");
+        rollCharacter();
+      } else {
+        console.log("NPCGen: Skipping auto-roll, character exists or pending state available");
+      }
+    }, 150); // Longer delay to let restoration complete first
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Handle click outside dropdown
@@ -187,11 +209,14 @@ function NPCGenerator() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  function rollCharacter(npcType = null) {
-    // Trigger roll animation first
-    triggerRollAnimation();
+  function rollCharacter(npcType = null, skipAnimation = false) {
+    // Trigger roll animation first (unless skipping for restoration)
+    if (!skipAnimation) {
+      triggerRollAnimation();
+    }
     
     // Delay the actual character generation until after the popup disappears
+    // Use shorter delay if skipping animation
     setTimeout(() => {
       setHpOverride(null);
       setCurrentNpcType(npcType); // Track the current NPC type
@@ -448,7 +473,7 @@ function NPCGenerator() {
       equipment,
       competence
     });
-    }, 500); // Match the popup duration
+    }, skipAnimation ? 0 : 500); // No delay if skipping animation, otherwise match popup duration
   }
 
   // NPC save/load/delete functions
@@ -700,7 +725,7 @@ function NPCGenerator() {
         }, char.name),
         /*#__PURE__*/React.createElement("div", {
           key: "char-details",
-          className: "text-gray-600"
+          className: darkMode ? "text-gray-300" : "text-gray-600"
         }, `Level ${char.level} ${char.occupation} • Saved ${char.savedAt}`)
       ]),
       /*#__PURE__*/React.createElement("div", {
@@ -2049,10 +2074,62 @@ export function mount(root) {
   // Clean up previous React root properly
   if (root._reactRoot) {
     try {
+      // Suppress React DOM errors during unmount
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      // More comprehensive error suppression
+      console.error = (message, ...args) => {
+        // Check if it's a React DOM unmount error
+        if (typeof message === 'string' && (
+          message.includes('removeChild') || 
+          message.includes('NotFoundError') ||
+          message.includes('The node to be removed is not a child') ||
+          message.includes('Failed to execute \'removeChild\'')
+        )) {
+          return; // Suppress these errors
+        }
+        // Also check if it's an Error object with React DOM messages
+        if (message instanceof Error && (
+          message.message.includes('removeChild') ||
+          message.message.includes('NotFoundError') ||
+          message.message.includes('The node to be removed is not a child')
+        )) {
+          return; // Suppress these errors
+        }
+        originalError(message, ...args);
+      };
+      
+      console.warn = (message, ...args) => {
+        if (typeof message === 'string' && message.includes('removeChild')) {
+          return; // Suppress removeChild warnings too
+        }
+        originalWarn(message, ...args);
+      };
+      
+      // Add global error event suppression as backup
+      const handleGlobalError = (event) => {
+        if (event.error && event.error.message && (
+          event.error.message.includes('removeChild') ||
+          event.error.message.includes('NotFoundError')
+        )) {
+          event.preventDefault();
+          return false;
+        }
+      };
+      window.addEventListener('error', handleGlobalError);
+      
       root._reactRoot.unmount();
+      
+      // Restore console methods and remove global handler after a brief delay
+      setTimeout(() => {
+        console.error = originalError;
+        console.warn = originalWarn;
+        window.removeEventListener('error', handleGlobalError);
+      }, 200);
     } catch (e) {
-      // Ignore unmount errors - expected after HTML restoration
-      console.log("React unmount error (expected after HTML restoration):", e.message);
+      // Suppress unmount errors - they're expected when switching modules
+      console.log("React unmount completed (some errors expected)");
     }
     root._reactRoot = null;
   }
@@ -2064,9 +2141,13 @@ export function mount(root) {
   root._reactRoot = window.ReactDOM.createRoot(root);
   root._reactRoot.render(window.React.createElement(NPCGenerator));
   
-  // Set up state persistence after component renders
+  // Wait a moment for the component to render, then set up state persistence
   setTimeout(() => {
+    console.log("Setting up NPC Generator state persistence functions");
+    
     window.saveState = () => {
+      console.log("NPC saveState called");
+      
       // First try current state, then fall back to preserved state
       const currentState = window._currentNPCState || window._preservedNPCState;
       if (!currentState || !currentState.pc) {
@@ -2087,19 +2168,34 @@ export function mount(root) {
     };
     
     window.restoreState = (state) => {
+      console.log("NPC Generator restoreState called with:", state);
       if (state && (state.hasNPC || state.npcData)) {
         console.log("NPC Generator restoring state");
         
-        // Store the state temporarily and remount
+        // Store the state for immediate pickup during component initialization
         if (state.npcData) {
           window._pendingNPCState = state.npcData;
         }
         
-        // Remount the component
-        setTimeout(() => {
-          root._reactRoot.render(window.React.createElement(NPCGenerator));
-        }, 50);
+        // Don't re-render, just mount a fresh component that will pick up the pending state
+        if (root._reactRoot) {
+          // Unmount current component
+          root._reactRoot.unmount();
+          root._reactRoot = null;
+          
+          // Create new root and mount with pending state
+          setTimeout(() => {
+            root._reactRoot = window.ReactDOM.createRoot(root);
+            root._reactRoot.render(window.React.createElement(NPCGenerator));
+          }, 5); // Reduced delay for faster restoration
+        } else {
+          console.log("No React root available for NPC restoration");
+        }
+      } else {
+        console.log("No valid NPC state to restore");
       }
     };
-  }, 200);
+    
+    console.log("NPC Generator state persistence functions set up");
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }

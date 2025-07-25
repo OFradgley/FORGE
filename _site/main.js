@@ -15,7 +15,8 @@ const modules = [
 
 const generators = [
   { label: "PC", file: "./modules/charGen.compiled.js" },
-  { label: "NPC", file: "./modules/npcGen.compiled.js" }
+  { label: "NPC", file: "./modules/npcGen.compiled.js" },
+  { label: "Quest", file: "./modules/questGen.compiled.js" }
   // Add future generators here
 ];
 
@@ -352,7 +353,7 @@ async function loadModule(path) {
           } else {
             console.log("No restoreState function available");
           }
-        }, 300); // Increased delay
+        }, 20); // Faster restoration - after persistence functions are set up at 10ms
       }
     }
     
