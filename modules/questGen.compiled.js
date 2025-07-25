@@ -93,6 +93,25 @@ function rollLocationSubject() {
   }
 }
 
+// Direction and Distance tables for location-based quests
+const directions = {
+  1: "North-east (NE)",
+  2: "East (E)",
+  3: "South-east (SE)",
+  4: "South-west (SW)",
+  5: "West (W)",
+  6: "North-west (NW)"
+};
+
+const distances = {
+  1: "1 hex (~6 miles)",
+  2: "2 hexes (~12 miles)",
+  3: "3 hexes (~18 miles)",
+  4: "4 hexes (~24 miles)",
+  5: "5 hexes (~30 miles)",
+  6: "6 hexes (~36 miles)"
+};
+
 // ------------------------------ Main Component ------------------------------
 function QuestGenerator() {
   // Store pending state reference to use for all state initializations
@@ -124,6 +143,10 @@ function QuestGenerator() {
   const [showRewardInfo, setShowRewardInfo] = React.useState(false);
   const [showQuestActionDropdown, setShowQuestActionDropdown] = React.useState(false);
   const [showQuestSubjectDropdown, setShowQuestSubjectDropdown] = React.useState(false);
+  const [locationDirectionDistance, setLocationDirectionDistance] = React.useState(() => {
+    // Check for pending state on initialization
+    return pendingState && pendingState.locationDirectionDistance ? pendingState.locationDirectionDistance : null;
+  });
 
   // Clear pending state after all initializations are complete
   React.useEffect(() => {
@@ -145,6 +168,9 @@ function QuestGenerator() {
       if (backupPendingState.savedQuests) {
         setSavedQuests(backupPendingState.savedQuests);
       }
+      if (backupPendingState.locationDirectionDistance !== undefined) {
+        setLocationDirectionDistance(backupPendingState.locationDirectionDistance);
+      }
       
       // Clear the pending state
       delete window._pendingQuestState;
@@ -155,7 +181,8 @@ function QuestGenerator() {
   React.useEffect(() => {
     window._currentQuestState = {
       quest,
-      savedQuests
+      savedQuests,
+      locationDirectionDistance
     };
     
     // Provide direct update function for faster restoration
@@ -167,10 +194,13 @@ function QuestGenerator() {
       if (state.savedQuests) {
         setSavedQuests(state.savedQuests);
       }
+      if (state.locationDirectionDistance !== undefined) {
+        setLocationDirectionDistance(state.locationDirectionDistance);
+      }
       // Clear pending state after successful update
       window._pendingQuestState = null;
     };
-  }, [quest, savedQuests]);
+  }, [quest, savedQuests, locationDirectionDistance]);
   
   // Clean up update function on unmount
   React.useEffect(() => {
@@ -353,6 +383,8 @@ function QuestGenerator() {
       }
       
       setQuest(newQuest);
+      // Reset location direction and distance for new quest
+      setLocationDirectionDistance(null);
     }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
   }
 
@@ -433,6 +465,15 @@ function QuestGenerator() {
         questSubject
       }));
     }
+  };
+
+  const rollLocationDirectionDistance = () => {
+    const directionRoll = d6();
+    const distanceRoll = d6();
+    const direction = directions[directionRoll];
+    const distance = distances[distanceRoll];
+    
+    setLocationDirectionDistance(`${direction}, ${distance}`);
   };
 
   const saveQuest = () => {
@@ -828,6 +869,27 @@ function QuestGenerator() {
               key: "quest-subject-value",
               className: "font-semibold"
             }, quest.questSubject)
+          ]),
+
+          // Location Direction and Distance Field (independent of quest type)
+          /*#__PURE__*/React.createElement("div", {
+            key: "location-direction-distance-field"
+          }, [
+            /*#__PURE__*/React.createElement("div", {
+              key: "location-direction-distance-header",
+              className: "flex items-center gap-2 mb-1"
+            }, /*#__PURE__*/React.createElement("span", {
+              key: "location-direction-distance-label",
+              className: "text-xs text-gray-500"
+            }, "Location Direction and Distance")),
+            locationDirectionDistance ? /*#__PURE__*/React.createElement("div", {
+              key: "location-direction-distance-value",
+              className: "font-semibold"
+            }, locationDirectionDistance) : /*#__PURE__*/React.createElement("button", {
+              key: "roll-direction-distance-btn",
+              className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm",
+              onClick: rollLocationDirectionDistance
+            }, "Roll if required")
           ])
         ])
       ]))
