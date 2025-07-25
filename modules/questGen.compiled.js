@@ -143,6 +143,7 @@ function QuestGenerator() {
   const [showRewardInfo, setShowRewardInfo] = React.useState(false);
   const [showQuestActionDropdown, setShowQuestActionDropdown] = React.useState(false);
   const [showQuestSubjectDropdown, setShowQuestSubjectDropdown] = React.useState(false);
+  const [showLocationDirectionDistanceDropdown, setShowLocationDirectionDistanceDropdown] = React.useState(false);
   const [locationDirectionDistance, setLocationDirectionDistance] = React.useState(() => {
     // Check for pending state on initialization
     return pendingState && pendingState.locationDirectionDistance ? pendingState.locationDirectionDistance : null;
@@ -392,11 +393,42 @@ function QuestGenerator() {
     if (!quest) return;
     const questTypeRoll = d6();
     const questType = questTypes[questTypeRoll];
-    setQuest(prev => ({
-      ...prev,
+    
+    // Generate new contextual Quest Action and Subject for the new quest type
+    let newQuest = {
+      ...quest,
       questType,
       questTypeRoll
-    }));
+    };
+
+    // Add contextual Quest Action and Subject based on new quest type
+    if (questType === "Character Based") {
+      const questAction = pick(characterActions);
+      const questSubjectRoll = d6();
+      const questSubject = questSubjects[questSubjectRoll];
+      
+      newQuest.questAction = questAction;
+      newQuest.questSubject = questSubject;
+      newQuest.questSubjectRoll = questSubjectRoll;
+    } else if (questType === "Item Based") {
+      const questAction = pick(itemActions);
+      const questSubject = pick(itemSubjects);
+      
+      newQuest.questAction = questAction;
+      newQuest.questSubject = questSubject;
+      // Remove questSubjectRoll for item-based quests as they don't use it
+      delete newQuest.questSubjectRoll;
+    } else if (questType === "Location Based") {
+      const questAction = pick(locationActions);
+      const questSubject = rollLocationSubject();
+      
+      newQuest.questAction = questAction;
+      newQuest.questSubject = questSubject;
+      // Remove questSubjectRoll for location-based quests as they use complex rolling
+      delete newQuest.questSubjectRoll;
+    }
+    
+    setQuest(newQuest);
   };
 
   const rerollReward = () => {
@@ -621,11 +653,42 @@ function QuestGenerator() {
                 const selectedType = e.target.value;
                 // Find the roll number for this type
                 const rollNum = Object.keys(questTypes).find(key => questTypes[key] === selectedType);
-                setQuest(prev => ({
-                  ...prev,
+                
+                // Generate new contextual Quest Action and Subject for the selected quest type
+                let newQuest = {
+                  ...quest,
                   questType: selectedType,
                   questTypeRoll: parseInt(rollNum)
-                }));
+                };
+
+                // Add contextual Quest Action and Subject based on selected quest type
+                if (selectedType === "Character Based") {
+                  const questAction = pick(characterActions);
+                  const questSubjectRoll = d6();
+                  const questSubject = questSubjects[questSubjectRoll];
+                  
+                  newQuest.questAction = questAction;
+                  newQuest.questSubject = questSubject;
+                  newQuest.questSubjectRoll = questSubjectRoll;
+                } else if (selectedType === "Item Based") {
+                  const questAction = pick(itemActions);
+                  const questSubject = pick(itemSubjects);
+                  
+                  newQuest.questAction = questAction;
+                  newQuest.questSubject = questSubject;
+                  // Remove questSubjectRoll for item-based quests as they don't use it
+                  delete newQuest.questSubjectRoll;
+                } else if (selectedType === "Location Based") {
+                  const questAction = pick(locationActions);
+                  const questSubject = rollLocationSubject();
+                  
+                  newQuest.questAction = questAction;
+                  newQuest.questSubject = questSubject;
+                  // Remove questSubjectRoll for location-based quests as they use complex rolling
+                  delete newQuest.questSubjectRoll;
+                }
+                
+                setQuest(newQuest);
               },
               className: "border rounded px-1 py-0.5 text-sm",
               autoFocus: true,
@@ -884,11 +947,67 @@ function QuestGenerator() {
             /*#__PURE__*/React.createElement("div", {
               key: "location-direction-distance-header",
               className: "flex items-center gap-2 mb-1"
-            }, /*#__PURE__*/React.createElement("span", {
-              key: "location-direction-distance-label",
-              className: "text-xs text-gray-500"
-            }, "Location Direction and Distance")),
-            locationDirectionDistance ? /*#__PURE__*/React.createElement("div", {
+            }, [
+              /*#__PURE__*/React.createElement("span", {
+                key: "location-direction-distance-label",
+                className: "text-xs text-gray-500"
+              }, "Location Direction and Distance"),
+              locationDirectionDistance && /*#__PURE__*/React.createElement("button", {
+                key: "location-direction-distance-dropdown-btn",
+                className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                onClick: () => setShowLocationDirectionDistanceDropdown(v => !v),
+                style: { fontSize: "0.75rem" }
+              }, "..."),
+              showLocationDirectionDistanceDropdown && /*#__PURE__*/React.createElement("button", {
+                key: "location-direction-distance-reroll-btn",
+                className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                style: {
+                  fontSize: "0.75rem",
+                  height: "25px",
+                  width: "25px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  marginLeft: "4px"
+                },
+                type: "button",
+                onMouseDown: e => e.preventDefault(),
+                onClick: rollLocationDirectionDistance,
+                tabIndex: -1
+              }, /*#__PURE__*/React.createElement("img", {
+                src: "./d6.png",
+                alt: "Reroll",
+                style: {
+                  width: "25px",
+                  height: "25px",
+                  filter: darkMode ? "invert(1)" : "none"
+                }
+              }))
+            ]),
+            showLocationDirectionDistanceDropdown ? /*#__PURE__*/React.createElement("div", {
+              key: "location-direction-distance-dropdown",
+              className: "flex items-center gap-2"
+            }, /*#__PURE__*/React.createElement("select", {
+              value: locationDirectionDistance || "",
+              onChange: (e) => {
+                setLocationDirectionDistance(e.target.value);
+              },
+              className: "border rounded px-1 py-0.5 text-sm",
+              autoFocus: true,
+              onBlur: () => setShowLocationDirectionDistanceDropdown(false)
+            }, [
+              /*#__PURE__*/React.createElement("option", { key: "empty", value: "" }, "Select Direction and Distance"),
+              ...Object.keys(directions).flatMap(dirKey => 
+                Object.keys(distances).map(distKey => {
+                  const option = `${directions[dirKey]}, ${distances[distKey]}`;
+                  return /*#__PURE__*/React.createElement("option", { 
+                    key: `${dirKey}-${distKey}`, 
+                    value: option 
+                  }, option);
+                })
+              )
+            ])) : locationDirectionDistance ? /*#__PURE__*/React.createElement("div", {
               key: "location-direction-distance-value",
               className: "font-semibold"
             }, locationDirectionDistance) : /*#__PURE__*/React.createElement("button", {
