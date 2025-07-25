@@ -24,6 +24,43 @@ const rewards = {
   6: "XP plus an Item"
 };
 
+// Quest Actions for Character Based quests
+const characterActions = [
+  "Arrest", "Assassinate", "Avenge", "Befriend", "Bribe", "Bring message", "Capture", "Conceal", 
+  "Decoy", "Deliver", "Discredit", "Distract", "Entrap", "Expose", "Extort", "Find", "Frame", 
+  "Get help from", "Guard", "Identify", "Incriminate", "Infiltrate", "Intimidate", "Kidnap", 
+  "Kill", "Negotiate", "Protect", "Rescue", "Sabotage", "Silence", "Smuggle", "Spy on", 
+  "Steal from", "Track", "Transport", "Waylay"
+];
+
+// Quest Actions for Item Based quests
+const itemActions = [
+  "Acquire", "Bury", "Conceal", "Consume", "Counterfeit", "Decode", "Defend", "Deliver", 
+  "Destroy", "Extract", "Fabricate", "Find", "Forge", "Guard", "Hide", "Hijack", "Inscribe", 
+  "Plant", "Protect", "Purify", "Replace", "Replicate", "Repossess", "Restore", "Retake", 
+  "Sabotage", "Smuggle", "Steal from place", "Steal in transit", "Stop delivery", "Stop heist", 
+  "Stop sabotage", "Study", "Trade", "Transport", "Unearth"
+];
+
+// Quest Subjects for Item Based quests
+const itemSubjects = [
+  "Armour", "Cargo", "Clue", "Corpse", "Crystal", "Deed", "Map", "Evidence of innocence", 
+  "Furniture", "Gem", "Gold", "Heirloom", "Idol", "Ingredient", "Jewellery", "Key", "Livestock", 
+  "Magic item", "Manuscript", "Evidence of crime", "Medicine", "Message", "Monster", "Painting", 
+  "Potion", "Prisoner", "Recipe", "Religious item", "Sealed container", "Ship", "Statue", 
+  "Symbol of authority", "Tome", "Unusual animal", "Vehicle", "Weapon"
+];
+
+// Quest Subjects for Character Based quests
+const questSubjects = {
+  1: "Urban Character",
+  2: "Urban Character",
+  3: "Rural Character", 
+  4: "Rural Character",
+  5: "Wilderness Character",
+  6: "Wilderness Character"
+};
+
 // ------------------------------ Main Component ------------------------------
 function QuestGenerator() {
   // Store pending state reference to use for all state initializations
@@ -53,6 +90,8 @@ function QuestGenerator() {
   const [showQuestTypeDropdown, setShowQuestTypeDropdown] = React.useState(false);
   const [showRewardDropdown, setShowRewardDropdown] = React.useState(false);
   const [showRewardInfo, setShowRewardInfo] = React.useState(false);
+  const [showQuestActionDropdown, setShowQuestActionDropdown] = React.useState(false);
+  const [showQuestSubjectDropdown, setShowQuestSubjectDropdown] = React.useState(false);
 
   // Clear pending state after all initializations are complete
   React.useEffect(() => {
@@ -243,7 +282,7 @@ function QuestGenerator() {
           reward = "XP in the form of gems";
         }
       }
-      
+
       const newQuest = {
         questType,
         reward,
@@ -251,6 +290,26 @@ function QuestGenerator() {
         rewardRoll,
         timestamp: new Date().toLocaleTimeString()
       };
+
+      // Add contextual Quest Action and Subject for Character Based quests
+      if (questType === "Character Based") {
+        const questAction = pick(characterActions);
+        const questSubjectRoll = d6();
+        const questSubject = questSubjects[questSubjectRoll];
+        
+        newQuest.questAction = questAction;
+        newQuest.questSubject = questSubject;
+        newQuest.questSubjectRoll = questSubjectRoll;
+      }
+      
+      // Add contextual Quest Action and Subject for Item Based quests
+      if (questType === "Item Based") {
+        const questAction = pick(itemActions);
+        const questSubject = pick(itemSubjects);
+        
+        newQuest.questAction = questAction;
+        newQuest.questSubject = questSubject;
+      }
       
       setQuest(newQuest);
     }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
@@ -289,6 +348,44 @@ function QuestGenerator() {
     }));
   };
 
+  const rerollQuestAction = () => {
+    if (!quest) return;
+    
+    let questAction;
+    if (quest.questType === "Character Based") {
+      questAction = pick(characterActions);
+    } else if (quest.questType === "Item Based") {
+      questAction = pick(itemActions);
+    } else {
+      return; // No action for other quest types yet
+    }
+    
+    setQuest(prev => ({
+      ...prev,
+      questAction
+    }));
+  };
+
+  const rerollQuestSubject = () => {
+    if (!quest) return;
+    
+    if (quest.questType === "Character Based") {
+      const questSubjectRoll = d6();
+      const questSubject = questSubjects[questSubjectRoll];
+      setQuest(prev => ({
+        ...prev,
+        questSubject,
+        questSubjectRoll
+      }));
+    } else if (quest.questType === "Item Based") {
+      const questSubject = pick(itemSubjects);
+      setQuest(prev => ({
+        ...prev,
+        questSubject
+      }));
+    }
+  };
+
   const saveQuest = () => {
     if (!quest) return;
     
@@ -310,6 +407,16 @@ function QuestGenerator() {
       rewardRoll: savedQuest.rewardRoll,
       timestamp: savedQuest.timestamp
     };
+    
+    // Include new fields if they exist
+    if (savedQuest.questAction) {
+      questToLoad.questAction = savedQuest.questAction;
+    }
+    if (savedQuest.questSubject) {
+      questToLoad.questSubject = savedQuest.questSubject;
+      questToLoad.questSubjectRoll = savedQuest.questSubjectRoll;
+    }
+    
     setQuest(questToLoad);
   };
 
@@ -520,6 +627,158 @@ function QuestGenerator() {
               key: "reward-value",
               className: "font-semibold"
             }, quest.reward)
+          ]),
+          
+          // Quest Action Field (for Character Based and Item Based quests)
+          (quest.questType === "Character Based" || quest.questType === "Item Based") && quest.questAction && /*#__PURE__*/React.createElement("div", {
+            key: "quest-action-field"
+          }, [
+            /*#__PURE__*/React.createElement("div", {
+              key: "quest-action-header",
+              className: "flex items-center gap-2 mb-1"
+            }, [
+              /*#__PURE__*/React.createElement("span", {
+                key: "quest-action-label",
+                className: "text-xs text-gray-500"
+              }, "Quest Action"),
+              /*#__PURE__*/React.createElement("button", {
+                key: "quest-action-dropdown-btn",
+                className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                onClick: () => setShowQuestActionDropdown(v => !v),
+                style: { fontSize: "0.75rem" }
+              }, "..."),
+              showQuestActionDropdown && /*#__PURE__*/React.createElement("button", {
+                key: "quest-action-reroll-btn",
+                className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                style: {
+                  fontSize: "0.75rem",
+                  height: "25px",
+                  width: "25px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  marginLeft: "4px"
+                },
+                type: "button",
+                onMouseDown: e => e.preventDefault(),
+                onClick: rerollQuestAction,
+                tabIndex: -1
+              }, /*#__PURE__*/React.createElement("img", {
+                src: "./d6.png",
+                alt: "Reroll",
+                style: {
+                  width: "25px",
+                  height: "25px",
+                  filter: darkMode ? "invert(1)" : "none"
+                }
+              }))
+            ]),
+            showQuestActionDropdown ? /*#__PURE__*/React.createElement("div", {
+              key: "quest-action-dropdown",
+              className: "flex items-center gap-2"
+            }, /*#__PURE__*/React.createElement("select", {
+              value: quest.questAction,
+              onChange: (e) => {
+                setQuest(prev => ({
+                  ...prev,
+                  questAction: e.target.value
+                }));
+              },
+              className: "border rounded px-1 py-0.5 text-sm",
+              autoFocus: true,
+              onBlur: () => setShowQuestActionDropdown(false)
+            }, (quest.questType === "Character Based" ? characterActions : itemActions).map(action => /*#__PURE__*/React.createElement("option", { 
+              key: action, 
+              value: action 
+            }, action)))) : /*#__PURE__*/React.createElement("div", {
+              key: "quest-action-value",
+              className: "font-semibold"
+            }, quest.questAction)
+          ]),
+
+          // Quest Subject Field (for Character Based and Item Based quests)
+          (quest.questType === "Character Based" || quest.questType === "Item Based") && quest.questSubject && /*#__PURE__*/React.createElement("div", {
+            key: "quest-subject-field"
+          }, [
+            /*#__PURE__*/React.createElement("div", {
+              key: "quest-subject-header",
+              className: "flex items-center gap-2 mb-1"
+            }, [
+              /*#__PURE__*/React.createElement("span", {
+                key: "quest-subject-label",
+                className: "text-xs text-gray-500"
+              }, "Quest Subject"),
+              /*#__PURE__*/React.createElement("button", {
+                key: "quest-subject-dropdown-btn",
+                className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                onClick: () => setShowQuestSubjectDropdown(v => !v),
+                style: { fontSize: "0.75rem" }
+              }, "..."),
+              showQuestSubjectDropdown && /*#__PURE__*/React.createElement("button", {
+                key: "quest-subject-reroll-btn",
+                className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                style: {
+                  fontSize: "0.75rem",
+                  height: "25px",
+                  width: "25px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  marginLeft: "4px"
+                },
+                type: "button",
+                onMouseDown: e => e.preventDefault(),
+                onClick: rerollQuestSubject,
+                tabIndex: -1
+              }, /*#__PURE__*/React.createElement("img", {
+                src: "./d6.png",
+                alt: "Reroll",
+                style: {
+                  width: "25px",
+                  height: "25px",
+                  filter: darkMode ? "invert(1)" : "none"
+                }
+              }))
+            ]),
+            showQuestSubjectDropdown ? /*#__PURE__*/React.createElement("div", {
+              key: "quest-subject-dropdown",
+              className: "flex items-center gap-2"
+            }, /*#__PURE__*/React.createElement("select", {
+              value: quest.questSubject,
+              onChange: (e) => {
+                const selectedSubject = e.target.value;
+                if (quest.questType === "Character Based") {
+                  // Find the roll number for character subjects
+                  const rollNum = Object.keys(questSubjects).find(key => questSubjects[key] === selectedSubject);
+                  setQuest(prev => ({
+                    ...prev,
+                    questSubject: selectedSubject,
+                    questSubjectRoll: parseInt(rollNum)
+                  }));
+                } else {
+                  // For item subjects, no roll number needed
+                  setQuest(prev => ({
+                    ...prev,
+                    questSubject: selectedSubject
+                  }));
+                }
+              },
+              className: "border rounded px-1 py-0.5 text-sm",
+              autoFocus: true,
+              onBlur: () => setShowQuestSubjectDropdown(false)
+            }, quest.questType === "Character Based" ? [
+              /*#__PURE__*/React.createElement("option", { key: "urban", value: "Urban Character" }, "Urban Character"),
+              /*#__PURE__*/React.createElement("option", { key: "rural", value: "Rural Character" }, "Rural Character"),
+              /*#__PURE__*/React.createElement("option", { key: "wilderness", value: "Wilderness Character" }, "Wilderness Character")
+            ] : itemSubjects.map(subject => /*#__PURE__*/React.createElement("option", { 
+              key: subject, 
+              value: subject 
+            }, subject)))) : /*#__PURE__*/React.createElement("div", {
+              key: "quest-subject-value",
+              className: "font-semibold"
+            }, quest.questSubject)
           ])
         ])
       ]))
