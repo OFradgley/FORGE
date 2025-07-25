@@ -562,10 +562,15 @@ function QuestGenerator() {
           key: "quest-fields",
           className: "space-y-4"
         }, [
-          // Quest Type Field
+          // 2x2 Grid for main quest fields
           /*#__PURE__*/React.createElement("div", {
-            key: "quest-type-field"
+            key: "quest-grid",
+            className: "grid grid-cols-2 gap-4"
           }, [
+            // Quest Type Field (top left)
+            /*#__PURE__*/React.createElement("div", {
+              key: "quest-type-field"
+            }, [
             /*#__PURE__*/React.createElement("div", {
               key: "quest-type-header",
               className: "flex items-center gap-2 mb-1"
@@ -634,8 +639,8 @@ function QuestGenerator() {
               className: "font-semibold"
             }, quest.questType)
           ]),
-          
-          // Reward Field
+
+          // Reward Field (top right)
           /*#__PURE__*/React.createElement("div", {
             key: "reward-field"
           }, [
@@ -718,8 +723,8 @@ function QuestGenerator() {
               className: "font-semibold"
             }, quest.reward)
           ]),
-          
-          // Quest Action Field (for Character Based, Item Based, and Location Based quests)
+
+          // Quest Action Field (bottom left - for Character Based, Item Based, and Location Based quests)
           (quest.questType === "Character Based" || quest.questType === "Item Based" || quest.questType === "Location Based") && quest.questAction && /*#__PURE__*/React.createElement("div", {
             key: "quest-action-field"
           }, [
@@ -787,7 +792,7 @@ function QuestGenerator() {
             }, quest.questAction)
           ]),
 
-          // Quest Subject Field (for Character Based, Item Based, and Location Based quests)
+          // Quest Subject Field (bottom right - for Character Based, Item Based, and Location Based quests)
           (quest.questType === "Character Based" || quest.questType === "Item Based" || quest.questType === "Location Based") && quest.questSubject && /*#__PURE__*/React.createElement("div", {
             key: "quest-subject-field"
           }, [
@@ -869,6 +874,7 @@ function QuestGenerator() {
               key: "quest-subject-value",
               className: "font-semibold"
             }, quest.questSubject)
+          ])
           ]),
 
           // Location Direction and Distance Field (independent of quest type)
