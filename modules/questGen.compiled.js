@@ -508,6 +508,67 @@ function QuestGenerator() {
     setLocationDirectionDistance(`${direction}, ${distance}`);
   };
 
+  const generateCharacterForQuest = (questSubject) => {
+    // Define occupation arrays for each character type
+    const urbanOccupations = [
+      "Actor", "Architect", "Aristocrat", "Assassin", "Beggar", "Cleric", "Courtier", "Dealer", 
+      "Engineer", "Executioner", "Jailer", "Jester", "Judge", "Knight", "Locksmith", "Mage", 
+      "Magister", "Musician", "Noble", "Paladin", "Pickpocket", "Pit-fighter", "Politician", 
+      "Racketeer", "Reverend", "Scribe", "Servant", "Shopkeeper", "Spy", "Squire", "Statesman", 
+      "Steward", "Teacher", "Thug", "Undertaker", "Vagrant"
+    ];
+
+    const ruralOccupations = [
+      "Acolyte", "Acrobat", "Alchemist", "Apothecary", "Arbalist", "Armorer", "Artificer", 
+      "Blacksmith", "Bodyguard", "Builder", "Burglar", "Butcher", "Carpenter", "Charlatan", 
+      "Cook", "Driver", "Duellist", "Fence", "Fisherman", "Gambler", "Herald", "Hitman", 
+      "Illusionist", "Inventor", "Mercenary", "Merchant", "Preacher", "Rogue", "Scientist", 
+      "Scrapper", "Shepherd", "Sorcerer", "Thief", "Villager", "Warrior", "Wizard"
+    ];
+
+    const wildernessOccupations = [
+      "Astrologer", "Bandit", "Barbarian", "Cartographer", "Chronicler", "Courier", "Deserter", 
+      "Drifter", "Druid", "Dungeoneer", "Explorer", "Falconer", "Gamekeeper", "Gardener", 
+      "Herbalist", "Hermit", "Highwayman", "Hunter", "Missionary", "Monk", "Navigator", 
+      "Occultist", "Outcast", "Outlaw", "Pilgrim", "Ranger", "Recluse", "Researcher", "Sailor", 
+      "Slaver", "Smuggler", "Tracker", "Trader", "Warlock", "Witch", "Woodsman"
+    ];
+
+    // Select appropriate occupation array based on quest subject
+    let occupationArray;
+    if (questSubject === "Urban Character") {
+      occupationArray = urbanOccupations;
+    } else if (questSubject === "Rural Character") {
+      occupationArray = ruralOccupations;
+    } else if (questSubject === "Wilderness Character") {
+      occupationArray = wildernessOccupations;
+    } else {
+      console.error("Unknown quest subject:", questSubject);
+      return;
+    }
+
+    // Pick a random occupation from the appropriate array
+    const selectedOccupation = pick(occupationArray);
+
+    // Save current quest generator state
+    if (window.saveState) {
+      const currentState = window.saveState();
+      if (currentState) {
+        sessionStorage.setItem('questGeneratorState', JSON.stringify(currentState));
+      }
+    }
+
+    // Store the selected occupation for the NPC generator
+    sessionStorage.setItem('generateNPCWithOccupation', selectedOccupation);
+
+    // Navigate to NPC generator
+    if (window.loadModule) {
+      window.loadModule('./modules/npcGen.compiled.js');
+    } else {
+      console.error("loadModule function not available");
+    }
+  };
+
   const saveQuest = () => {
     if (!quest) return;
     
@@ -947,6 +1008,16 @@ function QuestGenerator() {
             }, quest.questSubject)
           ])
           ]),
+
+          // Generate Character Button (for Character Based quests only)
+          quest.questType === "Character Based" && quest.questSubject && /*#__PURE__*/React.createElement("div", {
+            key: "generate-character-button",
+            className: "text-center mt-2"
+          }, /*#__PURE__*/React.createElement("button", {
+            key: "generate-character-btn",
+            className: "px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm font-semibold",
+            onClick: () => generateCharacterForQuest(quest.questSubject)
+          }, "Generate Character")),
 
           // Location Direction and Distance Field (independent of quest type)
           /*#__PURE__*/React.createElement("div", {

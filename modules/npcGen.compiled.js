@@ -119,6 +119,20 @@ function NPCGenerator() {
     };
   }, []);
 
+  // Listen for auto-generation requests from Quest Generator
+  React.useEffect(() => {
+    const handleGenerateRandomNPC = () => {
+      console.log("Handling auto-generation request from Quest Generator");
+      rollCharacter("Random", false); // Generate a random NPC
+    };
+
+    window.addEventListener('generateRandomNPC', handleGenerateRandomNPC);
+    
+    return () => {
+      window.removeEventListener('generateRandomNPC', handleGenerateRandomNPC);
+    };
+  }, []);
+
   // Roll animation trigger function
   const triggerRollAnimation = () => {
     setShowRollAnimation(true);
@@ -238,7 +252,17 @@ function NPCGenerator() {
                                     npcType === "Skilled" ? skilledOccupations : 
                                     npcType === "Mercenary" ? ["Mercenary"] :
                                     occupations;
-      let occ1 = pick(availableOccupations);
+      
+      // Check if we have a specific occupation from Quest Generator
+      const questOccupation = sessionStorage.getItem('generateNPCWithOccupation');
+      let occ1;
+      if (questOccupation) {
+        occ1 = questOccupation;
+        // Clear the stored occupation after using it
+        sessionStorage.removeItem('generateNPCWithOccupation');
+      } else {
+        occ1 = pick(availableOccupations);
+      }
       const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
       
       // Special handling for Mercenary NPCs - randomize first primary between Strength and Dexterity
@@ -2197,5 +2221,22 @@ export function mount(root) {
     };
     
     console.log("NPC Generator state persistence functions set up");
+    
+    // Check if we should auto-generate an NPC from Quest Generator
+    const questOccupation = sessionStorage.getItem('generateNPCWithOccupation');
+    if (questOccupation) {
+      console.log("Auto-generating NPC with occupation:", questOccupation);
+      // Delay slightly to ensure the component is fully mounted
+      setTimeout(() => {
+        // Use window to access the rollCharacter function from the mounted component
+        if (window._currentNPCUpdate) {
+          // Trigger a random character generation
+          // The rollCharacter function will pick up the stored occupation
+          // We'll need to add this to the global scope
+          const event = new CustomEvent('generateRandomNPC');
+          window.dispatchEvent(event);
+        }
+      }, 100);
+    }
   }, 10); // Much faster setup - must be faster than main.js restoration delay
 }

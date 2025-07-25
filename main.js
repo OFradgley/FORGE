@@ -298,10 +298,8 @@ menuContainer.appendChild(menuBtn);
 menuContainer.appendChild(dropdown);
 nav.appendChild(menuContainer);
 
-// Load default first module (Dice)
-loadModule(modules[0].file);
-
-async function loadModule(path) {
+// Make loadModule globally available for module navigation
+window.loadModule = async function loadModule(path) {
   try {
     console.log("Loading module:", path, "Current module:", currentModulePath);
     
@@ -361,4 +359,7 @@ async function loadModule(path) {
     console.error("Failed to load module:", path, e);
     root.innerHTML = `<div style=\"color:red\">Failed to load module: ${path}<br>${e.message}</div>`;
   }
-}
+};
+
+// Load default first module (Dice)
+window.loadModule(modules[0].file);
