@@ -52,6 +52,7 @@ function QuestGenerator() {
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
   const [showQuestTypeDropdown, setShowQuestTypeDropdown] = React.useState(false);
   const [showRewardDropdown, setShowRewardDropdown] = React.useState(false);
+  const [showRewardInfo, setShowRewardInfo] = React.useState(false);
 
   // Clear pending state after all initializations are complete
   React.useEffect(() => {
@@ -450,6 +451,13 @@ function QuestGenerator() {
                 className: "text-xs text-gray-500"
               }, "Reward"),
               /*#__PURE__*/React.createElement("button", {
+                key: "reward-info-btn",
+                className: "w-4 h-4 rounded-full bg-blue-500 text-white text-xs hover:bg-blue-600 flex items-center justify-center",
+                onClick: () => setShowRewardInfo(true),
+                style: { fontSize: "0.6rem", fontWeight: "bold" },
+                title: "Reward Information"
+              }, "i"),
+              /*#__PURE__*/React.createElement("button", {
                 key: "reward-dropdown-btn",
                 className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
                 onClick: () => setShowRewardDropdown(v => !v),
@@ -573,6 +581,42 @@ function QuestGenerator() {
         ])
       ])))
     ]),
+
+    // Reward Info Popup Modal
+    showRewardInfo && /*#__PURE__*/React.createElement("div", {
+      key: "reward-info-modal",
+      className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
+      onClick: () => setShowRewardInfo(false)
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg p-6 max-w-md mx-4 relative`,
+      onClick: (e) => e.stopPropagation()
+    }, [
+      /*#__PURE__*/React.createElement("h3", {
+        key: "modal-title",
+        className: `text-lg font-semibold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`
+      }, "Quest Reward Guidelines"),
+      /*#__PURE__*/React.createElement("div", {
+        key: "modal-content",
+        className: `text-sm leading-relaxed mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`
+      }, [
+        /*#__PURE__*/React.createElement("p", {
+          key: "first-paragraph",
+          className: "mb-3"
+        }, "Suggested quest reward XP is equal to 10% of the base XP to reach the next level, split evenly among the party."),
+        /*#__PURE__*/React.createElement("p", {
+          key: "second-paragraph", 
+          className: "mb-3"
+        }, "Example: a party of two PCs, one level 1 and one level 3, earn (2000/10) + (4000/10) = 600 XP total, split evenly for 300 XP each."),
+        /*#__PURE__*/React.createElement("p", {
+          key: "third-paragraph"
+        }, "Only one item may be given to the party, and they gain no further XP by selling reward items or gems.")
+      ]),
+      /*#__PURE__*/React.createElement("button", {
+        key: "modal-close",
+        className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
+        onClick: () => setShowRewardInfo(false)
+      }, "Close")
+    ])),
 
     /*#__PURE__*/React.createElement("div", {
       key: "attributions",
