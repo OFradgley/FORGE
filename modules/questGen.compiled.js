@@ -1,6 +1,6 @@
 // modules/questGen.compiled.js - FORGE Quest Generator Module
 import { Button, Card, CardHeader, CardTitle, CardContent } from "../ui.compiled.js";
-import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
+import { names, occupations, weapons, armours, dungeonGear, generalGear, appearances, details, clothes, quirks, personalities, conversationInterests, helmetItem, shieldItem, rationItem, attributeOrder, OCC_ATTR_MAP } from "../tables.js";
 
 // Helper Utilities
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -566,9 +566,6 @@ function QuestGenerator() {
       "Slaver", "Smuggler", "Tracker", "Trader", "Warlock", "Witch", "Woodsman"
     ];
 
-    // Import required arrays from tables.js for full NPC generation
-    // (Now imported at top of file)
-
     // Select appropriate occupation array based on quest subject
     let occupationArray;
     if (questSubject === "Urban Character") {
@@ -582,7 +579,7 @@ function QuestGenerator() {
       return;
     }
 
-    // Helper functions (copied from NPC generator)
+    // Helper functions (copied exactly from NPC generator)
     const mod = v => {
       if (v === 1) return -4;
       if (v <= 3) return -3;
@@ -609,7 +606,7 @@ function QuestGenerator() {
     const roll2d6 = () => d6() + d6();
     const d8 = () => Math.floor(Math.random() * 8) + 1;
 
-    // Generate full NPC character in background
+    // Generate full NPC character using exact NPC generator logic
     console.log("Generating full NPC character in background for quest...");
 
     // Generate character name and occupation
@@ -620,7 +617,7 @@ function QuestGenerator() {
     let occ2 = pick(occupations);
     while (occ2 === characterOccupation) occ2 = pick(occupations);
 
-    // Generate attributes
+    // Generate attributes (exact copy from NPC generator)
     const scores = Object.fromEntries(attributeOrder.map(a => [a, roll3d6()]));
     const primariesInit = choosePrimaries(characterOccupation, occ2);
     
@@ -632,7 +629,7 @@ function QuestGenerator() {
         score: s,
         mod: m,
         primary: primariesInit.has(a),
-        check: m + (primariesInit.has(a) ? 1 : 0) // Level 1 for NPCs
+        check: m + (primariesInit.has(a) ? 1 : 0) // Start with level 1 assumption, will be updated later
       };
     });
 
@@ -640,38 +637,60 @@ function QuestGenerator() {
     const rawHpPrimaryArr = Array.from({ length: 10 }, d8);
     const rawHpSecondaryArr = Array.from({ length: 10 }, d6);
 
-    // Generate gear
-    const weapon = pick(weapons);
+    // EXACT COPY OF NPC GENERATOR ARMOR/SHIELD LOGIC
+    // Handle armor and shield generation (no npcType restrictions for quest NPCs)
     const aRoll = roll2d6();
-    const armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
-    
+    let armour = aRoll <= 4 ? armours[0] : aRoll <= 8 ? armours[1] : aRoll <= 11 ? armours[2] : armours[3];
     const hs = roll2d6();
-    const hasHelmet = (hs >= 6 && hs <= 7) || (hs >= 11);
-    const hasShield = (hs >= 8 && hs <= 10) || (hs >= 11);
+    const hasHelmet = hs >= 6 && hs <= 7 || hs >= 11;
+    let hasShield = hs >= 8 && hs <= 10 || hs >= 11;
 
-    // Calculate AC
-    const dexMod = mod(scores.Dexterity);
-    let dexBonus;
-    if (armour.name === "Chain Armour (AC14)") {
-      dexBonus = Math.min(dexMod, 2);
-    } else if (armour.name === "Plate Armour (AC16)") {
-      dexBonus = Math.min(dexMod, 1);
+    const dexMod = 0; // NPCs always have +0 modifier
+    const strengthAttr = attrs.find(a => a.attr === "Strength");
+    const maxSlots = 10 + strengthAttr.check;
+    
+    let equipmentRoll = roll2d6();
+    
+    let equipment;
+    if (equipmentRoll <= 3) {
+      equipment = "Nothing";
+    } else if (equipmentRoll <= 6) {
+      equipment = "Basic travel";
+    } else if (equipmentRoll <= 9) {
+      equipment = "Basic combat";
+    } else if (equipmentRoll <= 11) {
+      equipment = "Travel & combat";
     } else {
-      dexBonus = dexMod;
+      equipment = "Anything";
     }
-
-    const armorType = armour.name === "Chain Armour (AC14)" ? "Medium" : 
-                      armour.name === "Plate Armour (AC16)" ? "Heavy" : "Light";
-
+    
+    // Adjust armor based on equipment type (exact copy from NPC generator)
+    if (equipment === "Basic combat") {
+      // Limit Basic combat to leather armor or no armor (AC 10-12)
+      if (armour.ac > 12) {
+        armour = Math.random() < 0.5 ? armours[0] : armours[1]; // 50/50 chance of no armor vs leather
+        hasShield = false; // Basic combat doesn't get shields
+      }
+    } else if (equipment === "Anything") {
+      // For "Anything" equipment, set armor to either chain or plate
+      armour = Math.random() < 0.5 ? armours[2] : armours[3]; // 50/50 chance of chain vs plate
+    }
+    
+    // Recalculate AC after potential armor adjustment (exact copy)
     const acBase = armour.ac;
     const acShield = hasShield ? 1 : 0;
-    const acDex = dexBonus;
+    const acDex = 0; // NPCs get no Dex bonus to AC
     const ac = acBase + acShield + acDex;
-
-    // Build inventory
+    
+    // Select weapon based on equipment type (exact copy)
+    let availableWeapons = weapons;
+    if (equipment === "Basic combat") {
+      availableWeapons = weapons.filter(w => w.slots === 1);
+    }
+    const weapon = pick(availableWeapons);
+    
+    // Create inventory with the selected weapon (exact copy from NPC generator)
     let inventory = [{ name: weapon.name, slots: weapon.slots }];
-
-    // Add ammo
     if (weapon.name === "Sling") {
       inventory.push({ name: "Pouch of Bullets x20", slots: 1 });
     } else if (weapon.name === "Hand Crossbow" || weapon.name === "Crossbow") {
@@ -679,46 +698,106 @@ function QuestGenerator() {
     } else if (weapon.name === "Shortbow" || weapon.name === "Longbow" || weapon.name === "Warbow") {
       inventory.push({ name: "Quiver of Arrows x20", slots: 1 });
     }
-
     inventory.push(
       armour.name !== "No Armour" ? { name: armour.name, slots: armour.slots } : null,
       hasHelmet ? helmetItem : null,
       hasShield ? shieldItem : null,
       pick(dungeonGear),
-      (() => {
-        let g1 = pick(generalGear), g2 = pick(generalGear);
-        while (g2.name === g1.name) g2 = pick(generalGear);
-        return [g1, g2];
-      })(),
+      (() => { let g1 = pick(generalGear), g2 = pick(generalGear); while (g2.name === g1.name) g2 = pick(generalGear); return [g1, g2]; })(),
       rationItem,
       { ...rationItem }
     );
-
     inventory = inventory.flat().filter(Boolean);
+    
+    // Roll for Competence and set Level and Morale (exact copy)
+    let competenceRoll = roll2d6();
+    
+    let competence, level, morale;
+    if (competenceRoll <= 3) {
+      competence = "A liability";
+      level = 0;
+      morale = 5;
+    } else if (competenceRoll <= 6) {
+      competence = "Average";
+      level = 1;
+      morale = 6;
+    } else if (competenceRoll <= 9) {
+      competence = "Competent";
+      level = 1;
+      morale = 7;
+    } else if (competenceRoll <= 11) {
+      competence = "Very capable";
+      level = 2;
+      morale = 8;
+    } else {
+      competence = "Exceptional";
+      level = 3;
+      morale = 9;
+    }
+    
+    // Roll for Alignment (exact copy)
+    const alignmentRoll = d6();
+    let alignment;
+    if (alignmentRoll <= 2) {
+      alignment = "Lawful";
+    } else if (alignmentRoll <= 5) {
+      alignment = "Neutral";
+    } else {
+      alignment = "Chaotic";
+    }
+    
+    // Calculate wage based on level (exact copy)
+    let wage;
+    if (level === 0) {
+      wage = "2gp";
+    } else if (level === 1) {
+      wage = "5gp";
+    } else if (level === 2) {
+      wage = "15gp";
+    } else if (level === 3) {
+      wage = "25gp";
+    } else {
+      wage = "1/2 Share";
+    }
 
-    const strengthAttr = attrs.find(a => a.attr === "Strength");
-    const maxSlots = 10 + strengthAttr.check;
+    // Update attributes with correct primaries based on level (exact copy from NPC generator)
+    const finalAttrs = attrs.map(a => ({
+      ...a,
+      primary: primariesInit.has(a.attr),
+      check: a.mod + (primariesInit.has(a.attr) ? level : Math.floor(level / 2))
+    }));
 
-    // Create complete NPC character object
+    // If level is 0, all attributes are secondary (exact copy)
+    if (level === 0) {
+      finalAttrs.forEach(a => {
+        a.primary = false;
+        a.check = a.mod;
+      });
+    }
+
+    // Override AC if equipment is "Nothing" or "Basic travel" (exact copy from NPC generator)
+    let finalAc = ac;
+    let finalAcBreakdown = { base: acBase, shield: acShield, dex: acDex };
+    if (equipment === "Nothing" || equipment === "Basic travel") {
+      finalAc = 10;
+      finalAcBreakdown = { base: 10, shield: 0, dex: 0 };
+    }
+
+    const finalStrengthAttr = finalAttrs.find(a => a.attr === "Strength");
+    const finalMaxSlots = 10 + finalStrengthAttr.check;
+
+    // Create complete NPC character object (exact copy structure from NPC generator)
     const fullNPCCharacter = {
       name: characterName,
-      level: 1,
-      alignment: pick(["Lawful", "Neutral", "Chaotic"]),
-      occupations: [characterOccupation, occ2],
-      attrs,
-      maxSlots,
+      level: level,
+      alignment: alignment,
+      occupations: [characterOccupation],
+      attrs: finalAttrs,
+      maxSlots: finalMaxSlots,
       rawHpPrimary: rawHpPrimaryArr,
       rawHpSecondary: rawHpSecondaryArr,
-      ac,
-      acBreakdown: {
-        base: acBase,
-        shield: acShield,
-        dex: acDex
-      },
-      armour,
-      armorType,
-      hasShield,
-      gold: (d6() + d6()) * 30,
+      ac: finalAc,
+      acBreakdown: finalAcBreakdown,
       inventory,
       totalSlots: inventory.reduce((s, i) => s + i.slots, 0),
       appearance: pick(appearances),
@@ -726,7 +805,11 @@ function QuestGenerator() {
       clothing: pick(clothes),
       quirk: pick(quirks),
       personality: pick(personalities),
-      spellPowerType: "None"
+      conversationInterest: pick(conversationInterests),
+      morale,
+      wage,
+      equipment,
+      competence
     };
 
     // Store both the simple character summary and full NPC data
@@ -736,8 +819,6 @@ function QuestGenerator() {
     };
 
     setGeneratedCharacter(characterSummary);
-    
-    // Store the complete NPC character for loading later
     setPreGeneratedNPC(fullNPCCharacter);
     
     console.log("Generated character summary:", characterSummary);
@@ -773,6 +854,8 @@ function QuestGenerator() {
     const questToSave = {
       ...quest,
       locationDirectionDistance, // Include location direction and distance
+      generatedCharacter, // Include generated character information
+      preGeneratedNPC, // Include full pre-generated NPC data
       id: Date.now() + Math.random(), // Unique ID for each saved quest
       savedAt: new Date().toLocaleDateString()
     };
@@ -806,6 +889,20 @@ function QuestGenerator() {
       setLocationDirectionDistance(savedQuest.locationDirectionDistance);
     } else {
       setLocationDirectionDistance(null);
+    }
+    
+    // Also restore generated character if it exists
+    if (savedQuest.generatedCharacter) {
+      setGeneratedCharacter(savedQuest.generatedCharacter);
+    } else {
+      setGeneratedCharacter(null);
+    }
+    
+    // Also restore pre-generated NPC if it exists
+    if (savedQuest.preGeneratedNPC) {
+      setPreGeneratedNPC(savedQuest.preGeneratedNPC);
+    } else {
+      setPreGeneratedNPC(null);
     }
   };
 
@@ -1224,14 +1321,15 @@ function QuestGenerator() {
                 }, `${generatedCharacter.name} the ${generatedCharacter.occupation}`),
                 /*#__PURE__*/React.createElement("button", {
                   key: "full-details-btn",
-                  className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold",
+                  className: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs",
                   onClick: viewCharacterDetails
                 }, "Full Details")
               ]) :
               // Show generate button if no character has been generated
               /*#__PURE__*/React.createElement("button", {
                 key: "generate-character-btn",
-                className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-semibold w-full",
+                className: "px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm",
+                style: { width: '175px' },
                 onClick: () => generateCharacterForQuest(quest.questSubject)
               }, "Generate Character"))
           ])
@@ -1309,9 +1407,9 @@ function QuestGenerator() {
               className: "font-semibold"
             }, locationDirectionDistance) : /*#__PURE__*/React.createElement("button", {
               key: "roll-direction-distance-btn",
-              className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm",
+              className: "px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm",
               onClick: rollLocationDirectionDistance
-            }, "Roll if required")
+            }, "Roll if Required")
           ])
         ])
       ]))
@@ -1350,7 +1448,12 @@ function QuestGenerator() {
           /*#__PURE__*/React.createElement("div", {
             key: "quest-summary",
             className: "font-semibold"
-          }, savedQuest.questAction && savedQuest.questSubject ? `${savedQuest.questAction} ${savedQuest.questSubject}` : `${savedQuest.questType} Quest`),
+          }, savedQuest.questAction && savedQuest.questSubject ? 
+            // For Character Based quests, use generated character name if available
+            (savedQuest.questType === "Character Based" && savedQuest.generatedCharacter) ?
+              `${savedQuest.questAction} ${savedQuest.generatedCharacter.name} the ${savedQuest.generatedCharacter.occupation}` :
+              `${savedQuest.questAction} ${savedQuest.questSubject}` 
+            : `${savedQuest.questType} Quest`),
           /*#__PURE__*/React.createElement("div", {
             key: "quest-details",
             className: darkMode ? "text-gray-300" : "text-gray-600"
