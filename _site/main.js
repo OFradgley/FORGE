@@ -43,7 +43,7 @@ modules.forEach(({ label, file }, i) => {
   btn.style.background = i === 0 ? "#2563eb" : "#222"; // blue-600 for selected, dark grey for inactive
   btn.style.color = "#fff"; // white text for all
   btn.style.border = "none";
-  btn.style.margin = "0 7px";
+  btn.style.margin = "0 5px";
   btn.style.fontSize = "1.1rem";
   btn.style.cursor = "pointer";
   btn.onmouseover = () => {
@@ -91,12 +91,12 @@ generatorsContainer.style.position = "relative";
 generatorsContainer.style.display = "inline-block";
 
 const generatorsBtn = document.createElement("button");
-generatorsBtn.textContent = "Generator ▼";
+generatorsBtn.textContent = "Generators ▼";
 generatorsBtn.className = "px-4 py-2 rounded font-bold shadow-lg";
 generatorsBtn.style.background = "#222"; // dark grey like inactive buttons
 generatorsBtn.style.color = "#fff";
 generatorsBtn.style.border = "none";
-generatorsBtn.style.margin = "0 8px";
+generatorsBtn.style.margin = "0 6px";
 generatorsBtn.style.fontSize = "1.1rem";
 generatorsBtn.style.cursor = "pointer";
 
