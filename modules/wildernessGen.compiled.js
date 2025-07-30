@@ -336,11 +336,9 @@ function WildernessGenerator() {
               }, React.createElement("select", {
                 value: selectedSeason,
                 onChange: (e) => setSelectedSeason(e.target.value),
-                className: `px-3 py-2 border rounded-md font-medium ${
-                  darkMode 
-                    ? "bg-gray-800 border-gray-600 text-white" 
-                    : "bg-white border-gray-300 text-gray-900"
-                }`
+                className: "border rounded px-1 py-0.5 text-sm",
+                autoFocus: true,
+                onBlur: () => setShowSeasonDropdown(false)
               }, [
                 React.createElement("option", { key: "wet", value: "Wet Season" }, "Wet Season"),
                 React.createElement("option", { key: "dry", value: "Dry Season" }, "Dry Season"),
@@ -421,11 +419,9 @@ function WildernessGenerator() {
                     }
                   }));
                 },
-                className: `px-3 py-2 border rounded-md font-medium ${
-                  darkMode 
-                    ? "bg-gray-800 border-gray-600 text-white" 
-                    : "bg-white border-gray-300 text-gray-900"
-                }`
+                className: "border rounded px-1 py-0.5 text-sm",
+                autoFocus: true,
+                onBlur: () => setShowWeatherDropdown(false)
               }, Object.values(weatherTables[selectedSeason]).filter((value, index, self) => self.indexOf(value) === index).map(weather => 
                 React.createElement("option", { key: weather, value: weather }, weather)
               ))) : React.createElement("div", {
@@ -457,7 +453,11 @@ function WildernessGenerator() {
       }, [
         React.createElement("p", {
           key: "season-info-text"
-        }, "Season will not change when \"Generate\" is pressed. In order to randomly choose another Season, click \"...\" followed by the Dice icon.")
+        }, "Season will not change when \"Generate\" is pressed."),
+        React.createElement("p", {
+          key: "season-info-text-2",
+          className: "mt-2"
+        }, "In order to randomly choose another Season, click \"...\" followed by the Dice icon.")
       ]),
       React.createElement("button", {
         key: "modal-close",
