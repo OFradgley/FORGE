@@ -74,16 +74,9 @@ function WildernessGenerator() {
   });
 
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
-  const [showWeatherDropdown, setShowWeatherDropdown] = React.useState(() => {
-    // Show dropdown by default if no weather exists, otherwise show results
-    try {
-      const saved = localStorage.getItem('wilderness-data');
-      const savedData = saved ? JSON.parse(saved) : null;
-      return !savedData?.weather; // Show dropdown if no weather exists
-    } catch (error) {
-      return true; // Default to showing dropdown
-    }
-  });
+  const [showWeatherDropdown, setShowWeatherDropdown] = React.useState(false);
+  const [showSeasonDropdown, setShowSeasonDropdown] = React.useState(false);
+  const [showSeasonInfo, setShowSeasonInfo] = React.useState(false);
 
   // Save wilderness data to localStorage whenever it changes
   React.useEffect(() => {
@@ -115,6 +108,23 @@ function WildernessGenerator() {
     });
 
     return () => observer.disconnect();
+  }, []);
+
+  // Auto-show dropdown on mount if no weather exists
+  React.useEffect(() => {
+    console.log("WildernessGen auto-roll effect - weather:", !!wilderness?.weather);
+    
+    // Auto-roll on mount if no weather exists (similar to other generators)
+    const timeoutId = setTimeout(() => {
+      if (!wilderness?.weather) {
+        console.log("WildernessGen: Auto-rolling new weather");
+        generateWeather();
+      } else {
+        console.log("WildernessGen: Skipping auto-roll, weather exists");
+      }
+    }, 150); // Delay to let restoration complete first
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Roll animation trigger function
@@ -198,14 +208,17 @@ function WildernessGenerator() {
         ...prev,
         weather: weatherData
       }));
-      
-      // Hide dropdown and show results after generating
-      setShowWeatherDropdown(false);
     }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
   };
 
   const rerollWeather = () => {
     generateWeather();
+  };
+
+  const rerollSeason = () => {
+    const seasons = ["Wet Season", "Dry Season", "Cold Season"];
+    const newSeason = pick(seasons);
+    setSelectedSeason(newSeason);
   };
 
   const toggleWeatherView = () => {
@@ -220,23 +233,30 @@ function WildernessGenerator() {
     }, [
       React.createElement(CardHeader, {
         key: "card-header"
-      }, React.createElement("div", {
-        key: "header-content",
-        className: "flex items-center gap-3"
       }, [
-        React.createElement("img", {
-          key: "favicon",
-          src: "favicon.ico",
-          alt: "Forge Favicon",
-          style: {
-            width: 32,
-            height: 32
-          }
-        }),
-        React.createElement(CardTitle, {
-          key: "card-title"
-        }, "FORGE Wilderness Generator")
-      ])),
+        React.createElement("div", {
+          key: "header-content",
+          className: "flex items-center gap-3"
+        }, [
+          React.createElement("img", {
+            key: "favicon",
+            src: "favicon.ico",
+            alt: "Forge Favicon",
+            style: {
+              width: 32,
+              height: 32
+            }
+          }),
+          React.createElement(CardTitle, {
+            key: "card-title"
+          }, "FORGE Wilderness Generator")
+        ]),
+        React.createElement("button", {
+          key: "generate-btn",
+          className: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2",
+          onClick: () => generateWeather()
+        }, "Generate")
+      ]),
       React.createElement(CardContent, {
         key: "card-content"
       }, React.createElement("div", {
@@ -246,66 +266,205 @@ function WildernessGenerator() {
         React.createElement("p", {
           key: "description",
           className: darkMode ? "text-center text-white" : "text-center text-gray-600"
-        }, !wilderness?.weather && showWeatherDropdown ? "Select a season and click \"Generate\" to begin." : ""),
+        }, !wilderness?.weather ? "Click \"Generate\" to begin." : ""),
 
-        // Weather Field (always visible, either showing dropdown or results)
-        React.createElement("div", {
-          key: "weather-field"
+        // Weather Fields (directly in CardContent like Quest generator)
+        wilderness && React.createElement("div", {
+          key: "weather-fields",
+          className: "space-y-4"
         }, [
+          // 2x1 Grid for weather fields
           React.createElement("div", {
-            key: "weather-header",
-            className: "flex items-center gap-2 mb-1"
+            key: "weather-grid",
+            className: "grid grid-cols-2 gap-4"
           }, [
-            React.createElement("span", {
-              key: "weather-label",
-              className: "text-xs text-gray-500"
-            }, "Weather"),
-            // Only show "..." button if weather exists AND we're showing results
-            wilderness?.weather && !showWeatherDropdown && React.createElement("button", {
-              key: "weather-dropdown-btn",
-              className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
-              onClick: toggleWeatherView,
-              style: { fontSize: "0.75rem" }
-            }, "...")
-          ]),
-          showWeatherDropdown ? React.createElement("div", {
-            key: "weather-dropdown",
-            className: "flex items-center gap-2"
-          }, [
-            React.createElement("select", {
-              key: "season-select",
-              value: selectedSeason,
-              onChange: (e) => setSelectedSeason(e.target.value),
-              className: `px-3 py-2 border rounded-md font-medium ${
-                darkMode 
-                  ? "bg-gray-800 border-gray-600 text-white" 
-                  : "bg-white border-gray-300 text-gray-900"
-              }`
+            // Season Field (left)
+            React.createElement("div", {
+              key: "season-field"
             }, [
-              React.createElement("option", { key: "wet", value: "Wet Season" }, "Wet Season"),
-              React.createElement("option", { key: "dry", value: "Dry Season" }, "Dry Season"),
-              React.createElement("option", { key: "cold", value: "Cold Season" }, "Cold Season")
+              React.createElement("div", {
+                key: "season-header",
+                className: "flex items-center gap-2 mb-1"
+              }, [
+                React.createElement("span", {
+                  key: "season-label",
+                  className: "text-xs text-gray-500"
+                }, "Season"),
+                React.createElement("button", {
+                  key: "season-info-btn",
+                  className: "w-4 h-4 rounded-full bg-blue-500 text-white text-xs hover:bg-blue-600 flex items-center justify-center",
+                  onClick: () => setShowSeasonInfo(true),
+                  style: { fontSize: "0.6rem", fontWeight: "bold" },
+                  title: "Season Information"
+                }, "i"),
+                React.createElement("button", {
+                  key: "season-dropdown-btn",
+                  className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  onClick: () => setShowSeasonDropdown(v => !v),
+                  style: { fontSize: "0.75rem" }
+                }, "..."),
+                showSeasonDropdown && React.createElement("button", {
+                  key: "season-reroll-btn",
+                  className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  style: {
+                    fontSize: "0.75rem",
+                    height: "25px",
+                    width: "25px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    marginLeft: "4px"
+                  },
+                  type: "button",
+                  onMouseDown: e => e.preventDefault(),
+                  onClick: rerollSeason,
+                  tabIndex: -1
+                }, React.createElement("img", {
+                  src: "./d6.png",
+                  alt: "Reroll",
+                  style: {
+                    width: "25px",
+                    height: "25px",
+                    filter: darkMode ? "invert(1)" : "none"
+                  }
+                }))
+              ]),
+              showSeasonDropdown ? React.createElement("div", {
+                key: "season-dropdown",
+                className: "flex items-center gap-2"
+              }, React.createElement("select", {
+                value: selectedSeason,
+                onChange: (e) => setSelectedSeason(e.target.value),
+                className: `px-3 py-2 border rounded-md font-medium ${
+                  darkMode 
+                    ? "bg-gray-800 border-gray-600 text-white" 
+                    : "bg-white border-gray-300 text-gray-900"
+                }`
+              }, [
+                React.createElement("option", { key: "wet", value: "Wet Season" }, "Wet Season"),
+                React.createElement("option", { key: "dry", value: "Dry Season" }, "Dry Season"),
+                React.createElement("option", { key: "cold", value: "Cold Season" }, "Cold Season")
+              ])) : React.createElement("div", {
+                key: "season-value",
+                className: "font-semibold"
+              }, selectedSeason)
             ]),
-            React.createElement("button", {
-              key: "generate-btn",
-              className: "px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700",
-              onClick: () => generateWeather()
-            }, "Generate")
-          ]) : wilderness?.weather && React.createElement("div", {
-            key: "weather-value",
-            className: "font-semibold"
-          }, [
-            React.createElement("div", {
-              key: "weather-result-text"
-            }, wilderness.weather.result),
-            React.createElement("div", {
-              key: "weather-season",
-              className: "text-sm text-gray-500 mt-1"
-            }, `(${wilderness.weather.season})`)
+
+            // Weather Field (right)
+            wilderness?.weather && React.createElement("div", {
+              key: "weather-field"
+            }, [
+              React.createElement("div", {
+                key: "weather-header",
+                className: "flex items-center gap-2 mb-1"
+              }, [
+                React.createElement("span", {
+                  key: "weather-label",
+                  className: "text-xs text-gray-500"
+                }, "Weather"),
+                React.createElement("button", {
+                  key: "weather-dropdown-btn",
+                  className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  onClick: toggleWeatherView,
+                  style: { fontSize: "0.75rem" }
+                }, "..."),
+                showWeatherDropdown && React.createElement("button", {
+                  key: "weather-reroll-btn",
+                  className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  style: {
+                    fontSize: "0.75rem",
+                    height: "25px",
+                    width: "25px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    marginLeft: "4px"
+                  },
+                  type: "button",
+                  onMouseDown: e => e.preventDefault(),
+                  onClick: rerollWeather,
+                  tabIndex: -1
+                }, React.createElement("img", {
+                  src: "./d6.png",
+                  alt: "Reroll",
+                  style: {
+                    width: "25px",
+                    height: "25px",
+                    filter: darkMode ? "invert(1)" : "none"
+                  }
+                }))
+              ]),
+              showWeatherDropdown ? React.createElement("div", {
+                key: "weather-dropdown",
+                className: "flex items-center gap-2"
+              }, React.createElement("select", {
+                value: wilderness.weather.result,
+                onChange: (e) => {
+                  // Find which roll corresponds to this weather result in the current season
+                  const weatherTable = weatherTables[selectedSeason];
+                  let foundRoll = 7; // default
+                  for (const [roll, weather] of Object.entries(weatherTable)) {
+                    if (weather === e.target.value) {
+                      foundRoll = parseInt(roll);
+                      break;
+                    }
+                  }
+                  setWilderness(prev => ({
+                    ...prev,
+                    weather: {
+                      ...prev.weather,
+                      result: e.target.value,
+                      roll: foundRoll,
+                      season: selectedSeason
+                    }
+                  }));
+                },
+                className: `px-3 py-2 border rounded-md font-medium ${
+                  darkMode 
+                    ? "bg-gray-800 border-gray-600 text-white" 
+                    : "bg-white border-gray-300 text-gray-900"
+                }`
+              }, Object.values(weatherTables[selectedSeason]).filter((value, index, self) => self.indexOf(value) === index).map(weather => 
+                React.createElement("option", { key: weather, value: weather }, weather)
+              ))) : React.createElement("div", {
+                key: "weather-value",
+                className: "font-semibold"
+              }, wilderness.weather.result)
+            ])
           ])
         ])
       ]))
-    ])
+    ]),
+
+    // Season Info Popup Modal
+    showSeasonInfo && React.createElement("div", {
+      key: "season-info-modal",
+      className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
+      onClick: () => setShowSeasonInfo(false)
+    }, React.createElement("div", {
+      className: `${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg p-6 max-w-md mx-4 relative`,
+      onClick: (e) => e.stopPropagation()
+    }, [
+      React.createElement("h3", {
+        key: "modal-title",
+        className: `text-lg font-semibold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`
+      }, "Season Information"),
+      React.createElement("div", {
+        key: "modal-content",
+        className: `text-sm leading-relaxed mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`
+      }, [
+        React.createElement("p", {
+          key: "season-info-text"
+        }, "Season will not change when \"Generate\" is pressed. In order to randomly choose another Season, click \"...\" followed by the Dice icon.")
+      ]),
+      React.createElement("button", {
+        key: "modal-close",
+        className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
+        onClick: () => setShowSeasonInfo(false)
+      }, "Close")
+    ]))
   ]);
 }
 
