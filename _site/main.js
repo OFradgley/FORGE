@@ -16,7 +16,8 @@ const modules = [
 const generators = [
   { label: "PC", file: "./modules/charGen.compiled.js" },
   { label: "NPC", file: "./modules/npcGen.compiled.js" },
-  { label: "Quest", file: "./modules/questGen.compiled.js" }
+  { label: "Quest", file: "./modules/questGen.compiled.js" },
+  { label: "Wilderness", file: "./modules/wildernessGen.compiled.js" }
   // Add future generators here
 ];
 
