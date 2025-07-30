@@ -623,13 +623,13 @@ function QuestGenerator() {
     
     const attrs = attributeOrder.map(a => {
       const s = scores[a];
-      const m = mod(s);
+      const m = 0; // NPCs always have +0 modifier
       return {
         attr: a,
         score: s,
         mod: m,
         primary: primariesInit.has(a),
-        check: m + (primariesInit.has(a) ? 1 : 0) // Start with level 1 assumption, will be updated later
+        check: m + (primariesInit.has(a) ? 1 : Math.floor(1 / 2)) // level 1: primary = +1, secondary = +0
       };
     });
 
@@ -647,7 +647,7 @@ function QuestGenerator() {
 
     const dexMod = 0; // NPCs always have +0 modifier
     const strengthAttr = attrs.find(a => a.attr === "Strength");
-    const maxSlots = 10 + strengthAttr.check;
+    const maxSlots = 10 + strengthAttr.mod; // Use mod temporarily, will be recalculated later
     
     let equipmentRoll = roll2d6();
     
@@ -763,15 +763,17 @@ function QuestGenerator() {
     // Update attributes with correct primaries based on level (exact copy from NPC generator)
     const finalAttrs = attrs.map(a => ({
       ...a,
+      mod: 0, // Ensure NPCs always have +0 modifier
       primary: primariesInit.has(a.attr),
-      check: a.mod + (primariesInit.has(a.attr) ? level : Math.floor(level / 2))
+      check: 0 + (primariesInit.has(a.attr) ? level : Math.floor(level / 2)) // NPCs: mod is always 0
     }));
 
     // If level is 0, all attributes are secondary (exact copy)
     if (level === 0) {
       finalAttrs.forEach(a => {
         a.primary = false;
-        a.check = a.mod;
+        a.mod = 0; // Ensure NPCs always have +0 modifier
+        a.check = 0; // Level 0 NPCs get +0 to all checks
       });
     }
 
