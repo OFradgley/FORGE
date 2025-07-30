@@ -61,6 +61,12 @@ const itemSubjects = [
   "Symbol of authority", "Tome", "Unusual animal", "Vehicle", "Weapon"
 ];
 
+// Quest Subjects for Location Based quests
+const locationSubjects = [
+  "Dungeon Location", "Wilderness Location", "Another Settlement", 
+  "Slums Location", "Public Location", "Elite Location"
+];
+
 // Quest Subjects for Character Based quests
 const questSubjects = {
   1: "Urban Character",
@@ -1212,7 +1218,9 @@ function QuestGenerator() {
               className: "border rounded px-1 py-0.5 text-sm",
               autoFocus: true,
               onBlur: () => setShowQuestActionDropdown(false)
-            }, (quest.questType === "Character Based" ? characterActions : itemActions).map(action => /*#__PURE__*/React.createElement("option", { 
+            }, (quest.questType === "Character Based" ? characterActions : 
+                quest.questType === "Item Based" ? itemActions : 
+                locationActions).map(action => /*#__PURE__*/React.createElement("option", { 
               key: action, 
               value: action 
             }, action)))) : /*#__PURE__*/React.createElement("div", {
@@ -1299,7 +1307,10 @@ function QuestGenerator() {
               /*#__PURE__*/React.createElement("option", { key: "urban", value: "Urban Character" }, "Urban Character"),
               /*#__PURE__*/React.createElement("option", { key: "rural", value: "Rural Character" }, "Rural Character"),
               /*#__PURE__*/React.createElement("option", { key: "wilderness", value: "Wilderness Character" }, "Wilderness Character")
-            ] : itemSubjects.map(subject => /*#__PURE__*/React.createElement("option", { 
+            ] : quest.questType === "Item Based" ? itemSubjects.map(subject => /*#__PURE__*/React.createElement("option", { 
+              key: subject, 
+              value: subject 
+            }, subject)) : locationSubjects.map(subject => /*#__PURE__*/React.createElement("option", { 
               key: subject, 
               value: subject 
             }, subject)))) : /*#__PURE__*/React.createElement("div", {
