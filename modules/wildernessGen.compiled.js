@@ -172,7 +172,7 @@ function WildernessGenerator() {
   React.useEffect(() => {
     if (wilderness?.nextTerrain && selectedThisTerrain) {
       console.log("Current terrain changed, regenerating next terrain for:", selectedThisTerrain);
-      generateTerrain(true); // Skip animation for automatic updates
+      generateTerrain(true, true); // Skip animation and keep dropdowns open for automatic updates
     }
   }, [selectedThisTerrain]);
 
@@ -296,7 +296,7 @@ function WildernessGenerator() {
   };
 
   const rerollWeather = () => {
-    generateWeather();
+    generateWeather(true); // Skip animation for manual rerolls
   };
 
   const rerollSeason = () => {
@@ -306,12 +306,16 @@ function WildernessGenerator() {
   };
 
   // Terrain Generation Functions
-  const generateTerrain = (skipAnimation = false) => {
+  const generateTerrain = (skipAnimation = false, keepDropdowns = false) => {
     if (!skipAnimation) {
       triggerRollAnimation();
     }
-    setShowThisTerrainDropdown(false);
-    setShowNextTerrainDropdown(false);
+    
+    // Only close dropdowns if not requested to keep them open
+    if (!keepDropdowns) {
+      setShowThisTerrainDropdown(false);
+      setShowNextTerrainDropdown(false);
+    }
     
     // Delay the actual terrain generation until after the popup disappears
     setTimeout(() => {
@@ -338,12 +342,46 @@ function WildernessGenerator() {
   };
 
   const rerollTerrain = () => {
-    generateTerrain();
+    generateTerrain(true, false); // Skip animation but close dropdowns for manual rerolls
+  };
+
+  const rerollNextTerrain = () => {
+    // For Next Hex Terrain reroll, keep the dropdown open (like Current Terrain Type)
+    const die1 = d6();
+    const die2 = d6();
+    const total = die1 + die2;
+    
+    // Use the selected "current terrain" to determine next terrain
+    const nextTerrainTable = nextTerrainTables[selectedThisTerrain];
+    const nextTerrain = nextTerrainTable[total];
+    
+    setWilderness(prev => ({
+      ...prev,
+      nextTerrain: nextTerrain,
+      terrainRoll: total
+    }));
+    // Keep dropdown open after reroll
   };
 
   const rerollCurrentTerrain = () => {
     const newTerrain = pick(terrainTypes);
     setSelectedThisTerrain(newTerrain);
+    // Keep dropdown open after reroll (like Season does)
+  };
+
+  // Helper function to get possible next terrain types based on current terrain
+  const getPossibleNextTerrains = (currentTerrain) => {
+    if (!nextTerrainTables[currentTerrain]) return terrainTypes;
+    
+    const transitionTable = nextTerrainTables[currentTerrain];
+    const possibleTerrains = new Set();
+    
+    // Get all unique terrain types that can be rolled from the current terrain
+    Object.values(transitionTable).forEach(terrain => {
+      possibleTerrains.add(terrain);
+    });
+    
+    return Array.from(possibleTerrains).sort();
   };
 
   // Combined generation function
@@ -669,7 +707,7 @@ function WildernessGenerator() {
                   },
                   type: "button",
                   onMouseDown: e => e.preventDefault(),
-                  onClick: rerollTerrain,
+                  onClick: rerollNextTerrain,
                   tabIndex: -1
                 }, React.createElement("img", {
                   src: "./d6.png",
@@ -695,7 +733,7 @@ function WildernessGenerator() {
                 className: "border rounded px-1 py-0.5 text-sm",
                 autoFocus: true,
                 onBlur: () => setShowNextTerrainDropdown(false)
-              }, terrainTypes.map(terrain => 
+              }, getPossibleNextTerrains(selectedThisTerrain).map(terrain => 
                 React.createElement("option", { key: terrain, value: terrain }, terrain)
               ))) : React.createElement("div", {
                 key: "next-terrain-value",
