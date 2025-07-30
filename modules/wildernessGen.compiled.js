@@ -629,8 +629,22 @@ function WildernessGenerator() {
                   className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
                   onClick: () => setShowThisTerrainDropdown(v => !v),
                   style: { fontSize: "0.75rem" }
-                }, "..."),
-                showThisTerrainDropdown && React.createElement("button", {
+                }, "...")
+              ]),
+              showThisTerrainDropdown ? React.createElement("div", {
+                key: "this-terrain-dropdown",
+                className: "flex items-center gap-2"
+              }, [
+                React.createElement("select", {
+                  value: selectedThisTerrain,
+                  onChange: (e) => setSelectedThisTerrain(e.target.value),
+                  className: "border rounded px-1 py-0.5 text-sm",
+                  autoFocus: true,
+                  onBlur: () => setShowThisTerrainDropdown(false)
+                }, terrainTypes.map(terrain => 
+                  React.createElement("option", { key: terrain, value: terrain }, terrain)
+                )),
+                React.createElement("button", {
                   key: "this-terrain-reroll-btn",
                   className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
                   style: {
@@ -640,8 +654,7 @@ function WildernessGenerator() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 0,
-                    marginLeft: "4px"
+                    padding: 0
                   },
                   type: "button",
                   onMouseDown: e => e.preventDefault(),
@@ -656,19 +669,7 @@ function WildernessGenerator() {
                     filter: darkMode ? "invert(1)" : "none"
                   }
                 }))
-              ]),
-              showThisTerrainDropdown ? React.createElement("div", {
-                key: "this-terrain-dropdown",
-                className: "flex items-center gap-2"
-              }, React.createElement("select", {
-                value: selectedThisTerrain,
-                onChange: (e) => setSelectedThisTerrain(e.target.value),
-                className: "border rounded px-1 py-0.5 text-sm",
-                autoFocus: true,
-                onBlur: () => setShowThisTerrainDropdown(false)
-              }, terrainTypes.map(terrain => 
-                React.createElement("option", { key: terrain, value: terrain }, terrain)
-              ))) : React.createElement("div", {
+              ]) : React.createElement("div", {
                 key: "this-terrain-value",
                 className: "font-semibold"
               }, selectedThisTerrain)
@@ -691,8 +692,27 @@ function WildernessGenerator() {
                   className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
                   onClick: () => setShowNextTerrainDropdown(v => !v),
                   style: { fontSize: "0.75rem" }
-                }, "..."),
-                showNextTerrainDropdown && React.createElement("button", {
+                }, "...")
+              ]),
+              showNextTerrainDropdown ? React.createElement("div", {
+                key: "next-terrain-dropdown",
+                className: "flex items-center gap-2"
+              }, [
+                React.createElement("select", {
+                  value: wilderness.nextTerrain,
+                  onChange: (e) => {
+                    setWilderness(prev => ({
+                      ...prev,
+                      nextTerrain: e.target.value
+                    }));
+                  },
+                  className: "border rounded px-1 py-0.5 text-sm",
+                  autoFocus: true,
+                  onBlur: () => setShowNextTerrainDropdown(false)
+                }, getPossibleNextTerrains(selectedThisTerrain).map(terrain => 
+                  React.createElement("option", { key: terrain, value: terrain }, terrain)
+                )),
+                React.createElement("button", {
                   key: "next-terrain-reroll-btn",
                   className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
                   style: {
@@ -702,8 +722,7 @@ function WildernessGenerator() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 0,
-                    marginLeft: "4px"
+                    padding: 0
                   },
                   type: "button",
                   onMouseDown: e => e.preventDefault(),
@@ -718,24 +737,7 @@ function WildernessGenerator() {
                     filter: darkMode ? "invert(1)" : "none"
                   }
                 }))
-              ]),
-              showNextTerrainDropdown ? React.createElement("div", {
-                key: "next-terrain-dropdown",
-                className: "flex items-center gap-2"
-              }, React.createElement("select", {
-                value: wilderness.nextTerrain,
-                onChange: (e) => {
-                  setWilderness(prev => ({
-                    ...prev,
-                    nextTerrain: e.target.value
-                  }));
-                },
-                className: "border rounded px-1 py-0.5 text-sm",
-                autoFocus: true,
-                onBlur: () => setShowNextTerrainDropdown(false)
-              }, getPossibleNextTerrains(selectedThisTerrain).map(terrain => 
-                React.createElement("option", { key: terrain, value: terrain }, terrain)
-              ))) : React.createElement("div", {
+              ]) : React.createElement("div", {
                 key: "next-terrain-value",
                 className: "font-semibold"
               }, wilderness.nextTerrain)
