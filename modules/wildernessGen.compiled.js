@@ -102,6 +102,13 @@ function WildernessGenerator() {
   const [wilderness, setWilderness] = React.useState(() => {
     try {
       const saved = localStorage.getItem('wilderness-data');
+      const hasBeenUsed = localStorage.getItem('wilderness-has-been-used');
+      
+      // If never been used before, return null to trigger first-time generation
+      if (!hasBeenUsed) {
+        return null;
+      }
+      
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
       console.error('Error loading wilderness data from localStorage:', error);
@@ -114,10 +121,10 @@ function WildernessGenerator() {
   const [selectedSeason, setSelectedSeason] = React.useState(() => {
     try {
       const saved = localStorage.getItem('wilderness-season');
-      return saved ? JSON.parse(saved) : "Wet Season";
+      return saved ? JSON.parse(saved) : "Dry Season";
     } catch (error) {
       console.error('Error loading season from localStorage:', error);
-      return "Wet Season";
+      return "Dry Season";
     }
   });
 
@@ -176,6 +183,19 @@ function WildernessGenerator() {
     }
   }, [selectedThisTerrain]);
 
+  // Save wilderness data to localStorage whenever it changes
+  React.useEffect(() => {
+    if (wilderness) {
+      try {
+        localStorage.setItem('wilderness-data', JSON.stringify(wilderness));
+        // Mark that the wilderness module has been used
+        localStorage.setItem('wilderness-has-been-used', 'true');
+      } catch (error) {
+        console.error('Error saving wilderness data to localStorage:', error);
+      }
+    }
+  }, [wilderness]);
+
   // Dark mode detection
   React.useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -194,15 +214,61 @@ function WildernessGenerator() {
     return () => observer.disconnect();
   }, []);
 
+  // Store current state globally for saveState function to access
+  React.useEffect(() => {
+    window._currentWildernessState = {
+      wilderness,
+      selectedSeason,
+      selectedThisTerrain
+    };
+  });
+
+  // Preserve state on unmount for saveState to access
+  React.useEffect(() => {
+    return () => {
+      // Keep a copy of the state for saveState to use after unmount
+      if (window._currentWildernessState) {
+        window._preservedWildernessState = { ...window._currentWildernessState };
+      }
+    };
+  }, []);
+
   // Auto-show dropdown on mount if no weather exists
   React.useEffect(() => {
     console.log("WildernessGen auto-roll effect - weather:", !!wilderness?.weather, ", nextTerrain:", !!wilderness?.nextTerrain);
     
+    // Check for pending state restoration first
+    if (window._pendingWildernessState) {
+      console.log("WildernessGen: Restoring pending state:", window._pendingWildernessState);
+      const pendingState = window._pendingWildernessState;
+      
+      // Restore wilderness data
+      if (pendingState.wilderness) {
+        setWilderness(pendingState.wilderness);
+      }
+      
+      // Restore selected season
+      if (pendingState.selectedSeason) {
+        setSelectedSeason(pendingState.selectedSeason);
+      }
+      
+      // Restore selected terrain
+      if (pendingState.selectedThisTerrain) {
+        setSelectedThisTerrain(pendingState.selectedThisTerrain);
+      }
+      
+      // Clear the pending state
+      window._pendingWildernessState = null;
+      console.log("WildernessGen: State restoration completed");
+      return;
+    }
+    
     // Auto-roll on mount if no weather exists (similar to other generators)
     const timeoutId = setTimeout(() => {
+      console.log("WildernessGen: Checking auto-roll conditions - wilderness:", wilderness, "weather:", wilderness?.weather, "nextTerrain:", wilderness?.nextTerrain);
       if (!wilderness?.weather || !wilderness?.nextTerrain) {
-        console.log("WildernessGen: Auto-rolling new wilderness features");
-        generateWilderness();
+        console.log("WildernessGen: Auto-rolling new wilderness features with animation");
+        generateWilderness(false); // Explicitly show animation on first load
       } else {
         console.log("WildernessGen: Skipping auto-roll, all features exist");
       }
@@ -213,13 +279,19 @@ function WildernessGenerator() {
 
   // Roll animation trigger function
   const triggerRollAnimation = () => {
+    console.log("WildernessGen: triggerRollAnimation called - setting showRollAnimation to true");
     setShowRollAnimation(true);
-    setTimeout(() => setShowRollAnimation(false), 500);
+    setTimeout(() => {
+      console.log("WildernessGen: triggerRollAnimation timeout - setting showRollAnimation to false");
+      setShowRollAnimation(false);
+    }, 500);
   };
 
   // Roll animation popup (same as Quest Generator)
   React.useEffect(() => {
+    console.log("WildernessGen: showRollAnimation useEffect triggered, showRollAnimation:", showRollAnimation);
     if (showRollAnimation) {
+      console.log("WildernessGen: Creating rolling popup");
       const popup = document.createElement('div');
       popup.style.cssText = `
         position: fixed;
@@ -843,16 +915,59 @@ function mount(root) {
     
     window.saveState = () => {
       console.log("Wilderness saveState called");
-      return null; // No state persistence needed for now
+      
+      // First try current state, then fall back to preserved state
+      const currentState = window._currentWildernessState || window._preservedWildernessState;
+      if (!currentState) {
+        console.log("No current wilderness state available");
+        return null;
+      }
+      
+      const { wilderness, selectedSeason, selectedThisTerrain } = currentState;
+      
+      console.log("Wilderness state to save:", { wilderness, selectedSeason, selectedThisTerrain });
+      
+      // Only save if there's actual wilderness data
+      if (wilderness || selectedSeason || selectedThisTerrain) {
+        return {
+          wildernessData: currentState,
+          timestamp: Date.now()
+        };
+      }
+      return null;
     };
     
     window.restoreState = (state) => {
       console.log("Wilderness restoreState called with:", state);
-      // No state restoration needed for now
+      if (state && state.wildernessData) {
+        console.log("Wilderness Generator restoring state");
+        
+        const wildernessState = state.wildernessData;
+        
+        // Store the state for immediate pickup during component initialization
+        window._pendingWildernessState = wildernessState;
+        
+        // Don't re-render, just mount a fresh component that will pick up the pending state
+        if (root._reactRoot) {
+          // Unmount current component
+          root._reactRoot.unmount();
+          root._reactRoot = null;
+          
+          // Create new root and mount with pending state
+          setTimeout(() => {
+            root._reactRoot = window.ReactDOM.createRoot(root);
+            root._reactRoot.render(window.React.createElement(WildernessGenerator));
+          }, 5); // Reduced delay for faster restoration
+        } else {
+          console.log("No React root available for Wilderness restoration");
+        }
+      } else {
+        console.log("No valid Wilderness state to restore");
+      }
     };
     
     console.log("Wilderness Generator state persistence functions set up");
-  }, 10);
+  }, 10); // Much faster setup - must be faster than main.js restoration delay
 }
 
 export { mount };
