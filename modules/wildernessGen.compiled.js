@@ -49,6 +49,54 @@ const weatherTables = {
   }
 };
 
+// Terrain Generation Tables
+const terrainTypes = ["Plains", "Hills", "Forest", "Swamp", "Desert", "Mountain"];
+
+const nextTerrainTables = {
+  "Plains": {
+    2: "Swamp", 3: "Swamp", 4: "Swamp",
+    5: "Hills", 6: "Hills",
+    7: "Plains", 8: "Plains",
+    9: "Forest", 10: "Forest",
+    11: "Desert", 12: "Desert"
+  },
+  "Hills": {
+    2: "Plains", 3: "Plains", 4: "Plains",
+    5: "Forest", 6: "Forest",
+    7: "Hills", 8: "Hills",
+    9: "Mountain", 10: "Mountain",
+    11: "Desert", 12: "Desert"
+  },
+  "Forest": {
+    2: "Hills", 3: "Hills", 4: "Hills",
+    5: "Swamp", 6: "Swamp",
+    7: "Forest", 8: "Forest",
+    9: "Plains", 10: "Plains",
+    11: "Mountain", 12: "Mountain"
+  },
+  "Swamp": {
+    2: "Hills", 3: "Hills", 4: "Hills",
+    5: "Plains", 6: "Plains",
+    7: "Swamp", 8: "Swamp",
+    9: "Forest", 10: "Forest",
+    11: "Mountain", 12: "Mountain"
+  },
+  "Desert": {
+    2: "Forest", 3: "Forest", 4: "Forest",
+    5: "Hills", 6: "Hills",
+    7: "Desert", 8: "Desert",
+    9: "Plains", 10: "Plains",
+    11: "Mountain", 12: "Mountain"
+  },
+  "Mountain": {
+    2: "Plains", 3: "Plains", 4: "Plains",
+    5: "Hills", 6: "Hills",
+    7: "Mountain", 8: "Mountain",
+    9: "Forest", 10: "Forest",
+    11: "Desert", 12: "Desert"
+  }
+};
+
 // Main Wilderness Generator Component
 function WildernessGenerator() {
   const [wilderness, setWilderness] = React.useState(() => {
@@ -73,10 +121,23 @@ function WildernessGenerator() {
     }
   });
 
+  const [selectedThisTerrain, setSelectedThisTerrain] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('wilderness-this-terrain');
+      return saved ? JSON.parse(saved) : "Plains";
+    } catch (error) {
+      console.error('Error loading this terrain from localStorage:', error);
+      return "Plains";
+    }
+  });
+
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
   const [showWeatherDropdown, setShowWeatherDropdown] = React.useState(false);
   const [showSeasonDropdown, setShowSeasonDropdown] = React.useState(false);
   const [showSeasonInfo, setShowSeasonInfo] = React.useState(false);
+  const [showThisTerrainDropdown, setShowThisTerrainDropdown] = React.useState(false);
+  const [showNextTerrainDropdown, setShowNextTerrainDropdown] = React.useState(false);
+  const [showCurrentTerrainInfo, setShowCurrentTerrainInfo] = React.useState(false);
 
   // Save wilderness data to localStorage whenever it changes
   React.useEffect(() => {
@@ -91,6 +152,29 @@ function WildernessGenerator() {
       localStorage.setItem('wilderness-season', JSON.stringify(selectedSeason));
     }
   }, [selectedSeason]);
+
+  // Save selected this terrain to localStorage whenever it changes
+  React.useEffect(() => {
+    if (selectedThisTerrain) {
+      localStorage.setItem('wilderness-this-terrain', JSON.stringify(selectedThisTerrain));
+    }
+  }, [selectedThisTerrain]);
+
+  // Auto-regenerate weather when season changes (after initial load)
+  React.useEffect(() => {
+    if (wilderness?.weather && selectedSeason) {
+      console.log("Season changed, regenerating weather for:", selectedSeason);
+      generateWeather(true); // Skip animation for automatic updates
+    }
+  }, [selectedSeason]);
+
+  // Auto-regenerate next terrain when current terrain changes (after initial load)
+  React.useEffect(() => {
+    if (wilderness?.nextTerrain && selectedThisTerrain) {
+      console.log("Current terrain changed, regenerating next terrain for:", selectedThisTerrain);
+      generateTerrain(true); // Skip animation for automatic updates
+    }
+  }, [selectedThisTerrain]);
 
   // Dark mode detection
   React.useEffect(() => {
@@ -112,15 +196,15 @@ function WildernessGenerator() {
 
   // Auto-show dropdown on mount if no weather exists
   React.useEffect(() => {
-    console.log("WildernessGen auto-roll effect - weather:", !!wilderness?.weather);
+    console.log("WildernessGen auto-roll effect - weather:", !!wilderness?.weather, ", nextTerrain:", !!wilderness?.nextTerrain);
     
     // Auto-roll on mount if no weather exists (similar to other generators)
     const timeoutId = setTimeout(() => {
-      if (!wilderness?.weather) {
-        console.log("WildernessGen: Auto-rolling new weather");
-        generateWeather();
+      if (!wilderness?.weather || !wilderness?.nextTerrain) {
+        console.log("WildernessGen: Auto-rolling new wilderness features");
+        generateWilderness();
       } else {
-        console.log("WildernessGen: Skipping auto-roll, weather exists");
+        console.log("WildernessGen: Skipping auto-roll, all features exist");
       }
     }, 150); // Delay to let restoration complete first
     
@@ -221,6 +305,53 @@ function WildernessGenerator() {
     setSelectedSeason(newSeason);
   };
 
+  // Terrain Generation Functions
+  const generateTerrain = (skipAnimation = false) => {
+    if (!skipAnimation) {
+      triggerRollAnimation();
+    }
+    setShowThisTerrainDropdown(false);
+    setShowNextTerrainDropdown(false);
+    
+    // Delay the actual terrain generation until after the popup disappears
+    setTimeout(() => {
+      const die1 = d6();
+      const die2 = d6();
+      const total = die1 + die2;
+      
+      // Use the selected "current terrain" to determine next terrain
+      const nextTerrainTable = nextTerrainTables[selectedThisTerrain];
+      const nextTerrain = nextTerrainTable[total];
+      
+      const terrainData = {
+        nextTerrain: nextTerrain,
+        roll: total,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setWilderness(prev => ({
+        ...prev,
+        nextTerrain: terrainData.nextTerrain,
+        terrainRoll: terrainData.roll
+      }));
+    }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
+  };
+
+  const rerollTerrain = () => {
+    generateTerrain();
+  };
+
+  const rerollCurrentTerrain = () => {
+    const newTerrain = pick(terrainTypes);
+    setSelectedThisTerrain(newTerrain);
+  };
+
+  // Combined generation function
+  const generateWilderness = (skipAnimation = false) => {
+    generateWeather(skipAnimation);
+    generateTerrain(skipAnimation);
+  };
+
   const toggleWeatherView = () => {
     setShowWeatherDropdown(v => !v);
   };
@@ -254,7 +385,7 @@ function WildernessGenerator() {
         React.createElement("button", {
           key: "generate-btn",
           className: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2",
-          onClick: () => generateWeather()
+          onClick: () => generateWilderness()
         }, "Generate")
       ]),
       React.createElement(CardContent, {
@@ -266,7 +397,7 @@ function WildernessGenerator() {
         React.createElement("p", {
           key: "description",
           className: darkMode ? "text-center text-white" : "text-center text-gray-600"
-        }, !wilderness?.weather ? "Click \"Generate\" to begin." : ""),
+        }, !wilderness?.weather || !wilderness?.nextTerrain ? "Click \"Generate\" to begin." : ""),
 
         // Weather Fields (directly in CardContent like Quest generator)
         wilderness && React.createElement("div", {
@@ -429,6 +560,148 @@ function WildernessGenerator() {
                 className: "font-semibold"
               }, wilderness.weather.result)
             ])
+          ]),
+
+          // 2x2 Grid for terrain fields (second row)
+          React.createElement("div", {
+            key: "terrain-grid",
+            className: "grid grid-cols-2 gap-4"
+          }, [
+            // Current Terrain Type Field (left)
+            React.createElement("div", {
+              key: "this-terrain-field"
+            }, [
+              React.createElement("div", {
+                key: "this-terrain-header",
+                className: "flex items-center gap-2 mb-1"
+              }, [
+                React.createElement("span", {
+                  key: "this-terrain-label",
+                  className: "text-xs text-gray-500"
+                }, "Current Terrain Type"),
+                React.createElement("button", {
+                  key: "current-terrain-info-btn",
+                  className: "w-4 h-4 rounded-full bg-blue-500 text-white text-xs hover:bg-blue-600 flex items-center justify-center",
+                  onClick: () => setShowCurrentTerrainInfo(true),
+                  style: { fontSize: "0.6rem", fontWeight: "bold" },
+                  title: "Current Terrain Type Information"
+                }, "i"),
+                React.createElement("button", {
+                  key: "this-terrain-dropdown-btn",
+                  className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  onClick: () => setShowThisTerrainDropdown(v => !v),
+                  style: { fontSize: "0.75rem" }
+                }, "..."),
+                showThisTerrainDropdown && React.createElement("button", {
+                  key: "this-terrain-reroll-btn",
+                  className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  style: {
+                    fontSize: "0.75rem",
+                    height: "25px",
+                    width: "25px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    marginLeft: "4px"
+                  },
+                  type: "button",
+                  onMouseDown: e => e.preventDefault(),
+                  onClick: rerollCurrentTerrain,
+                  tabIndex: -1
+                }, React.createElement("img", {
+                  src: "./d6.png",
+                  alt: "Reroll",
+                  style: {
+                    width: "25px",
+                    height: "25px",
+                    filter: darkMode ? "invert(1)" : "none"
+                  }
+                }))
+              ]),
+              showThisTerrainDropdown ? React.createElement("div", {
+                key: "this-terrain-dropdown",
+                className: "flex items-center gap-2"
+              }, React.createElement("select", {
+                value: selectedThisTerrain,
+                onChange: (e) => setSelectedThisTerrain(e.target.value),
+                className: "border rounded px-1 py-0.5 text-sm",
+                autoFocus: true,
+                onBlur: () => setShowThisTerrainDropdown(false)
+              }, terrainTypes.map(terrain => 
+                React.createElement("option", { key: terrain, value: terrain }, terrain)
+              ))) : React.createElement("div", {
+                key: "this-terrain-value",
+                className: "font-semibold"
+              }, selectedThisTerrain)
+            ]),
+
+            // Next Hex Terrain Type Field (right)
+            wilderness?.nextTerrain && React.createElement("div", {
+              key: "next-terrain-field"
+            }, [
+              React.createElement("div", {
+                key: "next-terrain-header",
+                className: "flex items-center gap-2 mb-1"
+              }, [
+                React.createElement("span", {
+                  key: "next-terrain-label",
+                  className: "text-xs text-gray-500"
+                }, "Next Hex Terrain Type"),
+                React.createElement("button", {
+                  key: "next-terrain-dropdown-btn",
+                  className: "px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  onClick: () => setShowNextTerrainDropdown(v => !v),
+                  style: { fontSize: "0.75rem" }
+                }, "..."),
+                showNextTerrainDropdown && React.createElement("button", {
+                  key: "next-terrain-reroll-btn",
+                  className: "rounded bg-blue-600 text-white text-xs hover:bg-blue-700",
+                  style: {
+                    fontSize: "0.75rem",
+                    height: "25px",
+                    width: "25px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    marginLeft: "4px"
+                  },
+                  type: "button",
+                  onMouseDown: e => e.preventDefault(),
+                  onClick: rerollTerrain,
+                  tabIndex: -1
+                }, React.createElement("img", {
+                  src: "./d6.png",
+                  alt: "Reroll",
+                  style: {
+                    width: "25px",
+                    height: "25px",
+                    filter: darkMode ? "invert(1)" : "none"
+                  }
+                }))
+              ]),
+              showNextTerrainDropdown ? React.createElement("div", {
+                key: "next-terrain-dropdown",
+                className: "flex items-center gap-2"
+              }, React.createElement("select", {
+                value: wilderness.nextTerrain,
+                onChange: (e) => {
+                  setWilderness(prev => ({
+                    ...prev,
+                    nextTerrain: e.target.value
+                  }));
+                },
+                className: "border rounded px-1 py-0.5 text-sm",
+                autoFocus: true,
+                onBlur: () => setShowNextTerrainDropdown(false)
+              }, terrainTypes.map(terrain => 
+                React.createElement("option", { key: terrain, value: terrain }, terrain)
+              ))) : React.createElement("div", {
+                key: "next-terrain-value",
+                className: "font-semibold"
+              }, wilderness.nextTerrain)
+            ])
           ])
         ])
       ]))
@@ -463,6 +736,38 @@ function WildernessGenerator() {
         key: "modal-close",
         className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
         onClick: () => setShowSeasonInfo(false)
+      }, "Close")
+    ])),
+
+    // Current Terrain Type Info Popup Modal
+    showCurrentTerrainInfo && React.createElement("div", {
+      key: "current-terrain-info-modal",
+      className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
+      onClick: () => setShowCurrentTerrainInfo(false)
+    }, React.createElement("div", {
+      className: `${darkMode ? "bg-gray-800" : "bg-white"} rounded-lg p-6 max-w-md mx-4 relative`,
+      onClick: (e) => e.stopPropagation()
+    }, [
+      React.createElement("h3", {
+        key: "modal-title",
+        className: `text-lg font-semibold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`
+      }, "Current Terrain Type Information"),
+      React.createElement("div", {
+        key: "modal-content",
+        className: `text-sm leading-relaxed mb-4 ${darkMode ? "text-gray-200" : "text-gray-700"}`
+      }, [
+        React.createElement("p", {
+          key: "terrain-info-text"
+        }, "Current Terrain Type will not change when \"Generate\" is pressed."),
+        React.createElement("p", {
+          key: "terrain-info-text-2",
+          className: "mt-2"
+        }, "In order to randomly choose another Current Terrain Type, click \"...\" followed by the Dice icon.")
+      ]),
+      React.createElement("button", {
+        key: "modal-close",
+        className: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
+        onClick: () => setShowCurrentTerrainInfo(false)
       }, "Close")
     ]))
   ]);
