@@ -99,17 +99,33 @@ const nextTerrainTables = {
 
 // Main Wilderness Generator Component
 function WildernessGenerator() {
+  // Store pending state reference to use for all state initializations
+  const pendingState = window._pendingWildernessState;
+  
   const [wilderness, setWilderness] = React.useState(() => {
+    // Check for pending state on initialization (from module switching)
+    if (pendingState && pendingState.wilderness) {
+      console.log("WildernessGen: Initializing from pending state:", pendingState.wilderness);
+      return pendingState.wilderness;
+    }
+    
+    // If no pending state, this is a fresh page load (including hard refresh)
+    // For fresh loads, clear localStorage and start fresh like PC/NPC generators
     try {
       const saved = localStorage.getItem('wilderness-data');
-      const hasBeenUsed = localStorage.getItem('wilderness-has-been-used');
+      console.log("WildernessGen: Raw localStorage wilderness-data:", saved);
       
-      // If never been used before, return null to trigger first-time generation
-      if (!hasBeenUsed) {
-        return null;
+      // Clear localStorage on fresh page loads (hard refresh, direct navigation)
+      if (saved) {
+        console.log("WildernessGen: Clearing localStorage on fresh page load");
+        localStorage.removeItem('wilderness-data');
+        localStorage.removeItem('wilderness-season');
+        localStorage.removeItem('wilderness-this-terrain');
       }
       
-      return saved ? JSON.parse(saved) : null;
+      // Always start fresh on page load (no pending state)
+      console.log("WildernessGen: Starting fresh - no existing data");
+      return null;
     } catch (error) {
       console.error('Error loading wilderness data from localStorage:', error);
       return null;
@@ -119,23 +135,23 @@ function WildernessGenerator() {
   const [darkMode, setDarkMode] = React.useState(() => document.body.classList.contains("dark"));
   
   const [selectedSeason, setSelectedSeason] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('wilderness-season');
-      return saved ? JSON.parse(saved) : "Dry Season";
-    } catch (error) {
-      console.error('Error loading season from localStorage:', error);
-      return "Dry Season";
+    // Check for pending state on initialization
+    if (pendingState && pendingState.selectedSeason) {
+      return pendingState.selectedSeason;
     }
+    
+    // For fresh page loads, start with default (localStorage was cleared above)
+    return "Dry Season";
   });
 
   const [selectedThisTerrain, setSelectedThisTerrain] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('wilderness-this-terrain');
-      return saved ? JSON.parse(saved) : "Plains";
-    } catch (error) {
-      console.error('Error loading this terrain from localStorage:', error);
-      return "Plains";
+    // Check for pending state on initialization
+    if (pendingState && pendingState.selectedThisTerrain) {
+      return pendingState.selectedThisTerrain;
     }
+    
+    // For fresh page loads, start with default (localStorage was cleared above)
+    return "Plains";
   });
 
   const [showRollAnimation, setShowRollAnimation] = React.useState(false);
@@ -146,55 +162,97 @@ function WildernessGenerator() {
   const [showNextTerrainDropdown, setShowNextTerrainDropdown] = React.useState(false);
   const [showCurrentTerrainInfo, setShowCurrentTerrainInfo] = React.useState(false);
 
-  // Save wilderness data to localStorage whenever it changes
+  // Clear pending state after all initializations are complete
   React.useEffect(() => {
-    if (wilderness) {
-      localStorage.setItem('wilderness-data', JSON.stringify(wilderness));
+    if (window._pendingWildernessState === pendingState && pendingState) {
+      console.log("Clearing pending wilderness state after initialization");
+      window._pendingWildernessState = null;
     }
-  }, [wilderness]);
+  }, []);
 
-  // Save selected season to localStorage whenever it changes
-  React.useEffect(() => {
-    if (selectedSeason) {
-      localStorage.setItem('wilderness-season', JSON.stringify(selectedSeason));
-    }
-  }, [selectedSeason]);
+  // Roll animation trigger function
+  const triggerRollAnimation = () => {
+    console.log("WildernessGen: triggerRollAnimation called - setting showRollAnimation to true");
+    setShowRollAnimation(true);
+    setTimeout(() => {
+      console.log("WildernessGen: triggerRollAnimation timeout - setting showRollAnimation to false");
+      setShowRollAnimation(false);
+    }, 500);
+  };
 
-  // Save selected this terrain to localStorage whenever it changes
-  React.useEffect(() => {
-    if (selectedThisTerrain) {
-      localStorage.setItem('wilderness-this-terrain', JSON.stringify(selectedThisTerrain));
+  // Weather Generation Function
+  const generateWeather = (skipAnimation = false) => {
+    console.log("WildernessGen: generateWeather called, skipAnimation:", skipAnimation);
+    // Trigger roll animation first (unless skipping for restoration)
+    if (!skipAnimation) {
+      triggerRollAnimation();
     }
-  }, [selectedThisTerrain]);
+    
+    // Delay the actual weather generation until after the popup disappears
+    setTimeout(() => {
+      const die1 = d6();
+      const die2 = d6();
+      const total = die1 + die2;
+      const weather = weatherTables[selectedSeason][total];
+      
+      const weatherData = {
+        season: selectedSeason,
+        roll: total,
+        result: weather,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setWilderness(prev => ({
+        ...prev,
+        weather: weatherData
+      }));
+    }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
+  };
 
-  // Auto-regenerate weather when season changes (after initial load)
-  React.useEffect(() => {
-    if (wilderness?.weather && selectedSeason) {
-      console.log("Season changed, regenerating weather for:", selectedSeason);
-      generateWeather(true); // Skip animation for automatic updates
+  // Terrain Generation Functions
+  const generateTerrain = (skipAnimation = false, keepDropdowns = false) => {
+    console.log("WildernessGen: generateTerrain called, skipAnimation:", skipAnimation);
+    if (!skipAnimation) {
+      triggerRollAnimation();
     }
-  }, [selectedSeason]);
+    
+    // Only close dropdowns if not requested to keep them open
+    if (!keepDropdowns) {
+      setShowThisTerrainDropdown(false);
+      setShowNextTerrainDropdown(false);
+    }
+    
+    // Delay the actual terrain generation until after the popup disappears
+    setTimeout(() => {
+      const die1 = d6();
+      const die2 = d6();
+      const total = die1 + die2;
+      
+      // Use the selected "current terrain" to determine next terrain
+      const nextTerrainTable = nextTerrainTables[selectedThisTerrain];
+      const nextTerrain = nextTerrainTable[total];
+      
+      const terrainData = {
+        nextTerrain: nextTerrain,
+        roll: total,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setWilderness(prev => ({
+        ...prev,
+        nextTerrain: terrainData.nextTerrain,
+        terrainRoll: terrainData.roll
+      }));
+    }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
+  };
 
-  // Auto-regenerate next terrain when current terrain changes (after initial load)
-  React.useEffect(() => {
-    if (wilderness?.nextTerrain && selectedThisTerrain) {
-      console.log("Current terrain changed, regenerating next terrain for:", selectedThisTerrain);
-      generateTerrain(true, true); // Skip animation and keep dropdowns open for automatic updates
-    }
-  }, [selectedThisTerrain]);
-
-  // Save wilderness data to localStorage whenever it changes
-  React.useEffect(() => {
-    if (wilderness) {
-      try {
-        localStorage.setItem('wilderness-data', JSON.stringify(wilderness));
-        // Mark that the wilderness module has been used
-        localStorage.setItem('wilderness-has-been-used', 'true');
-      } catch (error) {
-        console.error('Error saving wilderness data to localStorage:', error);
-      }
-    }
-  }, [wilderness]);
+  // Combined generation function
+  const generateWilderness = (skipAnimation = false) => {
+    console.log("WildernessGen: generateWilderness called, skipAnimation:", skipAnimation);
+    console.log("WildernessGen: About to call generateWeather and generateTerrain");
+    generateWeather(skipAnimation);
+    generateTerrain(skipAnimation);
+  };
 
   // Dark mode detection
   React.useEffect(() => {
@@ -233,59 +291,29 @@ function WildernessGenerator() {
     };
   }, []);
 
-  // Auto-show dropdown on mount if no weather exists
+  // Auto-roll wilderness on component mount only if no existing wilderness (exactly like PC/NPC generators)
   React.useEffect(() => {
-    console.log("WildernessGen auto-roll effect - weather:", !!wilderness?.weather, ", nextTerrain:", !!wilderness?.nextTerrain);
+    console.log("WildernessGen auto-roll effect - wilderness:", !!wilderness, "pendingState:", !!window._pendingWildernessState);
     
-    // Check for pending state restoration first
-    if (window._pendingWildernessState) {
-      console.log("WildernessGen: Restoring pending state:", window._pendingWildernessState);
-      const pendingState = window._pendingWildernessState;
-      
-      // Restore wilderness data
-      if (pendingState.wilderness) {
-        setWilderness(pendingState.wilderness);
-      }
-      
-      // Restore selected season
-      if (pendingState.selectedSeason) {
-        setSelectedSeason(pendingState.selectedSeason);
-      }
-      
-      // Restore selected terrain
-      if (pendingState.selectedThisTerrain) {
-        setSelectedThisTerrain(pendingState.selectedThisTerrain);
-      }
-      
-      // Clear the pending state
-      window._pendingWildernessState = null;
-      console.log("WildernessGen: State restoration completed");
-      return;
-    }
-    
-    // Auto-roll on mount if no weather exists (similar to other generators)
+    // Wait longer to allow restoration to complete before deciding to auto-roll
     const timeoutId = setTimeout(() => {
-      console.log("WildernessGen: Checking auto-roll conditions - wilderness:", wilderness, "weather:", wilderness?.weather, "nextTerrain:", wilderness?.nextTerrain);
-      if (!wilderness?.weather || !wilderness?.nextTerrain) {
-        console.log("WildernessGen: Auto-rolling new wilderness features with animation");
-        generateWilderness(false); // Explicitly show animation on first load
+      // Check again after waiting - restoration might have happened
+      const hasWildernessNow = !!wilderness;
+      const hasPendingState = !!window._pendingWildernessState;
+      
+      console.log("WildernessGen auto-roll decision - wilderness now:", hasWildernessNow, "pendingState now:", hasPendingState);
+      
+      // Only roll if we don't have wilderness data already (either from state or restored)
+      if (!hasWildernessNow && !hasPendingState) {
+        console.log("WildernessGen: Auto-rolling new wilderness");
+        generateWilderness();
       } else {
-        console.log("WildernessGen: Skipping auto-roll, all features exist");
+        console.log("WildernessGen: Skipping auto-roll, wilderness exists or pending state available");
       }
-    }, 150); // Delay to let restoration complete first
+    }, 150); // Longer delay to let restoration complete first
     
     return () => clearTimeout(timeoutId);
   }, []);
-
-  // Roll animation trigger function
-  const triggerRollAnimation = () => {
-    console.log("WildernessGen: triggerRollAnimation called - setting showRollAnimation to true");
-    setShowRollAnimation(true);
-    setTimeout(() => {
-      console.log("WildernessGen: triggerRollAnimation timeout - setting showRollAnimation to false");
-      setShowRollAnimation(false);
-    }, 500);
-  };
 
   // Roll animation popup (same as Quest Generator)
   React.useEffect(() => {
@@ -339,34 +367,6 @@ function WildernessGenerator() {
     }
   }, [showRollAnimation]);
 
-  // Weather Generation Function
-  const generateWeather = (skipAnimation = false) => {
-    // Trigger roll animation first (unless skipping for restoration)
-    if (!skipAnimation) {
-      triggerRollAnimation();
-    }
-    
-    // Delay the actual weather generation until after the popup disappears
-    setTimeout(() => {
-      const die1 = d6();
-      const die2 = d6();
-      const total = die1 + die2;
-      const weather = weatherTables[selectedSeason][total];
-      
-      const weatherData = {
-        season: selectedSeason,
-        roll: total,
-        result: weather,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      
-      setWilderness(prev => ({
-        ...prev,
-        weather: weatherData
-      }));
-    }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
-  };
-
   const rerollWeather = () => {
     generateWeather(true); // Skip animation for manual rerolls
   };
@@ -375,42 +375,6 @@ function WildernessGenerator() {
     const seasons = ["Wet Season", "Dry Season", "Cold Season"];
     const newSeason = pick(seasons);
     setSelectedSeason(newSeason);
-  };
-
-  // Terrain Generation Functions
-  const generateTerrain = (skipAnimation = false, keepDropdowns = false) => {
-    if (!skipAnimation) {
-      triggerRollAnimation();
-    }
-    
-    // Only close dropdowns if not requested to keep them open
-    if (!keepDropdowns) {
-      setShowThisTerrainDropdown(false);
-      setShowNextTerrainDropdown(false);
-    }
-    
-    // Delay the actual terrain generation until after the popup disappears
-    setTimeout(() => {
-      const die1 = d6();
-      const die2 = d6();
-      const total = die1 + die2;
-      
-      // Use the selected "current terrain" to determine next terrain
-      const nextTerrainTable = nextTerrainTables[selectedThisTerrain];
-      const nextTerrain = nextTerrainTable[total];
-      
-      const terrainData = {
-        nextTerrain: nextTerrain,
-        roll: total,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      
-      setWilderness(prev => ({
-        ...prev,
-        nextTerrain: terrainData.nextTerrain,
-        terrainRoll: terrainData.roll
-      }));
-    }, skipAnimation ? 50 : 500); // Match the popup duration or use shorter delay
   };
 
   const rerollTerrain = () => {
@@ -454,12 +418,6 @@ function WildernessGenerator() {
     });
     
     return Array.from(possibleTerrains).sort();
-  };
-
-  // Combined generation function
-  const generateWilderness = (skipAnimation = false) => {
-    generateWeather(skipAnimation);
-    generateTerrain(skipAnimation);
   };
 
   const toggleWeatherView = () => {
@@ -942,10 +900,8 @@ function mount(root) {
       if (state && state.wildernessData) {
         console.log("Wilderness Generator restoring state");
         
-        const wildernessState = state.wildernessData;
-        
         // Store the state for immediate pickup during component initialization
-        window._pendingWildernessState = wildernessState;
+        window._pendingWildernessState = state.wildernessData;
         
         // Don't re-render, just mount a fresh component that will pick up the pending state
         if (root._reactRoot) {
